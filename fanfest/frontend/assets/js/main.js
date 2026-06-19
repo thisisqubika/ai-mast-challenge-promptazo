@@ -210,3 +210,12 @@ renderWorld();
 renderRecap();
 renderUpcoming();
 renderNav();
+
+const liveCta = document.querySelector('.live-bar__cta');
+if (liveCta) {
+  liveCta.addEventListener('click', () => {
+    if (typeof window.showEvent === 'function') {
+      window.showEvent('evt-001');
+    }
+  });
+}
