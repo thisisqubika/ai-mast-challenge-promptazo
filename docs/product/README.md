@@ -36,4 +36,5 @@ We use QAF for **both** planning and implementation:
 ## Source of truth
 
 - **Flow**: Benchmark FigJam → "Flujo" page (latest). Page 1 holds the earlier draft; "Flujo" supersedes it.
+- **Screens / UI**: claude.ai/design project "Tribuna Fan Fests Discovery" (`60abb423-7365-4d4a-a03c-f14305f91d8b`) — one `*.dc.html` per screen (Home, Event Detail, …). Ported to `fanfest/frontend`.
 - **Challenge rules**: Confluence — *Overview & Registration* + *Delivery Requirements* (TGS space).
