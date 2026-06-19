@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException
 
+from app.services import registry
+
 # ---------------------------------------------------------------------------
 # In-process persistent store (survives for the lifetime of the process).
 # Keys:
@@ -111,6 +113,7 @@ def checkin_user(event_id: str, user_id: str, name: str) -> dict:
 
     attendee_set = _get_attendee_set(event_id)
     attendee_set.add(user_id)
+    registry.register(user_id, name)
 
     return {
         "user_id": user_id,
