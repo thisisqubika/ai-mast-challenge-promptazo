@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "schema_version": "1.0.0",
+  "framework_version": "1.0.0",
+  "stack_profile": {
+    "services": [
+      {
+        "id": "backend",
+        "name": "Fan Fest Backend",
+        "path": "fanfest/backend",
+        "type": "backend",
+        "language": "python",
+        "frameworks": {
+          "main": "FastAPI"
+        },
+        "environment": {
+          "port": 8000
+        },
+        "file_count": 12,
+        "manifest_file": "fanfest/backend/requirements.txt"
+      }
+    ],
+    "is_monorepo": false,
+    "software_version_control": "github",
+    "file_counts": {
+      "total": 15,
+      "by_language": {
+        "python": 11,
+        "javascript": 2,
+        "css": 1,
+        "html": 1
+      }
+    },
+    "readme_run_sections": [
+      {
+        "path": "README.md",
+        "heading": "How to Run It Locally",
+        "body": "**Backend**\n\n```bash\ncd fanfest/backend\npip install -r requirements.txt\ncp .env.example .env        # fill in ANTHROPIC_API_KEY and Google credentials\nuvicorn app.main:app --reload\n# API available at http://localhost:8000\n```\n\n**Frontend**\n\n```bash\ncd fanfest/frontend\npython -m http.server 8080\n# Open http://localhost:8080 in your browser\n```\n\n**Environment variables required** (see `fanfest/backend/.env.example`):\n- `ANTHROPIC_API_KEY` — for the AI recap feature\n- Google OAuth credentials — for Calendar, Maps, and Drive integrations\n",
+        "fenced_blocks": [
+          "cd fanfest/backend\npip install -r requirements.txt\ncp .env.example .env        # fill in ANTHROPIC_API_KEY and Google credentials\nuvicorn app.main:app --reload\n# API available at http://localhost:8000",
+          "cd fanfest/frontend\npython -m http.server 8080\n# Open http://localhost:8080 in your browser"
+        ]
+      }
+    ],
+    "command_catalog": {
+      "setup": [
+        {
+          "tier": "readme",
+          "command": "pip install -r requirements.txt",
+          "description": "From README.md § How to Run It Locally",
+          "source": "README.md#how-to-run-it-locally"
+        },
+        {
+          "tier": "readme",
+          "command": "python -m http.server 8080",
+          "description": "From README.md § How to Run It Locally",
+          "source": "README.md#how-to-run-it-locally"
+        }
+      ]
+    }
+  },
+  "resource_state": {
+    "skills": {},
+    "agents": {}
+  }
+}
