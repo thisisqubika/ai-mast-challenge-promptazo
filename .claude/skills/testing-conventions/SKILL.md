@@ -53,7 +53,7 @@ def sample_event():
     return {"name": "Test Fest", "date": "2026-07-01", "location": "Buenos Aires"}
 ```
 
-For services with mutable in-memory state, add an `autouse=True` fixture that resets module-level dicts before each test. This prevents state leaking between tests without needing explicit teardown.
+For services with mutable in-memory state, add an `autouse=True` fixture that resets module-level dicts before each test. This prevents state leaking between tests without needing explicit teardown. Shared resets go in `conftest.py`; domain-specific resets (e.g. `_predictions`, `_attendees`) go in the test module itself.
 
 ```python
 # fanfest/backend/tests/conftest.py

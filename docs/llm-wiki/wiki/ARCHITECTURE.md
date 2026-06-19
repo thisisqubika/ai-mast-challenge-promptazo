@@ -4,7 +4,7 @@ summary: >-
   FanFest is a single-repository project (not a monorepo) containing two runtime
   components under a shared `fanfest/` directory. There is no workspace tool,
   no...
-last_updated: '2026-06-19T18:35:00.000Z'
+last_updated: '2026-06-19T18:50:00.000Z'
 tags:
   - architecture
   - topology
@@ -96,12 +96,14 @@ When implemented, the expected shape is standard OAuth 2.0 Authorization Code fl
 
 ## Data Architecture
 
-No operational data store has been declared. No database, cache, message queue, or object store is present or referenced anywhere in the codebase. No ORM (SQLAlchemy, Tortoise, etc.), no migration tool (Alembic, etc.), and no schema definition file exist.
+An in-process dict store (introduced by FEST-02) is the current persistence layer. It lives in `fanfest/backend/app/services/events_service.py` as three module-level Python dicts (`_events`, `_predictions`, `_attendees`), seeded with mock event data at import time. State persists for the lifetime of the running process but resets on server restart.
 
-No durable database or object store has been declared. All state is in-memory: match state and Hype Wall photos are held in module-level Python dicts in `services/match_state.py` and `services/photos_service.py` and reset on server restart. If persistence is added, the scaffolded `app/models/` and `app/schemas/` directories provide the intended placement.
+No durable database or object store has been declared. All state is in-memory in module-level Python dicts across multiple service modules, and resets on server restart. The scaffolded `app/models/` directory remains an empty stub for future ORM models.
 
 | Store | Technology | Status |
 |-------|-----------|--------|
+| In-process event/prediction store | Python dicts (`events_service.py`) | Implemented (FEST-02) |
+| In-process match state + Hype Wall photos | Python dicts (`match_state.py`, `photos_service.py`) | Implemented (FEST-03) |
 | Primary database | (not determined by analysis) | Not implemented |
 | Cache | (not determined by analysis) | Not implemented |
 | Queue | (not determined by analysis) | Not implemented |

@@ -15,9 +15,9 @@ app.add_middleware(
 )
 
 
+app.include_router(events.router, prefix="/api/v1")
+
+
 @app.get("/health")
 def get_health() -> dict[str, str]:
     return {"status": "ok"}
-
-
-app.include_router(events.router, prefix="/api/v1")
