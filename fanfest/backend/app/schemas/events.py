@@ -129,3 +129,24 @@ class RecapResponse(BaseModel):
     home_team: str
     away_team: str
     photo_count: int
+
+
+# ---------------------------------------------------------------------------
+# Events list
+# ---------------------------------------------------------------------------
+
+
+class EventSummary(BaseModel):
+    id: str
+    home_team: str
+    home_flag: str
+    home_abbr: str
+    away_team: str
+    away_flag: str
+    away_abbr: str
+    kickoff_iso: str
+    status: str
+    recap_event_id: str | None = None
+    home_score: int | None = None
+    away_score: int | None = None
+    photo_count: int = 0

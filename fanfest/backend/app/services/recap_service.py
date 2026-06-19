@@ -5,7 +5,31 @@ import json
 import anthropic
 
 from app.core.config import settings
+from app.data.seed import RECAPS
 from app.schemas.events import MatchState, Photo, RecapHighlight, RecapResponse
+
+# Seeded with pre-generated recaps for past events; new recaps are saved here
+# on first generation so subsequent calls return the cached version.
+_store: dict[str, RecapResponse] = {
+    r.event_id: RecapResponse(
+        event_id=r.event_id,
+        narrative=r.narrative,
+        highlights=[RecapHighlight(label=s.label, description=s.description) for s in r.slides],
+        correct_predictors=r.correct_predictors,
+        fallback=r.fallback,
+        home_score=r.home_score,
+        away_score=r.away_score,
+        home_team=r.home_team,
+        away_team=r.away_team,
+        photo_count=r.photo_count,
+    )
+    for r in RECAPS
+}
+
+
+def get_recap(event_id: str) -> RecapResponse | None:
+    """Return a stored recap or None if not yet generated."""
+    return _store.get(event_id)
 
 
 def generate_recap(
@@ -17,11 +41,17 @@ def generate_recap(
 ) -> RecapResponse:
     """Generate a narrative recap for a completed match.
 
-    Falls back to a templated summary when the Anthropic API key is absent
-    or any API or parse error occurs, always returning HTTP 200.
+    Returns a cached recap if one already exists. Otherwise generates via the
+    Anthropic API (or a fallback template), saves the result, and returns it.
+    Always returns HTTP 200.
     """
+    if event_id in _store:
+        return _store[event_id]
+
     if not settings.anthropic_api_key:
-        return _fallback_recap(event_id, state, photos, fallback=True)
+        result = _fallback_recap(event_id, state, photos, fallback=True)
+        _store[event_id] = result
+        return result
 
     try:
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
@@ -42,7 +72,7 @@ def generate_recap(
         ]
         narrative = data.get("narrative", "")
 
-        return RecapResponse(
+        result = RecapResponse(
             event_id=event_id,
             narrative=narrative,
             highlights=highlights,
@@ -54,8 +84,12 @@ def generate_recap(
             away_team=state.away_team,
             photo_count=len(photos),
         )
+        _store[event_id] = result
+        return result
     except Exception:
-        return _fallback_recap(event_id, state, photos, fallback=True)
+        result = _fallback_recap(event_id, state, photos, fallback=True)
+        _store[event_id] = result
+        return result
 
 
 def _build_context(state: MatchState, photos: list[Photo]) -> dict:

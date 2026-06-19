@@ -30,24 +30,38 @@ def reset_services() -> None:
     """Reset mutable in-memory state between tests."""
     import app.services.match_state as ms
     import app.services.photos_service as ps
-    from app.schemas.events import MatchState
+    import app.services.recap_service as rs
+    from app.data.seed import FANS, MATCHES, RECAPS
+    from app.schemas.events import Goal, MatchState, RecapHighlight, RecapResponse
 
-    ms._states = {
-        "event_001": MatchState(
-            event_id="event_001",
-            home_team="River Plate",
-            away_team="Boca Juniors",
-            home_score=0,
-            away_score=0,
-            status="pre",
-            clock_seconds=0,
-            venue="Estadio Monumental",
-            goals=[],
+    def _to_state(m) -> MatchState:
+        return MatchState(
+            event_id=m.event_id,
+            home_team=m.home_team,
+            away_team=m.away_team,
+            home_score=m.home_score,
+            away_score=m.away_score,
+            status=m.status,
+            clock_seconds=m.clock_seconds,
+            venue=m.venue,
+            goals=[Goal(player=g.player, team=g.team, minute=g.minute) for g in m.goals],
         )
-    }
+
+    ms._states = {m.event_id: _to_state(m) for m in MATCHES}
     ps._photos = {}
-    registry._checked_in = {
-        "user_001": "Alice",
-        "user_002": "Bob",
-        "user_003": "Carlos",
+    registry._checked_in = {f.user_id: f.name for f in FANS}
+    rs._store = {
+        r.event_id: RecapResponse(
+            event_id=r.event_id,
+            narrative=r.narrative,
+            highlights=[RecapHighlight(label=s.label, description=s.description) for s in r.slides],
+            correct_predictors=r.correct_predictors,
+            fallback=r.fallback,
+            home_score=r.home_score,
+            away_score=r.away_score,
+            home_team=r.home_team,
+            away_team=r.away_team,
+            photo_count=r.photo_count,
+        )
+        for r in RECAPS
     }

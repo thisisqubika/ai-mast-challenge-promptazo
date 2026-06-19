@@ -1,4 +1,4 @@
-import { fetchMatchState, fetchPhotos, uploadPhoto } from './api.js';
+import { fetchMatchState, fetchPhotos } from './api.js';
 
 const EVENT_ID = 'event_001';
 const POLL_INTERVAL = 3000;
@@ -108,12 +108,6 @@ function renderLiveView(state, photos) {
     <div class="hype-wall">
       <div class="hype-wall__title">Hype Wall 📸</div>
       <div class="hype-grid" id="hypeGrid">${renderPhotos(photos)}</div>
-      <div class="hype-upload">
-        <label class="hype-upload__label" for="photoInput">Elegir foto</label>
-        <input type="file" id="photoInput" accept="image/*" class="hype-upload__input">
-        <button class="hype-upload__btn" id="uploadBtn" type="button">Subir foto</button>
-      </div>
-      <div id="uploadStatus" class="hype-upload__status"></div>
     </div>`;
 
   return `
@@ -122,29 +116,6 @@ function renderLiveView(state, photos) {
     ${liveDetail}`;
 }
 
-async function handleUpload() {
-  const input = document.getElementById('photoInput');
-  const status = document.getElementById('uploadStatus');
-  const btn = document.getElementById('uploadBtn');
-  const file = input && input.files[0];
-  if (!file) {
-    status.textContent = 'Seleccioná una foto primero.';
-    return;
-  }
-  const { name, id } = getOrPromptUploader();
-  btn.disabled = true;
-  status.textContent = 'Subiendo...';
-  try {
-    await uploadPhoto(EVENT_ID, file, id, name);
-    status.textContent = 'Foto subida!';
-    input.value = '';
-    await refreshPhotos();
-  } catch (err) {
-    status.textContent = err.message.includes('403') ? 'Solo usuarios registrados pueden subir fotos.' : 'Error al subir la foto.';
-  } finally {
-    btn.disabled = false;
-  }
-}
 
 async function refreshPhotos() {
   const grid = document.getElementById('hypeGrid');
@@ -168,8 +139,6 @@ async function poll() {
     if (state.status !== lastStatus) {
       lastStatus = state.status;
       container.innerHTML = renderLiveView(state, photosData.photos);
-      const btn = document.getElementById('uploadBtn');
-      if (btn) btn.addEventListener('click', handleUpload);
     } else {
       const grid = document.getElementById('hypeGrid');
       if (grid) grid.innerHTML = renderPhotos(photosData.photos);

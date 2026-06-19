@@ -1,10 +1,8 @@
 """In-memory check-in registry seeded with demo users."""
 
-_checked_in: dict[str, str] = {
-    "user_001": "Alice",
-    "user_002": "Bob",
-    "user_003": "Carlos",
-}
+from app.data.seed import FANS
+
+_checked_in: dict[str, str] = {f.user_id: f.name for f in FANS}
 
 
 def is_checked_in(user_id: str) -> bool:

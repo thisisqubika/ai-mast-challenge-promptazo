@@ -112,3 +112,9 @@ export async function fetchRecap(eventId, tone = 'emocionante', slideCount = 4) 
   if (!res.ok) throw new Error(`fetchRecap ${res.status}`);
   return res.json();
 }
+
+export async function fetchPastEvents() {
+  const res = await fetch(`${API_BASE}/events?status=past`);
+  if (!res.ok) throw new Error(`fetchPastEvents ${res.status}`);
+  return res.json();
+}

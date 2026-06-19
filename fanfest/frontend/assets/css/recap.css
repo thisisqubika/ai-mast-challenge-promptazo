@@ -1,7 +1,6 @@
-/* Recap Screen */
+/* Recap Screen — visibility is controlled by the HTML `hidden` attribute */
 
 #recapView {
-  display: none;
   padding: 16px 20px 40px;
   font-family: 'Inter', system-ui, sans-serif;
   color: #f1f5f9;
@@ -9,8 +8,61 @@
   min-height: 100%;
 }
 
-#recapView.recap-view--visible {
-  display: block;
+/* BACK NAVIGATION */
+.rc-back {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.rc-back__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.07);
+  color: #94a3b8;
+  cursor: pointer;
+  flex: none;
+}
+
+.rc-back__btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.rc-back__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* ERROR STATE */
+.recap-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 12px;
+  text-align: center;
+}
+
+.recap-error-state__icon {
+  font-size: 36px;
+}
+
+.recap-error-state__text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* LOADING STATE */

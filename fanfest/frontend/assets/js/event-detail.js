@@ -108,9 +108,6 @@ function renderActionButtons() {
   const predictOpen = edState.showPredict && !edState.predictSent;
   return `
     <div class="ed-actions">
-      <button class="ed-btn ed-btn--upload" type="button" disabled aria-disabled="true">
-        📷 Subir foto
-      </button>
       <button class="ed-btn ed-btn--predict${predictOpen ? ' is-open' : ''}"
               id="edPredictBtn" type="button">
         ${predictOpen ? '✕ Cerrar' : '🎯 Predecir'}
@@ -219,18 +216,26 @@ function renderEventDetail() {
        </div>
      </div>` +
     `<div class="ed-float-cta">
-       <button class="ed-float-cta__btn" id="edUploadCta" type="button">
+       <label class="ed-float-cta__btn" for="edPhotoInput">
          📸 Subir foto / video
-       </button>
+       </label>
+       <input type="file" id="edPhotoInput" accept="image/*,video/*" style="display:none">
      </div>`;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-function navigateToEventDetail() {
+function navigateToEventDetail(venue) {
   edState.showPredict = false;
   edState.homeScore   = 0;
   edState.awayScore   = 0;
   edState.predictSent = false;
+
+  if (venue) {
+    edEvent.venueName     = venue.name;
+    edEvent.venueDistance = venue.distance;
+    edEvent.attending     = venue.attending;
+    edEvent.amenities     = venue.amenities;
+  }
 
   const homeScroll   = document.querySelector('.phone > .scroll');
   const detailView   = $ed('eventDetailView');
@@ -276,9 +281,15 @@ $ed('eventDetailView').addEventListener('click', (e) => {
     return;
   }
 
-  // Upload CTA — mocked: log and no-op until feature-03 backend lands
-  if (e.target.closest('#edUploadCta')) {
-    console.log('[FEST-05] Upload CTA tapped — mocked, no-op in Previa');
+});
+
+$ed('eventDetailView').addEventListener('change', (e) => {
+  if (e.target.id === 'edPhotoInput') {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      console.log('[FEST-05] Upload selected:', file.name, '— wired to API when backend ready');
+      e.target.value = '';
+    }
   }
 });
 

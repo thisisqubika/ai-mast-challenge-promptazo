@@ -37,11 +37,33 @@ const worldCards = [
     amenities: [['🍷', 'Vinos'], ['📺', 'Pantalla']] },
 ];
 
-const recapCards = [
-  { result: 'ARG 3–3 FRA', stage: 'Final · 18 dic 2022', photos: '247', oppFlag: '🇫🇷' },
-  { result: 'ARG 2–0 AUS', stage: 'Octavos · 3 dic 2022', photos: '184', oppFlag: '🇦🇺' },
-  { result: 'ARG 3–0 CRO', stage: 'Semis · 13 dic 2022', photos: '312', oppFlag: '🇭🇷' },
-];
+// Recap cards — loaded from API; static array is a render-before-fetch placeholder
+let recapCards = [];
+
+const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function _fmtDate(iso) {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+async function loadRecapCards() {
+  try {
+    const res = await fetch('http://localhost:8000/api/v1/events?status=past');
+    if (!res.ok) throw new Error('api error');
+    const events = await res.json();
+    recapCards = events.map((e) => ({
+      id: e.id,
+      homeFlag: e.home_flag,
+      oppFlag: e.away_flag,
+      result: `${e.home_abbr} ${e.home_score ?? '?'}–${e.away_score ?? '?'} ${e.away_abbr}`,
+      stage: _fmtDate(e.kickoff_iso),
+      photos: String(e.photo_count),
+    }));
+    renderRecap();
+  } catch (_) {
+    // backend unavailable — section stays empty
+  }
+}
 
 const upcomingCards = [
   { home: 'España', homeFlag: '🇪🇸', away: 'Alemania', awayFlag: '🇩🇪',
@@ -86,8 +108,8 @@ function renderCategories() {
 function renderSeleccion() {
   const avatars = seleccionAvatars.map(([ini, bg]) =>
     `<div class="mini-avatar" style="background:${bg}">${ini}</div>`).join('');
-  $('rowSeleccion').innerHTML = seleccionVenues.map((v) => `
-    <div class="card-sel" data-event-card style="cursor:pointer">
+  $('rowSeleccion').innerHTML = seleccionVenues.map((v, i) => `
+    <div class="card-sel" data-event-card data-venue-idx="${i}" style="cursor:pointer">
       <div class="card-sel__match">
         <div class="card-sel__match-teams">🇦🇷 Argentina vs 🇲🇽 México</div>
         <div class="card-sel__match-time">Hoy · 21:00</div>
@@ -138,7 +160,7 @@ function renderRecap() {
       <div class="card-recap__hero">
         ${pitch}
         <div class="card-recap__vs">
-          <div class="recap-flag recap-flag--arg">🇦🇷</div>
+          <div class="recap-flag recap-flag--arg">${r.homeFlag}</div>
           <div class="card-recap__vs-label">vs</div>
           <div class="recap-flag recap-flag--opp">${r.oppFlag}</div>
         </div>
@@ -147,7 +169,7 @@ function renderRecap() {
         <div class="card-recap__result">${r.result}</div>
         <div class="card-recap__stage">${r.stage}</div>
         <div class="divider"></div>
-        <div class="card-recap__cronica">✨ Ver crónica</div>
+        <button class="card-recap__cronica" type="button" data-recap-event-id="${r.id}">✨ Ver crónica</button>
         <div class="card-recap__photos">📸 ${r.photos} fotos</div>
       </div>
     </div>`).join('');
@@ -199,17 +221,26 @@ $('navTabs').addEventListener('click', (e) => {
 });
 
 $('rowSeleccion').addEventListener('click', (e) => {
-  if (e.target.closest('[data-event-card]') && typeof window.navigateToEventDetail === 'function') {
-    window.navigateToEventDetail();
+  const card = e.target.closest('[data-event-card]');
+  if (card && typeof window.navigateToEventDetail === 'function') {
+    const idx = parseInt(card.dataset.venueIdx, 10);
+    window.navigateToEventDetail(seleccionVenues[idx]);
   }
 });
 
 renderCategories();
 renderSeleccion();
 renderWorld();
-renderRecap();
 renderUpcoming();
 renderNav();
+loadRecapCards();
+
+$('rowRecap').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-recap-event-id]');
+  if (btn && typeof window.navigateToRecap === 'function') {
+    window.navigateToRecap(btn.dataset.recapEventId);
+  }
+});
 
 const liveCta = document.querySelector('.live-bar__cta');
 if (liveCta) {

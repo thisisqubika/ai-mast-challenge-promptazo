@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+import unicodedata
+
+from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 
 from app.schemas.events import (
     AttendeeOut,
     CheckinRequest,
     CheckinResponse,
     EventDetail,
+    EventSummary,
     MatchState,
     MatchStateUpdate,
     Photo,
@@ -20,7 +23,61 @@ from app.services import photos_service
 from app.services import recap_service
 from app.services import registry
 
+
+def _abbr(name: str) -> str:
+    """3-char uppercase abbreviation stripping diacritics (e.g. 'México' → 'MEX')."""
+    nfd = unicodedata.normalize("NFD", name)
+    ascii_only = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
+    return ascii_only[:3].upper()
+
 router = APIRouter(prefix="/events", tags=["events"])
+
+
+# ---------------------------------------------------------------------------
+# Events list (must be before /{event_id} to avoid path-param capture)
+# ---------------------------------------------------------------------------
+
+
+@router.get("", response_model=list[EventSummary])
+def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
+    """Return events, optionally filtered by status ('future', 'live', 'past').
+
+    For past events the final score and photo count are joined from match-state
+    and photos services so the client can render recap cards without extra calls.
+    """
+    raw_events = events_service.list_events(status)
+    result: list[EventSummary] = []
+    for e in raw_events:
+        home_score = None
+        away_score = None
+        photo_count = 0
+        recap_id: str | None = e.get("recap_event_id")
+        if recap_id:
+            try:
+                state = match_state_service.get_state(recap_id)
+                home_score = state.home_score
+                away_score = state.away_score
+            except HTTPException:
+                pass
+            photo_count = len(photos_service.list_photos(e["id"]))
+        result.append(
+            EventSummary(
+                id=e["id"],
+                home_team=e["home_team"],
+                home_flag=e["home_flag"],
+                home_abbr=_abbr(e["home_team"]),
+                away_team=e["away_team"],
+                away_flag=e["away_flag"],
+                away_abbr=_abbr(e["away_team"]),
+                kickoff_iso=e["kickoff_iso"],
+                status=e.get("status", "future"),
+                recap_event_id=recap_id,
+                home_score=home_score,
+                away_score=away_score,
+                photo_count=photo_count,
+            )
+        )
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +201,15 @@ async def list_photos(event_id: str) -> PhotoList:
 # ---------------------------------------------------------------------------
 # FEST-04: AI-generated event recap
 # ---------------------------------------------------------------------------
+
+
+@router.get("/{event_id}/recap", response_model=RecapResponse)
+async def get_recap(event_id: str) -> RecapResponse:
+    """Return a previously generated recap. 404 if none exists yet."""
+    recap = recap_service.get_recap(event_id)
+    if recap is None:
+        raise HTTPException(status_code=404, detail="No recap found for this event")
+    return recap
 
 
 @router.post("/{event_id}/recap", response_model=RecapResponse)

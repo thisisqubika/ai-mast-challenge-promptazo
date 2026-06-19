@@ -2,21 +2,25 @@
 
 from fastapi import HTTPException
 
+from app.data.seed import MATCHES
 from app.schemas.events import Goal, MatchState
 
-_states: dict[str, MatchState] = {
-    "event_001": MatchState(
-        event_id="event_001",
-        home_team="River Plate",
-        away_team="Boca Juniors",
-        home_score=0,
-        away_score=0,
-        status="pre",
-        clock_seconds=0,
-        venue="Estadio Monumental",
-        goals=[],
+
+def _build_state(m) -> MatchState:
+    return MatchState(
+        event_id=m.event_id,
+        home_team=m.home_team,
+        away_team=m.away_team,
+        home_score=m.home_score,
+        away_score=m.away_score,
+        status=m.status,
+        clock_seconds=m.clock_seconds,
+        venue=m.venue,
+        goals=[Goal(player=g.player, team=g.team, minute=g.minute) for g in m.goals],
     )
-}
+
+
+_states: dict[str, MatchState] = {m.event_id: _build_state(m) for m in MATCHES}
 
 
 def get_state(event_id: str) -> MatchState:
