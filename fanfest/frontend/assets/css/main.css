@@ -232,7 +232,11 @@
 .card-recap__result { font-size: 14px; font-weight: 900; color: var(--ink); letter-spacing: -.3px; margin-bottom: 3px; }
 .card-recap__stage { font-size: 10px; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
 .card-recap__body .divider { margin-bottom: 8px; }
-.card-recap__cronica { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+.card-recap__cronica {
+  display: block; font-size: 11px; font-weight: 700; color: var(--accent);
+  margin-bottom: 3px; background: none; border: none; padding: 0;
+  cursor: pointer; font-family: inherit; text-align: left;
+}
 .card-recap__photos { font-size: 10px; font-weight: 500; color: var(--dim); }
 
 /* SECTION 4 — Upcoming cards */

@@ -45,6 +45,7 @@ EVENTS: list[Event] = [
             "&location=Brandsen+805%2C+Buenos+Aires"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Brandsen+805%2C+Buenos+Aires",
+        status="future",
     ),
     Event(
         id="evt-002",
@@ -65,6 +66,7 @@ EVENTS: list[Event] = [
             "&location=Av.+Corrientes+1234%2C+Buenos+Aires"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Av.+Corrientes+1234%2C+Buenos+Aires",
+        status="future",
     ),
     Event(
         id="evt-003",
@@ -85,6 +87,7 @@ EVENTS: list[Event] = [
             "&location=Thames+1800%2C+Buenos+Aires"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Thames+1800%2C+Buenos+Aires",
+        status="live",
     ),
     Event(
         id="evt-004",
@@ -105,6 +108,8 @@ EVENTS: list[Event] = [
             "&location=Sarmiento+567%2C+C%C3%B3rdoba"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Sarmiento+567%2C+C%C3%B3rdoba",
+        status="past",
+        recap_event_id="evt-004",
     ),
     Event(
         id="evt-005",
@@ -125,6 +130,7 @@ EVENTS: list[Event] = [
             "&location=San+Mart%C3%ADn+890%2C+Rosario"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=San+Mart%C3%ADn+890%2C+Rosario",
+        status="future",
     ),
     Event(
         id="evt-006",
@@ -145,6 +151,8 @@ EVENTS: list[Event] = [
             "&location=Reconquista+456%2C+Buenos+Aires"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Reconquista+456%2C+Buenos+Aires",
+        status="past",
+        recap_event_id="evt-006",
     ),
     Event(
         id="evt-007",
@@ -165,6 +173,7 @@ EVENTS: list[Event] = [
             "&location=Pellegrini+123%2C+Rosario"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Pellegrini+123%2C+Rosario",
+        status="future",
     ),
     Event(
         id="evt-008",
@@ -185,6 +194,7 @@ EVENTS: list[Event] = [
             "&location=Corrientes+2345%2C+Buenos+Aires"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Corrientes+2345%2C+Buenos+Aires",
+        status="live",
     ),
     Event(
         id="evt-009",
@@ -205,6 +215,7 @@ EVENTS: list[Event] = [
             "&location=G%C3%BCemes+789%2C+C%C3%B3rdoba"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=G%C3%BCemes+789%2C+C%C3%B3rdoba",
+        status="future",
     ),
     Event(
         id="evt-010",
@@ -225,6 +236,7 @@ EVENTS: list[Event] = [
             "&location=Pueyrred%C3%B3n+1111%2C+Buenos+Aires"
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Pueyrred%C3%B3n+1111%2C+Buenos+Aires",
+        status="future",
     ),
 ]
 

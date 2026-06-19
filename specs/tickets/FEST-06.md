@@ -25,6 +25,9 @@
 2. The slides selector (3 / 5 / 8) changes the number of moment slides shown (2 / 3 / 5) and the tone selector recolors the screen accent across slide 2, moment markers, and CTAs.
 3. The selected `tone` and `slideCount` are passed as inputs to the feature-04 recap generation so the AI narrative voice and number of moment slides reflect the user's choice.
 4. `node --check` passes on the JS module and the page serves with no console errors using inline mock data.
+5. **[Added]** The "Ver crónica" cards on the Home screen carry a `data-recap-event-id` attribute and are wired to navigate to the Recap screen inside the phone frame.
+6. **[Added]** Before fetching the recap, the client validates that the entity exists and its match has ended (`status === 'ended'`); shows a graceful error otherwise.
+7. **[Added]** The recap screen is rendered inside the `.phone` frame (hidden `#recapView` div), not outside it; navigation follows the same show/hide pattern as Event Detail.
 
 **Metrics**: Visual parity with the design source on the four section groups; all 8 acceptance-criteria checkboxes from the draft pass on manual verification; zero console errors at load.
 
@@ -82,6 +85,23 @@ Given the feature-04 recap generation is not yet wired or returns an error
 When the Recap screen is shown
 Then it renders the full layout from inline mock data without throwing
 And the screen never blocks on a live feed (MVP has no live feeds)
+```
+
+### Scenario 7: Navigating to recap from Home — entity exists and match ended (Happy Path)
+```gherkin
+Given a recap card on the Home screen with data-recap-event-id="evt-006"
+And the match for evt-006 exists in match_state with status "ended"
+When the user taps "Ver crónica"
+Then the home scroll hides and the recap screen shows inside the phone frame
+And the AI recap is fetched and rendered for evt-006
+```
+
+### Scenario 8: Entity missing or match not ended — graceful gate (Error Case)
+```gherkin
+Given a recap card with data-recap-event-id="evt-999"
+When the user taps "Ver crónica"
+Then a user-friendly error message is shown ("Partido no disponible")
+And the back button returns the user to the Home screen
 ```
 
 ---

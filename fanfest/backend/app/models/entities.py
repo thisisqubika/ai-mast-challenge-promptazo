@@ -25,6 +25,10 @@ class Event:
     invite_link: str
     calendar_link: str
     maps_link: str
+    # "future" | "live" | "past"
+    status: str = "future"
+    # ID of the match state entity used for AI recap (only set when status="past")
+    recap_event_id: str | None = None
 
 
 @dataclass
