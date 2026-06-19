@@ -17,6 +17,11 @@ from app.schemas.events import (
     RecapRequest,
     RecapResponse,
 )
+from app.services import events_service
+from app.services import match_state as match_state_service
+from app.services import photos_service
+from app.services import recap_service
+from app.services import registry
 
 
 def _abbr(name: str) -> str:
@@ -24,11 +29,6 @@ def _abbr(name: str) -> str:
     nfd = unicodedata.normalize("NFD", name)
     ascii_only = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
     return ascii_only[:3].upper()
-from app.services import events_service
-from app.services import match_state as match_state_service
-from app.services import photos_service
-from app.services import recap_service
-from app.services import registry
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -201,6 +201,15 @@ async def list_photos(event_id: str) -> PhotoList:
 # ---------------------------------------------------------------------------
 # FEST-04: AI-generated event recap
 # ---------------------------------------------------------------------------
+
+
+@router.get("/{event_id}/recap", response_model=RecapResponse)
+async def get_recap(event_id: str) -> RecapResponse:
+    """Return a previously generated recap. 404 if none exists yet."""
+    recap = recap_service.get_recap(event_id)
+    if recap is None:
+        raise HTTPException(status_code=404, detail="No recap found for this event")
+    return recap
 
 
 @router.post("/{event_id}/recap", response_model=RecapResponse)
