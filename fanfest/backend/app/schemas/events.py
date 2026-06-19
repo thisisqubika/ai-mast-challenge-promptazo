@@ -101,3 +101,31 @@ class MatchStateUpdate(BaseModel):
     player: str | None = None
     team: str | None = None
     minute: int | None = None
+
+
+# ---------------------------------------------------------------------------
+# FEST-04: AI-generated event recap
+# ---------------------------------------------------------------------------
+
+
+class RecapRequest(BaseModel):
+    tone: Literal["emocionante", "inspirador", "humorístico", "nostálgico"] = "emocionante"
+    slide_count: int = Field(4, ge=1, le=10)
+
+
+class RecapHighlight(BaseModel):
+    label: str
+    description: str
+
+
+class RecapResponse(BaseModel):
+    event_id: str
+    narrative: str
+    highlights: list[RecapHighlight]
+    correct_predictors: list[str] = []
+    fallback: bool = False
+    home_score: int
+    away_score: int
+    home_team: str
+    away_team: str
+    photo_count: int

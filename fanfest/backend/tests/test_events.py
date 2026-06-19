@@ -74,7 +74,7 @@ def test_checkin_marks_user_present():
 
 
 # ---------------------------------------------------------------------------
-# FEST-02 — Scenario 2: prediction locked after match start → 409
+# FEST-02 — Scenario 2: prediction locked after match start -> 409
 # ---------------------------------------------------------------------------
 
 
@@ -111,7 +111,7 @@ def test_prediction_overwrite_before_match_start():
 
 
 # ---------------------------------------------------------------------------
-# FEST-02 — Scenario 4: event not found → 404
+# FEST-02 — Scenario 4: event not found -> 404
 # ---------------------------------------------------------------------------
 
 
@@ -136,7 +136,7 @@ def test_checkin_on_missing_event_returns_404():
 
 
 # ---------------------------------------------------------------------------
-# FEST-02 — Scenario 5: check-in without user identity → 400
+# FEST-02 — Scenario 5: check-in without user identity -> 400
 # ---------------------------------------------------------------------------
 
 
