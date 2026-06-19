@@ -41,7 +41,9 @@ project/
 
 | Command | Description |
 | ------- | ----------- |
-| `pip install -r requirements.txt` | From README.md § How to Run It Locally |
+| `pip install -r requirements.txt` | Install backend dependencies (run from `fanfest/backend/`) |
+| `ruff check .` | Lint backend Python (run from `fanfest/backend/`) |
+| `pytest` | Run backend tests (run from `fanfest/backend/`) |
 
 ## Environment Variables
 
