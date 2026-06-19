@@ -5,3 +5,28 @@
 .codex-backups/
 qubika-agentic-framework/
 .mcp.json
+
+# Secrets / environment
+.env
+.env.local
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.next/
+build/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
