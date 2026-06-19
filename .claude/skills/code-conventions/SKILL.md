@@ -70,17 +70,17 @@ def get_event(event_id: int):
 
 ## Gotchas
 
-### requirements.txt Is Blank — Declare Before Importing
+### Declare New Dependencies in requirements.txt Before Importing
 
-All backend Python files are empty stubs and `requirements.txt` has no entries. Any new dependency must be declared there before importing.
+Any new backend dependency must be pinned in `fanfest/backend/requirements.txt` before importing it in code.
 
 ```python
 # WRONG — import will fail in a fresh virtualenv
-from anthropic import Anthropic
-client = Anthropic()
+import newlib
+newlib.do_something()
 
 # CORRECT — add to requirements.txt first, then import
-# requirements.txt: anthropic>=0.25.0
-from anthropic import Anthropic
-client = Anthropic()
+# requirements.txt: newlib>=1.0.0
+import newlib
+newlib.do_something()
 ```

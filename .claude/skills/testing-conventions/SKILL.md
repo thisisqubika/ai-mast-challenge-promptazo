@@ -53,6 +53,16 @@ def sample_event():
     return {"name": "Test Fest", "date": "2026-07-01", "location": "Buenos Aires"}
 ```
 
+For services with mutable in-memory state, add an `autouse=True` fixture that resets module-level dicts before each test. This prevents state leaking between tests without needing explicit teardown.
+
+```python
+# fanfest/backend/tests/conftest.py
+@pytest.fixture(autouse=True)
+def reset_services() -> None:
+    import app.services.some_service as svc
+    svc._store = {}  # reset to baseline before every test
+```
+
 ## Coverage Expectations
 
 No formal threshold. Cover all route handlers and any non-trivial business logic before merging. External API integration paths should have at least one test with a mocked client.
