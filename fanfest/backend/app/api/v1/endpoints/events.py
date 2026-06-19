@@ -1,24 +1,35 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Form, HTTPException, UploadFile
 
 from app.schemas.events import (
+    AttendeeOut,
     CheckinRequest,
     CheckinResponse,
     EventDetail,
+    MatchState,
+    MatchStateUpdate,
+    Photo,
+    PhotoList,
     PredictionRequest,
     PredictionResponse,
-    AttendeeOut,
 )
 from app.services import events_service
+from app.services import match_state as match_state_service
+from app.services import photos_service
+from app.services import registry
 
-router = APIRouter(tags=["events"])
+router = APIRouter(prefix="/events", tags=["events"])
 
 
-@router.get("/events/{event_id}", response_model=EventDetail)
+# ---------------------------------------------------------------------------
+# FEST-02: Event detail, predictions, check-in
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{event_id}", response_model=EventDetail)
 def get_event_detail(event_id: str) -> EventDetail:
     """Return full detail for a single event."""
     event = events_service.get_event(event_id)
 
-    # Build attendees list from the attendees set stored in service.
     attendee_set = events_service._attendees.get(event_id, set())
     attendees = [
         AttendeeOut(user_id=uid, name=uid, checked_in=True)
@@ -43,7 +54,7 @@ def get_event_detail(event_id: str) -> EventDetail:
     )
 
 
-@router.post("/events/{event_id}/predictions", response_model=PredictionResponse)
+@router.post("/{event_id}/predictions", response_model=PredictionResponse)
 def create_prediction(event_id: str, body: PredictionRequest) -> PredictionResponse:
     """Submit or overwrite a score prediction for an event."""
     if not body.user_id or not body.user_id.strip():
@@ -59,7 +70,7 @@ def create_prediction(event_id: str, body: PredictionRequest) -> PredictionRespo
     return PredictionResponse(**result)
 
 
-@router.post("/events/{event_id}/checkin", response_model=CheckinResponse)
+@router.post("/{event_id}/checkin", response_model=CheckinResponse)
 def create_checkin(event_id: str, body: CheckinRequest) -> CheckinResponse:
     """Check a user into an event (idempotent)."""
     if not body.user_id or not body.user_id.strip():
@@ -72,3 +83,56 @@ def create_checkin(event_id: str, body: CheckinRequest) -> CheckinResponse:
         name=name,
     )
     return CheckinResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# FEST-03: Live match state, Hype Wall photos
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{event_id}/match-state", response_model=MatchState)
+async def get_match_state(event_id: str) -> MatchState:
+    return match_state_service.get_state(event_id)
+
+
+@router.post("/{event_id}/match-state", response_model=MatchState)
+async def update_match_state(event_id: str, body: MatchStateUpdate) -> MatchState:
+    if body.action == "goal":
+        if not body.player or not body.team or body.minute is None:
+            raise HTTPException(
+                status_code=422,
+                detail="goal action requires player, team, minute",
+            )
+        return match_state_service.score_goal(
+            event_id, body.player, body.team, body.minute
+        )
+    if body.action == "end":
+        return match_state_service.end_match(event_id)
+    if body.action == "reset":
+        return match_state_service.reset(event_id)
+    raise HTTPException(status_code=422, detail="Unknown action")
+
+
+@router.post("/{event_id}/photos", response_model=Photo, status_code=201)
+async def create_photo(
+    event_id: str,
+    file: UploadFile,
+    uploader_id: str = Form(...),
+    uploader_name: str = Form(...),
+) -> Photo:
+    if not registry.is_checked_in(uploader_id):
+        raise HTTPException(status_code=403, detail="User is not checked in")
+    file_bytes = await file.read()
+    return photos_service.upload_photo(
+        event_id=event_id,
+        file_bytes=file_bytes,
+        filename=file.filename or "photo.jpg",
+        uploader_id=uploader_id,
+        uploader_name=uploader_name,
+    )
+
+
+@router.get("/{event_id}/photos", response_model=PhotoList)
+async def list_photos(event_id: str) -> PhotoList:
+    photos = photos_service.list_photos(event_id)
+    return PhotoList(photos=photos)

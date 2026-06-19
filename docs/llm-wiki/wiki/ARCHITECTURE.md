@@ -4,7 +4,7 @@ summary: >-
   FanFest is a single-repository project (not a monorepo) containing two runtime
   components under a shared `fanfest/` directory. There is no workspace tool,
   no...
-last_updated: '2026-06-19T18:45:00.000Z'
+last_updated: '2026-06-19T18:50:00.000Z'
 tags:
   - architecture
   - topology
@@ -34,7 +34,7 @@ The top-level layout is flat: `fanfest/backend/` holds the Python service and `f
 | [[backend]] | backend | Python (FastAPI) | 8000 | REST API; AI recap via Claude; planned Google integrations |
 | [[frontend]] | frontend | JavaScript (vanilla) | 8080 | Single-page app served via `python -m http.server` |
 
-The backend follows a pre-scaffolded layered layout (`app/api/v1/endpoints/`, `app/core/`, `app/models/`, `app/schemas/`, `app/services/`) though most subdirectories are currently empty stubs. The frontend is four files: one HTML entry point, one JS application module, one API client module, and one CSS stylesheet.
+The backend follows a layered layout (`app/api/v1/endpoints/`, `app/core/`, `app/models/`, `app/schemas/`, `app/services/`). As of FEST-03 the core app is bootstrapped with a working FastAPI instance, CORSMiddleware, and an events domain (`endpoints/events.py`, `schemas/events.py`, `services/match_state.py`, `services/photos_service.py`, `services/registry.py`). The frontend is five JS/CSS files: one HTML entry point, two JS application modules (`main.js` for Feature 01 discovery, `live.js` for live event + Hype Wall), one shared API client (`api.js`), and two CSS stylesheets.
 
 ---
 
@@ -44,7 +44,7 @@ The only inter-service channel is browser-to-backend HTTP. The frontend's `fanfe
 
 | Source | Target | Protocol | Notes |
 |--------|--------|----------|-------|
-| frontend (`api.js`) | backend (`app/main.py`) | HTTP / REST | JSON request/response; exact endpoint schema (not determined by analysis) |
+| frontend (`api.js`) | backend (`app/main.py`) | HTTP / REST | JSON request/response; active endpoints: `GET/POST /api/v1/events/{id}/match-state`, `POST/GET /api/v1/events/{id}/photos` |
 
 No backend-to-frontend push channel (SSE, WebSocket) has been implemented. No service mesh, proxy, or API gateway sits between the two.
 
@@ -60,9 +60,9 @@ Three external vendors are declared via environment variables; no in-repo client
 | Google OAuth | User authentication (planned) | (not determined by analysis) | OAuth 2.0 client credentials via env vars | local; production (not determined by analysis) |
 | Google Calendar API | Calendar integration (planned) | (not determined by analysis) | Google OAuth token (same credential set) | local; production (not determined by analysis) |
 | Google Maps API | Maps integration (planned) | (not determined by analysis) | Google OAuth token (same credential set) | local; production (not determined by analysis) |
-| Google Drive API | Drive integration (planned) | (not determined by analysis) | Google OAuth token (same credential set) | local; production (not determined by analysis) |
+| Google Drive API | Hype Wall photo storage | `app/services/photos_service.py` | Service-account JSON via `GOOGLE_SERVICE_ACCOUNT_FILE` env var; falls back to in-memory mock when unset | local; production (not determined by analysis) |
 
-All Google integrations are indicated only by environment variable names in `.env.example`. No SDK import, route, or service class implementing any Google API has been written yet.
+All Google integrations except Drive are indicated only by environment variable names in `.env.example`. Google Drive now has a service wrapper (`app/services/photos_service.py`) using `google-api-python-client`; it operates in mock/in-memory mode when `GOOGLE_SERVICE_ACCOUNT_FILE` is unset, switching to live Drive when credentials are present.
 
 ---
 
@@ -98,11 +98,12 @@ When implemented, the expected shape is standard OAuth 2.0 Authorization Code fl
 
 An in-process dict store (introduced by FEST-02) is the current persistence layer. It lives in `fanfest/backend/app/services/events_service.py` as three module-level Python dicts (`_events`, `_predictions`, `_attendees`), seeded with mock event data at import time. State persists for the lifetime of the running process but resets on server restart.
 
-No external database, ORM, cache, or message queue is present. No DB client appears in `requirements.txt`. The scaffolded `app/models/` directory remains an empty stub for future ORM models.
+No durable database or object store has been declared. All state is in-memory in module-level Python dicts across multiple service modules, and resets on server restart. The scaffolded `app/models/` directory remains an empty stub for future ORM models.
 
 | Store | Technology | Status |
 |-------|-----------|--------|
 | In-process event/prediction store | Python dicts (`events_service.py`) | Implemented (FEST-02) |
+| In-process match state + Hype Wall photos | Python dicts (`match_state.py`, `photos_service.py`) | Implemented (FEST-03) |
 | Primary database | (not determined by analysis) | Not implemented |
 | Cache | (not determined by analysis) | Not implemented |
 | Queue | (not determined by analysis) | Not implemented |
@@ -169,22 +170,11 @@ All third-party actions are pinned to major version tags (`actions/checkout@v4`,
 
 ## Coupling Hotspots
 
-The graph detected one code community (`js-render`, 8 nodes) covering frontend JS render functions. All hub and bridge nodes are in the frontend; the backend produced no graph community because most of its subdirectories are empty stubs.
+The graph detects frontend JS render functions as the dominant hub/bridge cluster. The backend's events domain (`endpoints/events.py`, `services/match_state.py`, `services/photos_service.py`) is now implemented; backend coupling hotspots will be visible in future graph refreshes.
 
-**Hubs** (highest total degree, largest blast radius on change):
+**Hubs** (highest total degree, largest blast radius on change — frontend):
 
-- `fanfest/frontend/assets/js/main.js::$` (Function, score 10)
-- `fanfest/frontend/assets/js/main.js::renderSeleccion` (Function, score 8)
-- `fanfest/frontend/assets/js/main.js::tags` (Function, score 6)
-- `fanfest/frontend/assets/js/main.js::renderCategories` (Function, score 6)
-- `fanfest/frontend/assets/js/main.js::renderWorld` (Function, score 6)
+- `fanfest/frontend/assets/js/main.js::$` (Feature 01 DOM query helper — widest reach)
+- `fanfest/frontend/assets/js/main.js::renderSeleccion`, `tags`, `renderCategories`, `renderWorld`
 
-**Bridges** (betweenness centrality, structural connectors between graph regions):
-
-- `fanfest/frontend/assets/js/main.js::$` (Function, score 0.044872)
-- `fanfest/frontend/assets/js/main.js::tags` (Function, score 0.001832)
-- `fanfest/frontend/assets/js/main.js::renderCategories` (Function, score 0.001832)
-- `fanfest/frontend/assets/js/main.js::renderSeleccion` (Function, score 0.001832)
-- `fanfest/frontend/assets/js/main.js::renderWorld` (Function, score 0.001832)
-
-The `$` function (top-level IIFE or jQuery-style initializer) is both the highest-degree hub and the dominant structural bridge. Changes to it or to any of the four render functions ripple across the entire frontend module graph. The backend has no measurable coupling hotspots yet because no logic has been implemented beyond stubs.
+**Backend note:** `app/api/v1/endpoints/events.py` is the primary entry point for the events domain; `app/services/photos_service.py` and `app/services/match_state.py` are its dependencies. Changes to the events endpoint shape ripple to the frontend `api.js` client.

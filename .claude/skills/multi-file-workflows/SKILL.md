@@ -9,9 +9,9 @@ version: 1.0
 
 ## Adding a New API Endpoint
 
-1. Create `fanfest/backend/app/services/{domain}_service.py` with business logic and in-process state
-2. Create (or extend) `fanfest/backend/app/api/v1/endpoints/{domain}.py` with the route handler; import from the service
-3. Declare Pydantic request/response models in `fanfest/backend/app/schemas/{domain}.py`
+1. Define Pydantic request/response models in `fanfest/backend/app/schemas/{domain}.py`
+2. Implement business logic in `fanfest/backend/app/services/{domain}.py`
+3. Create (or extend) `fanfest/backend/app/api/v1/endpoints/{domain}.py` with the route handler; import from schemas and services
 4. Register the router in `fanfest/backend/app/main.py` via `app.include_router(router, prefix="/api/v1")`
 5. Add tests in `fanfest/backend/tests/test_{domain}.py`
 

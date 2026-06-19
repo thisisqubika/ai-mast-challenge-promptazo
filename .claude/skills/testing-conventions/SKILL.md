@@ -53,17 +53,14 @@ def sample_event():
     return {"name": "Test Fest", "date": "2026-07-01", "location": "Buenos Aires"}
 ```
 
-When a service module uses an in-process dict/set store (e.g. `_predictions`, `_attendees`), add an `autouse` fixture in the test module to reset that state before every test. Without this, tests leak state and order-dependently fail.
+For services with mutable in-memory state, add an `autouse=True` fixture that resets module-level dicts before each test. This prevents state leaking between tests without needing explicit teardown. Shared resets go in `conftest.py`; domain-specific resets (e.g. `_predictions`, `_attendees`) go in the test module itself.
 
 ```python
-# fanfest/backend/tests/test_{domain}.py
-import pytest
-from app.services import {domain}_service
-
+# fanfest/backend/tests/conftest.py
 @pytest.fixture(autouse=True)
-def reset_state():
-    {domain}_service._store.clear()
-    yield
+def reset_services() -> None:
+    import app.services.some_service as svc
+    svc._store = {}  # reset to baseline before every test
 ```
 
 ## Coverage Expectations

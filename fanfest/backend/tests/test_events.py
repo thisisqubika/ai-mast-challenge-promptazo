@@ -1,8 +1,10 @@
 """
 Tests for /api/v1/events/* endpoints.
-Covers all 5 BDD scenarios from FEST-02.
+FEST-02: event detail, predictions, check-in (5 BDD scenarios, 9 tests).
+FEST-03: live match state and Hype Wall photos.
 """
 
+import io
 from datetime import datetime, timezone
 
 import pytest
@@ -18,11 +20,10 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def reset_state():
-    """Isolate test state: clear predictions and attendees before every test."""
+def reset_fest02_state():
+    """Reset FEST-02 in-process state before every test."""
     events_service._predictions.clear()
     events_service._attendees[EVENT_ID] = set()
-    # Restore match_start_time in case a test moved it to the past.
     events_service._events[EVENT_ID]["match_start_time"] = datetime(
         2030, 1, 1, 18, 0, tzinfo=timezone.utc
     )
@@ -30,7 +31,7 @@ def reset_state():
 
 
 # ---------------------------------------------------------------------------
-# Scenario 1 — Fan views event detail, submits prediction, checks in
+# FEST-02 — Scenario 1: view detail, predict, check in
 # ---------------------------------------------------------------------------
 
 
@@ -50,12 +51,7 @@ def test_get_event_detail_returns_full_data():
 
 
 def test_submit_prediction_persisted_and_returned():
-    payload = {
-        "user_id": "user-1",
-        "name": "Alice",
-        "home_score": 2,
-        "away_score": 1,
-    }
+    payload = {"user_id": "user-1", "name": "Alice", "home_score": 2, "away_score": 1}
     response = client.post(f"/api/v1/events/{EVENT_ID}/predictions", json=payload)
     assert response.status_code == 200
     data = response.json()
@@ -63,7 +59,6 @@ def test_submit_prediction_persisted_and_returned():
     assert data["event_id"] == EVENT_ID
     assert data["home_score"] == 2
     assert data["away_score"] == 1
-    # Side-effect: prediction stored in the service
     assert ("user-1", EVENT_ID) in events_service._predictions
 
 
@@ -75,59 +70,48 @@ def test_checkin_marks_user_present():
     assert data["user_id"] == "user-2"
     assert data["event_id"] == EVENT_ID
     assert data["checked_in"] is True
-    # Side-effect: user recorded in attendees set
     assert "user-2" in events_service._attendees[EVENT_ID]
 
 
 # ---------------------------------------------------------------------------
-# Scenario 2 — Prediction lock: match already started → 409
+# FEST-02 — Scenario 2: prediction locked after match start → 409
 # ---------------------------------------------------------------------------
 
 
 def test_prediction_locked_after_match_start():
-    # Move match_start_time into the past to simulate a started match.
     events_service._events[EVENT_ID]["match_start_time"] = datetime(
         2000, 1, 1, tzinfo=timezone.utc
     )
-    payload = {
-        "user_id": "user-1",
-        "name": "Alice",
-        "home_score": 1,
-        "away_score": 0,
-    }
+    payload = {"user_id": "user-1", "name": "Alice", "home_score": 1, "away_score": 0}
     response = client.post(f"/api/v1/events/{EVENT_ID}/predictions", json=payload)
     assert response.status_code == 409
     assert "Predictions are closed" in response.json()["detail"]
 
 
 # ---------------------------------------------------------------------------
-# Scenario 3 — Prediction overwrite before match starts → last write wins
+# FEST-02 — Scenario 3: prediction overwrite before match start
 # ---------------------------------------------------------------------------
 
 
 def test_prediction_overwrite_before_match_start():
-    base_payload = {"user_id": "user-1", "name": "Alice"}
-
-    # First prediction
+    base = {"user_id": "user-1", "name": "Alice"}
     client.post(
         f"/api/v1/events/{EVENT_ID}/predictions",
-        json={**base_payload, "home_score": 1, "away_score": 0},
+        json={**base, "home_score": 1, "away_score": 0},
     )
-    # Second prediction (overwrite)
     response = client.post(
         f"/api/v1/events/{EVENT_ID}/predictions",
-        json={**base_payload, "home_score": 3, "away_score": 2},
+        json={**base, "home_score": 3, "away_score": 2},
     )
     assert response.status_code == 200
     data = response.json()
     assert data["home_score"] == 3
     assert data["away_score"] == 2
-    # Only one record should exist for this user/event pair.
     assert len([k for k in events_service._predictions if k[0] == "user-1"]) == 1
 
 
 # ---------------------------------------------------------------------------
-# Scenario 4 — Unknown event → 404
+# FEST-02 — Scenario 4: event not found → 404
 # ---------------------------------------------------------------------------
 
 
@@ -138,12 +122,7 @@ def test_event_not_found_returns_404():
 
 
 def test_prediction_on_missing_event_returns_404():
-    payload = {
-        "user_id": "user-1",
-        "name": "Alice",
-        "home_score": 0,
-        "away_score": 0,
-    }
+    payload = {"user_id": "user-1", "name": "Alice", "home_score": 0, "away_score": 0}
     response = client.post(f"/api/v1/events/{MISSING_ID}/predictions", json=payload)
     assert response.status_code == 404
     assert response.json()["detail"] == "Event not found"
@@ -157,15 +136,123 @@ def test_checkin_on_missing_event_returns_404():
 
 
 # ---------------------------------------------------------------------------
-# Scenario 5 — Check-in without user identity → 400
+# FEST-02 — Scenario 5: check-in without user identity → 400
 # ---------------------------------------------------------------------------
 
 
 def test_checkin_without_user_identity_returns_400():
-    # Omit user_id entirely (it is Optional, so this is a valid JSON body)
     response = client.post(
         f"/api/v1/events/{EVENT_ID}/checkin",
         json={"name": "Anonymous"},
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "User identity required"
+
+
+# ---------------------------------------------------------------------------
+# FEST-03 — Live match state
+# ---------------------------------------------------------------------------
+
+
+def test_get_match_state(client: TestClient, sample_event_id: str) -> None:
+    response = client.get(f"/api/v1/events/{sample_event_id}/match-state")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["event_id"] == sample_event_id
+    assert data["status"] == "pre"
+    assert data["home_score"] == 0
+    assert data["away_score"] == 0
+
+
+def test_get_match_state_unknown_event(client: TestClient) -> None:
+    response = client.get("/api/v1/events/no_such_event/match-state")
+    assert response.status_code == 404
+
+
+def test_score_goal_updates_state(client: TestClient, sample_event_id: str) -> None:
+    response = client.post(
+        f"/api/v1/events/{sample_event_id}/match-state",
+        json={"action": "goal", "player": "Gallardo", "team": "River Plate", "minute": 34},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "live"
+    assert data["home_score"] == 1
+    assert data["away_score"] == 0
+    assert len(data["goals"]) == 1
+    assert data["goals"][0]["player"] == "Gallardo"
+
+
+def test_end_match_status(client: TestClient, sample_event_id: str) -> None:
+    response = client.post(
+        f"/api/v1/events/{sample_event_id}/match-state",
+        json={"action": "end"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "ended"
+
+
+def test_reset_match_state(client: TestClient, sample_event_id: str) -> None:
+    client.post(
+        f"/api/v1/events/{sample_event_id}/match-state",
+        json={"action": "goal", "player": "Tevez", "team": "Boca Juniors", "minute": 12},
+    )
+    response = client.post(
+        f"/api/v1/events/{sample_event_id}/match-state",
+        json={"action": "reset"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "pre"
+    assert data["home_score"] == 0
+    assert data["goals"] == []
+
+
+def test_upload_photo_checked_in(
+    client: TestClient,
+    sample_event_id: str,
+    checked_in_user: dict[str, str],
+) -> None:
+    response = client.post(
+        f"/api/v1/events/{sample_event_id}/photos",
+        data={"uploader_id": checked_in_user["id"], "uploader_name": checked_in_user["name"]},
+        files={"file": ("shot.jpg", io.BytesIO(b"fake-image-data"), "image/jpeg")},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["uploader_name"] == checked_in_user["name"]
+    assert "id" in data
+    assert "url" in data
+
+
+def test_upload_photo_not_checked_in_returns_403(
+    client: TestClient,
+    sample_event_id: str,
+    non_checked_in_user: dict[str, str],
+) -> None:
+    response = client.post(
+        f"/api/v1/events/{sample_event_id}/photos",
+        data={
+            "uploader_id": non_checked_in_user["id"],
+            "uploader_name": non_checked_in_user["name"],
+        },
+        files={"file": ("shot.jpg", io.BytesIO(b"fake-image-data"), "image/jpeg")},
+    )
+    assert response.status_code == 403
+
+
+def test_list_photos_returns_uploader(
+    client: TestClient,
+    sample_event_id: str,
+    checked_in_user: dict[str, str],
+) -> None:
+    client.post(
+        f"/api/v1/events/{sample_event_id}/photos",
+        data={"uploader_id": checked_in_user["id"], "uploader_name": checked_in_user["name"]},
+        files={"file": ("shot.jpg", io.BytesIO(b"fake-image-data"), "image/jpeg")},
+    )
+    response = client.get(f"/api/v1/events/{sample_event_id}/photos")
+    assert response.status_code == 200
+    photos = response.json()["photos"]
+    assert len(photos) == 1
+    assert photos[0]["uploader_name"] == checked_in_user["name"]
