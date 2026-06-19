@@ -13,7 +13,7 @@ version: 1.0
 2. Implement business logic in `fanfest/backend/app/services/{domain}.py`
 3. Create (or extend) `fanfest/backend/app/api/v1/endpoints/{domain}.py` with the route handler; import from schemas and services
 4. Register the router in `fanfest/backend/app/main.py` via `app.include_router(router, prefix="/api/v1")`
-5. Add test in `fanfest/backend/tests/test_{domain}.py`
+5. Add tests in `fanfest/backend/tests/test_{domain}.py`
 
 ```python
 # fanfest/backend/app/api/v1/endpoints/{domain}.py

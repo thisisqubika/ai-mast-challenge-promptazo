@@ -25,33 +25,14 @@ All routes are under `app/api/v1/endpoints/events.py`, mounted at `/api/v1`:
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/health` | Infrastructure health probe; no auth required |
+| `GET` | `/api/v1/events/{id}` | Full event detail: teams, venue, time, organizer, attendees, invite/calendar/maps links |
+| `POST` | `/api/v1/events/{id}/predictions` | Submit or overwrite a per-user scoreline (0–9); locked (HTTP 409) after mocked match-start time |
+| `POST` | `/api/v1/events/{id}/checkin` | Mark user present (idempotent); HTTP 400 if no user identity supplied |
 | `GET` | `/api/v1/events/{id}/match-state` | Returns live scoreboard, clock, venue, goals list |
 | `POST` | `/api/v1/events/{id}/match-state` | Dev control: advance state (`action: goal|end|reset`) |
 | `POST` | `/api/v1/events/{id}/photos` | Upload Hype Wall photo (multipart); 403 if uploader not checked in |
 | `GET` | `/api/v1/events/{id}/photos` | List all photos with uploader identity |
 | `POST` | `/api/v1/events/{id}/recap` | Generate AI-powered event recap; 409 if match not ended; 200 with `fallback: true` on Anthropic failure |
-
-FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc`. Route handlers follow the `get_`/`create_`/`update_`/`delete_` verb-prefix convention.
-
-## Internal Architecture
-
-The directory tree follows a standard FastAPI layered layout:
-
-```
-fanfest/backend/
-├── app/
-│   ├── main.py               # FastAPI app entry; router registration
-│   ├── api/
-│   │   └── v1/
-│   │       └── endpoints/    # one module per domain
-│   ├── core/                 # config, settings modules
-│   ├── models/               # (planned) ORM or data models
-│   ├── schemas/              # Pydantic request/response models
-│   └── services/             # (planned) business logic
-└── tests/                    # pytest test suite
-```
-
-The `services/` layer has four active modules: `match_state.py` (in-memory mocked match state with goal/end/reset actions), `photos_service.py` (Google Drive wrapper with in-memory mock fallback), `registry.py` (mock check-in registry for upload authorization), `recap_service.py` (Anthropic Claude API client with graceful fallback to a templated response when the key is absent or the API fails). `models/` remains unimplemented; `schemas/events.py` holds all Pydantic models. No ORM, database client, or migration tool has been declared.
 
 ## Request Lifecycle
 
