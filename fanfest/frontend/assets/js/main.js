@@ -87,7 +87,7 @@ function renderSeleccion() {
   const avatars = seleccionAvatars.map(([ini, bg]) =>
     `<div class="mini-avatar" style="background:${bg}">${ini}</div>`).join('');
   $('rowSeleccion').innerHTML = seleccionVenues.map((v) => `
-    <div class="card-sel">
+    <div class="card-sel" data-event-card style="cursor:pointer">
       <div class="card-sel__match">
         <div class="card-sel__match-teams">🇦🇷 Argentina vs 🇲🇽 México</div>
         <div class="card-sel__match-time">Hoy · 21:00</div>
@@ -196,6 +196,12 @@ $('navTabs').addEventListener('click', (e) => {
   if (!btn) return;
   state.activeTab = btn.dataset.tab;
   renderNav();
+});
+
+$('rowSeleccion').addEventListener('click', (e) => {
+  if (e.target.closest('[data-event-card]') && typeof window.navigateToEventDetail === 'function') {
+    window.navigateToEventDetail();
+  }
 });
 
 renderCategories();
