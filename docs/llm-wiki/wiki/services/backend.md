@@ -4,7 +4,7 @@ summary: >-
   The backend is a Python FastAPI server (port 8000) that acts as the sole API
   layer for the FanFest platform. It is responsible for serving the REST API
   consu...
-last_updated: '2026-06-19T18:35:00.000Z'
+last_updated: '2026-06-19T19:45:00.000Z'
 tags:
   - service
   - python
@@ -16,7 +16,7 @@ service_id: backend
 
 ## Purpose
 
-The backend is a Python FastAPI server (port 8000) that acts as the sole API layer for the FanFest platform. It is responsible for serving the REST API consumed by the [[frontend]], proxying all calls to external third-party services (Anthropic, Google), and owning the AI-generated event recap feature. As of FEST-03 the app is fully bootstrapped: `requirements.txt` is populated, `main.py` runs with CORSMiddleware, and the events domain exposes four routes.
+The backend is a Python FastAPI server (port 8000) that acts as the sole API layer for the FanFest platform. It is responsible for serving the REST API consumed by the [[frontend]], proxying all calls to external third-party services (Anthropic, Google), and owning the AI-generated event recap feature. As of FEST-04 the app is fully bootstrapped: `requirements.txt` is populated, `main.py` runs with CORSMiddleware, and the events domain exposes five routes including the AI-powered recap endpoint.
 
 ## Public API / Surface
 
@@ -29,6 +29,7 @@ All routes are under `app/api/v1/endpoints/events.py`, mounted at `/api/v1`:
 | `POST` | `/api/v1/events/{id}/match-state` | Dev control: advance state (`action: goal|end|reset`) |
 | `POST` | `/api/v1/events/{id}/photos` | Upload Hype Wall photo (multipart); 403 if uploader not checked in |
 | `GET` | `/api/v1/events/{id}/photos` | List all photos with uploader identity |
+| `POST` | `/api/v1/events/{id}/recap` | Generate AI-powered event recap; 409 if match not ended; 200 with `fallback: true` on Anthropic failure |
 
 FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc`. Route handlers follow the `get_`/`create_`/`update_`/`delete_` verb-prefix convention.
 
@@ -50,7 +51,7 @@ fanfest/backend/
 └── tests/                    # pytest test suite
 ```
 
-The `services/` layer has three active modules: `match_state.py` (in-memory mocked match state with goal/end/reset actions), `photos_service.py` (Google Drive wrapper with in-memory mock fallback), `registry.py` (mock check-in registry for upload authorization). `models/` remains unimplemented; `schemas/events.py` holds all Pydantic models. No ORM, database client, or migration tool has been declared.
+The `services/` layer has four active modules: `match_state.py` (in-memory mocked match state with goal/end/reset actions), `photos_service.py` (Google Drive wrapper with in-memory mock fallback), `registry.py` (mock check-in registry for upload authorization), `recap_service.py` (Anthropic Claude API client with graceful fallback to a templated response when the key is absent or the API fails). `models/` remains unimplemented; `schemas/events.py` holds all Pydantic models. No ORM, database client, or migration tool has been declared.
 
 ## Request Lifecycle
 
@@ -102,6 +103,6 @@ The Anthropic integration generates a personalized narrative recap given event c
 
 **HTTPException for error paths** — error responses use `raise HTTPException(status_code=..., detail=...)` directly; silent exception swallowing (bare `except` returning an error dict) is explicitly prohibited by convention.
 
-**Dependency declaration before import** — add any new dependency to `requirements.txt` before importing. CI installs from this file; missing entries cause import errors in GitHub Actions even if locally installed. The venv at `fanfest/backend/.venv/` currently declares: `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `python-multipart`, `google-auth`, `google-api-python-client`, `pytest`, `httpx`, `ruff`.
+**Dependency declaration before import** — add any new dependency to `requirements.txt` before importing. CI installs from this file; missing entries cause import errors in GitHub Actions even if locally installed. The venv at `fanfest/backend/.venv/` currently declares: `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `python-multipart`, `google-auth`, `google-api-python-client`, `anthropic`, `pytest`, `httpx`, `ruff`.
 
-**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. 8 tests exist in `tests/test_events.py` covering the events domain.
+**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. 17 tests exist: 10 in `tests/test_events.py` + `tests/test_health.py` (events domain and health), 7 in `tests/test_recap.py` (recap endpoint: happy path, fallback, empty-key fallback, 409/404/422 errors, slide_count cap).
