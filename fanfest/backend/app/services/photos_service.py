@@ -4,9 +4,20 @@ import uuid
 from datetime import datetime, timezone
 
 from app.core.config import settings
+from app.data.seed import PHOTOS as _SEED_PHOTOS
 from app.schemas.events import Photo
 
-_photos: dict[str, list[Photo]] = {}
+
+def _seed_photos() -> dict[str, list[Photo]]:
+    result: dict[str, list[Photo]] = {}
+    for p in _SEED_PHOTOS:
+        result.setdefault(p.event_id, []).append(
+            Photo(id=p.id, url=p.url, uploader_name=p.uploader_name, uploaded_at=p.uploaded_at)
+        )
+    return result
+
+
+_photos: dict[str, list[Photo]] = _seed_photos()
 
 
 def upload_photo(

@@ -1,0 +1,393 @@
+"""Local seed dataset for FanFest — ~10 rows per entity.
+
+The evt-001 / user_00x IDs mirror what the existing services expect so the
+demo app stays consistent while services are progressively migrated to use
+these typed entities.
+
+The special event_001 ID (underscore format) is kept for FEST-03 live match
+state demo compatibility (live.js hardcodes EVENT_ID = 'event_001').
+
+Import from here in tests instead of hand-rolling inline dicts.
+"""
+from datetime import datetime, timezone
+
+from app.models.entities import (
+    Event,
+    Fan,
+    Goal,
+    Match,
+    Photo,
+    Prediction,
+    Registration,
+)
+
+_utc = timezone.utc
+
+# ── Events ────────────────────────────────────────────────────────────────────
+
+EVENTS: list[Event] = [
+    Event(
+        id="evt-001",
+        home_team="Argentina",
+        home_flag="\U0001f1e6\U0001f1f7",
+        away_team="Brasil",
+        away_flag="\U0001f1e7\U0001f1f7",
+        venue_name="La Bombonera",
+        venue_address="Brandsen 805, Buenos Aires",
+        organizer="FanFest HQ",
+        kickoff_iso="2030-01-01T18:00:00Z",
+        match_start_time=datetime(2030, 1, 1, 18, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-001/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Argentina+vs+Brasil"
+            "&dates=20300101T180000Z/20300101T200000Z"
+            "&location=Brandsen+805%2C+Buenos+Aires"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Brandsen+805%2C+Buenos+Aires",
+    ),
+    Event(
+        id="evt-002",
+        home_team="España",
+        home_flag="\U0001f1ea\U0001f1f8",
+        away_team="Alemania",
+        away_flag="\U0001f1e9\U0001f1ea",
+        venue_name="Bar Munich",
+        venue_address="Av. Corrientes 1234, Buenos Aires",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-25T20:00:00Z",
+        match_start_time=datetime(2026, 6, 25, 20, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-002/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Espa%C3%B1a+vs+Alemania"
+            "&dates=20260625T200000Z/20260625T220000Z"
+            "&location=Av.+Corrientes+1234%2C+Buenos+Aires"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Av.+Corrientes+1234%2C+Buenos+Aires",
+    ),
+    Event(
+        id="evt-003",
+        home_team="Francia",
+        home_flag="\U0001f1eb\U0001f1f7",
+        away_team="Portugal",
+        away_flag="\U0001f1f5\U0001f1f9",
+        venue_name="Roof Lounge",
+        venue_address="Thames 1800, Buenos Aires",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-26T18:00:00Z",
+        match_start_time=datetime(2026, 6, 26, 18, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-003/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Francia+vs+Portugal"
+            "&dates=20260626T180000Z/20260626T200000Z"
+            "&location=Thames+1800%2C+Buenos+Aires"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Thames+1800%2C+Buenos+Aires",
+    ),
+    Event(
+        id="evt-004",
+        home_team="México",
+        home_flag="\U0001f1f2\U0001f1fd",
+        away_team="USA",
+        away_flag="\U0001f1fa\U0001f1f8",
+        venue_name="El Nacional Bar",
+        venue_address="Sarmiento 567, Córdoba",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-24T21:00:00Z",
+        match_start_time=datetime(2026, 6, 24, 21, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-004/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=M%C3%A9xico+vs+USA"
+            "&dates=20260624T210000Z/20260624T230000Z"
+            "&location=Sarmiento+567%2C+C%C3%B3rdoba"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Sarmiento+567%2C+C%C3%B3rdoba",
+    ),
+    Event(
+        id="evt-005",
+        home_team="Uruguay",
+        home_flag="\U0001f1fa\U0001f1fe",
+        away_team="Colombia",
+        away_flag="\U0001f1e8\U0001f1f4",
+        venue_name="Café del Sur",
+        venue_address="San Martín 890, Rosario",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-27T18:00:00Z",
+        match_start_time=datetime(2026, 6, 27, 18, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-005/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Uruguay+vs+Colombia"
+            "&dates=20260627T180000Z/20260627T200000Z"
+            "&location=San+Mart%C3%ADn+890%2C+Rosario"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=San+Mart%C3%ADn+890%2C+Rosario",
+    ),
+    Event(
+        id="evt-006",
+        home_team="Inglaterra",
+        home_flag="\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f",
+        away_team="Italia",
+        away_flag="\U0001f1ee\U0001f1f9",
+        venue_name="The English Pub",
+        venue_address="Reconquista 456, Buenos Aires",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-28T20:00:00Z",
+        match_start_time=datetime(2026, 6, 28, 20, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-006/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Inglaterra+vs+Italia"
+            "&dates=20260628T200000Z/20260628T220000Z"
+            "&location=Reconquista+456%2C+Buenos+Aires"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Reconquista+456%2C+Buenos+Aires",
+    ),
+    Event(
+        id="evt-007",
+        home_team="Países Bajos",
+        home_flag="\U0001f1f3\U0001f1f1",
+        away_team="Bélgica",
+        away_flag="\U0001f1e7\U0001f1ea",
+        venue_name="Amsterdam Bar",
+        venue_address="Pellegrini 123, Rosario",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-29T18:00:00Z",
+        match_start_time=datetime(2026, 6, 29, 18, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-007/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Pa%C3%ADses+Bajos+vs+B%C3%A9lgica"
+            "&dates=20260629T180000Z/20260629T200000Z"
+            "&location=Pellegrini+123%2C+Rosario"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Pellegrini+123%2C+Rosario",
+    ),
+    Event(
+        id="evt-008",
+        home_team="Japón",
+        home_flag="\U0001f1ef\U0001f1f5",
+        away_team="Corea del Sur",
+        away_flag="\U0001f1f0\U0001f1f7",
+        venue_name="Sushi & Sport",
+        venue_address="Corrientes 2345, Buenos Aires",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-30T13:00:00Z",
+        match_start_time=datetime(2026, 6, 30, 13, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-008/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Jap%C3%B3n+vs+Corea+del+Sur"
+            "&dates=20260630T130000Z/20260630T150000Z"
+            "&location=Corrientes+2345%2C+Buenos+Aires"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Corrientes+2345%2C+Buenos+Aires",
+    ),
+    Event(
+        id="evt-009",
+        home_team="Marruecos",
+        home_flag="\U0001f1f2\U0001f1e6",
+        away_team="Senegal",
+        away_flag="\U0001f1f8\U0001f1f3",
+        venue_name="Café Atlas",
+        venue_address="Güemes 789, Córdoba",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-07-01T16:00:00Z",
+        match_start_time=datetime(2026, 7, 1, 16, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-009/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Marruecos+vs+Senegal"
+            "&dates=20260701T160000Z/20260701T180000Z"
+            "&location=G%C3%BCemes+789%2C+C%C3%B3rdoba"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=G%C3%BCemes+789%2C+C%C3%B3rdoba",
+    ),
+    Event(
+        id="evt-010",
+        home_team="Brasil",
+        home_flag="\U0001f1e7\U0001f1f7",
+        away_team="Argentina",
+        away_flag="\U0001f1e6\U0001f1f7",
+        venue_name="Maracanã Fan Bar",
+        venue_address="Pueyrredón 1111, Buenos Aires",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-07-04T20:00:00Z",
+        match_start_time=datetime(2026, 7, 4, 20, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-010/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Brasil+vs+Argentina"
+            "&dates=20260704T200000Z/20260704T220000Z"
+            "&location=Pueyrred%C3%B3n+1111%2C+Buenos+Aires"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Pueyrred%C3%B3n+1111%2C+Buenos+Aires",
+    ),
+]
+
+# ── Fans ──────────────────────────────────────────────────────────────────────
+# user_001 / user_002 / user_003 mirror registry._checked_in so a future
+# refactor can drop registry.py entirely and read from here.
+
+FANS: list[Fan] = [
+    Fan(user_id="user_001", name="Alice",    location="Buenos Aires, AR"),
+    Fan(user_id="user_002", name="Bob",      location="Córdoba, AR"),
+    Fan(user_id="user_003", name="Carlos",   location="Rosario, AR"),
+    Fan(user_id="user_004", name="Diana",    location="Mendoza, AR"),
+    Fan(user_id="user_005", name="Elena",    location="Salta, AR"),
+    Fan(user_id="user_006", name="Fernando", location="Tucumán, AR"),
+    Fan(user_id="user_007", name="Gabriela", location="Mar del Plata, AR"),
+    Fan(user_id="user_008", name="Hernán",   location="La Plata, AR"),
+    Fan(user_id="user_009", name="Iván",     location="Santa Fe, AR"),
+    Fan(user_id="user_010", name="Julia",    location="Bariloche, AR"),
+]
+
+# ── Registrations ─────────────────────────────────────────────────────────────
+
+REGISTRATIONS: list[Registration] = [
+    Registration("user_001", "evt-001", datetime(2029, 12, 10, 10, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 17, 45, tzinfo=_utc)),
+    Registration("user_002", "evt-001", datetime(2029, 12, 11, 14, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 17, 50, tzinfo=_utc)),
+    Registration("user_003", "evt-001", datetime(2029, 12, 12,  9, 0, tzinfo=_utc), checked_in=False),
+    Registration("user_004", "evt-001", datetime(2029, 12, 13, 11, 0, tzinfo=_utc), checked_in=False),
+    Registration("user_005", "evt-001", datetime(2029, 12, 14, 15, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 18, 5,  tzinfo=_utc)),
+    Registration("user_006", "evt-001", datetime(2029, 12, 15,  8, 0, tzinfo=_utc), checked_in=False),
+    Registration("user_007", "evt-001", datetime(2029, 12, 16, 12, 0, tzinfo=_utc), checked_in=False),
+    Registration("user_001", "evt-002", datetime(2026, 6, 10, 10, 0, tzinfo=_utc),  checked_in=False),
+    Registration("user_002", "evt-003", datetime(2026, 6, 11, 14, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 26, 17, 55, tzinfo=_utc)),
+    Registration("user_003", "evt-004", datetime(2026, 6, 12,  9, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 24, 20, 50, tzinfo=_utc)),
+    Registration("user_004", "evt-002", datetime(2026, 6, 13, 11, 0, tzinfo=_utc),  checked_in=False),
+    Registration("user_005", "evt-003", datetime(2026, 6, 14, 15, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 26, 17, 40, tzinfo=_utc)),
+    Registration("user_007", "evt-002", datetime(2026, 6, 16, 12, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 25, 19, 55, tzinfo=_utc)),
+    Registration("user_008", "evt-005", datetime(2026, 6, 17,  9, 0, tzinfo=_utc),  checked_in=False),
+    Registration("user_009", "evt-002", datetime(2026, 6, 18, 16, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 25, 19, 50, tzinfo=_utc)),
+]
+
+# ── Matches ───────────────────────────────────────────────────────────────────
+# event_001 (underscore) is the FEST-03 live match demo; live.js hardcodes
+# EVENT_ID = 'event_001' so this ID must stay as-is.
+
+MATCHES: list[Match] = [
+    Match(
+        event_id="event_001",
+        home_team="River Plate",
+        away_team="Boca Juniors",
+        venue="Estadio Monumental",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+    Match(
+        event_id="evt-001",
+        home_team="Argentina", away_team="Brasil",
+        venue="La Bombonera",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+    Match(
+        event_id="evt-002",
+        home_team="España", away_team="Alemania",
+        venue="Bar Munich",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+    Match(
+        event_id="evt-003",
+        home_team="Francia", away_team="Portugal",
+        venue="Roof Lounge",
+        home_score=1, away_score=0, status="live", clock_seconds=3600,
+        goals=[Goal(player="Mbappé", team="Francia", minute=39)],
+    ),
+    Match(
+        event_id="evt-004",
+        home_team="México", away_team="USA",
+        venue="El Nacional Bar",
+        home_score=2, away_score=1, status="ended", clock_seconds=5400,
+        goals=[
+            Goal(player="Lozano",  team="México", minute=12),
+            Goal(player="Pulisic", team="USA",    minute=55),
+            Goal(player="Jiménez", team="México", minute=78),
+        ],
+    ),
+    Match(
+        event_id="evt-005",
+        home_team="Uruguay", away_team="Colombia",
+        venue="Café del Sur",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+    Match(
+        event_id="evt-006",
+        home_team="Inglaterra", away_team="Italia",
+        venue="The English Pub",
+        home_score=3, away_score=2, status="ended", clock_seconds=5400,
+        goals=[
+            Goal(player="Kane",      team="Inglaterra", minute=20),
+            Goal(player="Bellingham",team="Inglaterra", minute=35),
+            Goal(player="Immobile",  team="Italia",     minute=50),
+            Goal(player="Saka",      team="Inglaterra", minute=65),
+            Goal(player="Verratti",  team="Italia",     minute=80),
+        ],
+    ),
+    Match(
+        event_id="evt-007",
+        home_team="Países Bajos", away_team="Bélgica",
+        venue="Amsterdam Bar",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+    Match(
+        event_id="evt-008",
+        home_team="Japón", away_team="Corea del Sur",
+        venue="Sushi & Sport",
+        home_score=0, away_score=0, status="live", clock_seconds=1800,
+    ),
+    Match(
+        event_id="evt-009",
+        home_team="Marruecos", away_team="Senegal",
+        venue="Café Atlas",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+    Match(
+        event_id="evt-010",
+        home_team="Brasil", away_team="Argentina",
+        venue="Maracanã Fan Bar",
+        home_score=0, away_score=0, status="pre", clock_seconds=0,
+    ),
+]
+
+# ── Predictions ───────────────────────────────────────────────────────────────
+
+_pred_base = datetime(2029, 12, 31, 20, 0, tzinfo=_utc)
+
+PREDICTIONS: list[Prediction] = [
+    Prediction("user_001", "evt-001", home_score=3, away_score=1, submitted_at=_pred_base),
+    Prediction("user_002", "evt-001", home_score=2, away_score=0, submitted_at=_pred_base),
+    Prediction("user_003", "evt-001", home_score=1, away_score=1, submitted_at=_pred_base),
+    Prediction("user_004", "evt-001", home_score=2, away_score=1, submitted_at=_pred_base),
+    Prediction("user_005", "evt-001", home_score=1, away_score=0, submitted_at=_pred_base),
+    Prediction("user_006", "evt-001", home_score=3, away_score=2, submitted_at=_pred_base),
+    Prediction("user_007", "evt-002", home_score=2, away_score=1, submitted_at=datetime(2026, 6, 20, 10, 0, tzinfo=_utc)),
+    Prediction("user_008", "evt-003", home_score=1, away_score=0, submitted_at=datetime(2026, 6, 21, 11, 0, tzinfo=_utc)),
+    Prediction("user_001", "evt-002", home_score=1, away_score=0, submitted_at=datetime(2026, 6, 20, 12, 0, tzinfo=_utc)),
+    Prediction("user_002", "evt-003", home_score=2, away_score=1, submitted_at=datetime(2026, 6, 21, 14, 0, tzinfo=_utc)),
+    Prediction("user_009", "evt-001", home_score=4, away_score=0, submitted_at=_pred_base),
+    Prediction("user_010", "evt-001", home_score=2, away_score=2, submitted_at=_pred_base),
+]
+
+# ── Photos ────────────────────────────────────────────────────────────────────
+
+_photo_t = datetime(2030, 1, 1, 18, 30, tzinfo=_utc)
+
+PHOTOS: list[Photo] = [
+    Photo("photo-001", "evt-001", "https://picsum.photos/400/300?random=1",  "user_001", "Alice",    uploaded_at=_photo_t),
+    Photo("photo-002", "evt-001", "https://picsum.photos/400/300?random=2",  "user_002", "Bob",      uploaded_at=datetime(2030, 1, 1, 18, 45, tzinfo=_utc)),
+    Photo("photo-003", "evt-001", "https://picsum.photos/400/300?random=3",  "user_005", "Elena",    uploaded_at=datetime(2030, 1, 1, 19,  0, tzinfo=_utc)),
+    Photo("photo-004", "evt-001", "https://picsum.photos/400/300?random=4",  "user_001", "Alice",    uploaded_at=datetime(2030, 1, 1, 19, 10, tzinfo=_utc)),
+    Photo("photo-005", "evt-001", "https://picsum.photos/400/300?random=5",  "user_002", "Bob",      uploaded_at=datetime(2030, 1, 1, 19, 20, tzinfo=_utc)),
+    Photo("photo-006", "evt-001", "https://picsum.photos/400/300?random=6",  "user_005", "Elena",    uploaded_at=datetime(2030, 1, 1, 19, 35, tzinfo=_utc)),
+    Photo("photo-007", "evt-001", "https://picsum.photos/400/300?random=7",  "user_001", "Alice",    uploaded_at=datetime(2030, 1, 1, 19, 50, tzinfo=_utc)),
+    Photo("photo-008", "evt-002", "https://picsum.photos/400/300?random=8",  "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 25, 20, 30, tzinfo=_utc)),
+    Photo("photo-009", "evt-002", "https://picsum.photos/400/300?random=9",  "user_009", "Iván",     uploaded_at=datetime(2026, 6, 25, 21,  0, tzinfo=_utc)),
+    Photo("photo-010", "evt-003", "https://picsum.photos/400/300?random=10", "user_002", "Bob",      uploaded_at=datetime(2026, 6, 26, 18, 40, tzinfo=_utc)),
+]
+
+# ── Convenience lookups (used by services) ────────────────────────────────────
+
+FAN_NAMES: dict[str, str] = {f.user_id: f.name for f in FANS}

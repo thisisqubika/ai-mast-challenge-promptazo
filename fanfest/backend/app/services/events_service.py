@@ -1,7 +1,9 @@
+import dataclasses
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
 
+from app.data.seed import EVENTS, FAN_NAMES, PREDICTIONS, REGISTRATIONS
 from app.services import registry
 
 # ---------------------------------------------------------------------------
@@ -12,36 +14,30 @@ from app.services import registry
 #   _attendees    : event_id -> set of user_ids
 # ---------------------------------------------------------------------------
 
-_events: dict[str, dict] = {
-    "evt-001": {
-        "id": "evt-001",
-        "home_team": "Argentina",
-        "home_flag": "\U0001f1e6\U0001f1f7",
-        "away_team": "Brasil",
-        "away_flag": "\U0001f1e7\U0001f1f7",
-        "venue_name": "La Bombonera",
-        "venue_address": "Brandsen 805, Buenos Aires",
-        "organizer": "FanFest HQ",
-        "kickoff_iso": "2030-01-01T18:00:00Z",
-        "match_start_time": datetime(2030, 1, 1, 18, 0, tzinfo=timezone.utc),
-        "invite_link": "http://localhost:8000/api/v1/events/evt-001/invite",
-        "calendar_link": (
-            "https://calendar.google.com/calendar/render"
-            "?action=TEMPLATE"
-            "&text=Argentina+vs+Brasil"
-            "&dates=20300101T180000Z/20300101T200000Z"
-            "&location=Brandsen+805%2C+Buenos+Aires"
-        ),
-        "maps_link": (
-            "https://www.google.com/maps/dir/"
-            "?api=1&destination=Brandsen+805%2C+Buenos+Aires"
-        ),
+_events: dict[str, dict] = {e.id: dataclasses.asdict(e) for e in EVENTS}
+
+_predictions: dict[tuple, dict] = {
+    (p.user_id, p.event_id): {
+        "user_id": p.user_id,
+        "event_id": p.event_id,
+        "name": FAN_NAMES.get(p.user_id, p.user_id),
+        "home_score": p.home_score,
+        "away_score": p.away_score,
     }
+    for p in PREDICTIONS
 }
 
-_predictions: dict[tuple, dict] = {}
 
-_attendees: dict[str, set] = {"evt-001": set()}
+def _seed_attendees() -> dict[str, set]:
+    acc: dict[str, set] = {}
+    for r in REGISTRATIONS:
+        if r.checked_in:
+            acc.setdefault(r.event_id, set()).add(r.user_id)
+    acc.setdefault("evt-001", set())
+    return acc
+
+
+_attendees: dict[str, set] = _seed_attendees()
 
 
 # ---------------------------------------------------------------------------
