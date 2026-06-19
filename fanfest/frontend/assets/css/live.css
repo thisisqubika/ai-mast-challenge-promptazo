@@ -1,0 +1,354 @@
+/* Live Event Screen & Hype Wall */
+
+#liveView {
+  padding: 16px 20px 32px;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #f1f5f9;
+  background: #0f172a;
+  min-height: 100%;
+}
+
+/* SCOREBOARD */
+.scoreboard {
+  background: #1e293b;
+  border-radius: 18px;
+  padding: 18px 16px 14px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: center;
+}
+
+.scoreboard__status {
+  margin-bottom: 10px;
+  min-height: 22px;
+}
+
+.scoreboard__teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.scoreboard__team {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.scoreboard__team--away {
+  align-items: flex-start;
+}
+
+.scoreboard__team-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.scoreboard__score {
+  font-size: 40px;
+  font-weight: 900;
+  color: #f1f5f9;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.scoreboard__sep {
+  font-size: 28px;
+  font-weight: 700;
+  color: #475569;
+  flex: none;
+}
+
+.scoreboard__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.scoreboard__venue {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.scoreboard__venue::after {
+  content: " ·";
+}
+
+.scoreboard__clock {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.scoreboard__summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* STATUS BADGES */
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ef4444;
+  letter-spacing: 0.6px;
+}
+
+.status-badge {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+}
+
+.status-badge--pre {
+  background: rgba(100, 116, 139, 0.12);
+  border: 1px solid rgba(100, 116, 139, 0.25);
+  color: #64748b;
+}
+
+.status-badge--ended {
+  background: rgba(71, 85, 105, 0.2);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  color: #94a3b8;
+}
+
+/* LIVE DOT */
+.live-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex: none;
+}
+
+.live-dot__ring,
+.live-dot__core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.live-dot__ring {
+  animation: liveRing 1.4s ease-out infinite;
+}
+
+.live-dot__core {
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes liveRing {
+  0%   { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes livePulse {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.35); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* GOALS */
+.goals-section {
+  margin-bottom: 16px;
+}
+
+.goals-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.goal-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.goal-card__minute {
+  font-size: 11px;
+  font-weight: 800;
+  color: #10b981;
+  min-width: 28px;
+}
+
+.goal-card__player {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  flex: 1;
+}
+
+.goal-card__team {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* HYPE WALL */
+.hype-wall {
+  margin-bottom: 16px;
+}
+
+.hype-wall__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.hype-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hype-cell {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hype-cell__img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.hype-cell__label {
+  padding: 5px 7px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hype-empty {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  padding: 20px 0;
+  margin: 0;
+}
+
+/* UPLOAD */
+.hype-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hype-upload__input {
+  display: none;
+}
+
+.hype-upload__label {
+  display: inline-flex;
+  align-items: center;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.hype-upload__btn {
+  background: #7c3aed;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.hype-upload__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hype-upload__status {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  min-height: 16px;
+}
+
+/* RECAP BANNER */
+.recap-banner {
+  border-radius: 18px;
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #5b21b6 100%);
+  padding: 24px 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.recap-banner__title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.recap-banner__sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* MISC */
+.live-error {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  padding: 24px 0;
+  margin: 0;
+}

@@ -9,10 +9,11 @@ version: 1.0
 
 ## Adding a New API Endpoint
 
-1. Create (or extend) `fanfest/backend/app/api/v1/endpoints/{domain}.py` with the route handler
-2. Register the router in the FastAPI app (in `fanfest/backend/app/main.py` or a central router file)
-3. Declare any Pydantic request/response models in the same file or a peer `schemas/` module
-4. Add test in `fanfest/backend/tests/test_{domain}.py`
+1. Define Pydantic request/response models in `fanfest/backend/app/schemas/{domain}.py`
+2. Implement business logic in `fanfest/backend/app/services/{domain}.py`
+3. Create (or extend) `fanfest/backend/app/api/v1/endpoints/{domain}.py` with the route handler; import from schemas and services
+4. Register the router in `fanfest/backend/app/main.py` via `app.include_router(router, prefix="/api/v1")`
+5. Add test in `fanfest/backend/tests/test_{domain}.py`
 
 ```python
 # fanfest/backend/app/api/v1/endpoints/{domain}.py

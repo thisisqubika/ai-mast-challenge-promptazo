@@ -4,7 +4,7 @@ summary: >-
   The backend is a Python FastAPI server (port 8000) that acts as the sole API
   layer for the FanFest platform. It is responsible for serving the REST API
   consu...
-last_updated: '2026-06-19T16:30:00.000Z'
+last_updated: '2026-06-19T18:35:00.000Z'
 tags:
   - service
   - python
@@ -16,15 +16,21 @@ service_id: backend
 
 ## Purpose
 
-The backend is a Python FastAPI server (port 8000) that acts as the sole API layer for the FanFest platform. It is responsible for serving the REST API consumed by the [[frontend]], proxying all calls to external third-party services (Anthropic, Google), and owning the AI-generated event recap feature. The backend is operational at the infra baseline: `app/main.py` has a working FastAPI application and `requirements.txt` declares pinned runtime dependencies.
+The backend is a Python FastAPI server (port 8000) that acts as the sole API layer for the FanFest platform. It is responsible for serving the REST API consumed by the [[frontend]], proxying all calls to external third-party services (Anthropic, Google), and owning the AI-generated event recap feature. As of FEST-03 the app is fully bootstrapped: `requirements.txt` is populated, `main.py` runs with CORSMiddleware, and the events domain exposes four routes.
 
 ## Public API / Surface
 
-| Method | Path | Response | Notes |
-|--------|------|----------|-------|
-| `GET` | `/health` | `{"status": "ok"}` (HTTP 200) | Infrastructure health probe; no auth required |
+All routes are under `app/api/v1/endpoints/events.py`, mounted at `/api/v1`:
 
-The intended pattern for product routes places handlers under `fanfest/backend/app/api/v1/endpoints/{domain}.py`, each domain in its own module, routers registered in `fanfest/backend/app/main.py` via `app.include_router(router)`. The `/health` endpoint is an infra-only exception defined inline in `main.py`. FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc` once the server is running.
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Infrastructure health probe; no auth required |
+| `GET` | `/api/v1/events/{id}/match-state` | Returns live scoreboard, clock, venue, goals list |
+| `POST` | `/api/v1/events/{id}/match-state` | Dev control: advance state (`action: goal|end|reset`) |
+| `POST` | `/api/v1/events/{id}/photos` | Upload Hype Wall photo (multipart); 403 if uploader not checked in |
+| `GET` | `/api/v1/events/{id}/photos` | List all photos with uploader identity |
+
+FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc`. Route handlers follow the `get_`/`create_`/`update_`/`delete_` verb-prefix convention.
 
 ## Internal Architecture
 
@@ -44,21 +50,22 @@ fanfest/backend/
 └── tests/                    # pytest test suite
 ```
 
-`app/main.py` contains the live FastAPI app. `tests/test_health.py` is the first implemented test. Other subdirectories (`api/v1/endpoints/`, `core/`, `models/`, `schemas/`, `services/`) are still empty stubs. No ORM, auth library, database client, or migration tool has been declared. The structure establishes placement conventions without constraining future implementation choices.
+The `services/` layer has three active modules: `match_state.py` (in-memory mocked match state with goal/end/reset actions), `photos_service.py` (Google Drive wrapper with in-memory mock fallback), `registry.py` (mock check-in registry for upload authorization). `models/` remains unimplemented; `schemas/events.py` holds all Pydantic models. No ORM, database client, or migration tool has been declared.
 
 ## Request Lifecycle
 
 1. HTTP request arrives at uvicorn on port 8000
-2. FastAPI routes to the matching handler (`GET /health` is inline in `main.py`; product routes will live in `api/v1/endpoints/{domain}.py`)
-3. Handler calls into `services/` for business logic (product routes only)
-4. Service calls external APIs (Anthropic, Google) using credentials from env vars
-5. Response serialized via Pydantic schema and returned
+2. `CORSMiddleware` in `main.py` validates the `Origin` header (default allow: `http://localhost:8080`)
+3. FastAPI routes to the matching handler in `api/v1/endpoints/events.py`
+4. Handler calls into `services/` (`match_state`, `photos_service`, `registry`) for business logic
+5. For photo uploads: `registry.is_checked_in(uploader_id)` is checked; `HTTPException(403)` raised if not
+6. Response serialized via Pydantic schema from `schemas/events.py` and returned
 
-CORS middleware is configured in `main.py` allowing `http://localhost:8080` (the [[frontend]] origin) because there is no reverse proxy in local development. `allow_credentials=True` is set with the explicit single origin.
+CORS origins are configured via `CORS_ORIGINS` env var (default `http://localhost:8080`) in `app/core/config.py`.
 
 ## Data Layer
 
-(not determined by analysis) — no database, ORM, cache, or object store has been declared or configured. No DB client appears in `requirements.txt`. Persistence layer is entirely unimplemented.
+No database, ORM, or durable store has been declared. State lives in module-level Python dicts in `services/match_state.py` (match state per event) and `services/photos_service.py` (photo metadata per event); both reset on server restart. When `GOOGLE_SERVICE_ACCOUNT_FILE` is set, photo files are stored in Google Drive (`GOOGLE_DRIVE_FOLDER_ID`); otherwise photos are held in memory only.
 
 ## Configuration
 
@@ -95,6 +102,6 @@ The Anthropic integration generates a personalized narrative recap given event c
 
 **HTTPException for error paths** — error responses use `raise HTTPException(status_code=..., detail=...)` directly; silent exception swallowing (bare `except` returning an error dict) is explicitly prohibited by convention.
 
-**Dependency declaration before import** — any new dependency must be declared in `requirements.txt` before importing the library. Importing an undeclared package fails in a fresh virtualenv or CI. Current declared deps: `fastapi>=0.110.0`, `uvicorn[standard]>=0.29.0`, `pytest>=8.0.0`, `httpx>=0.27.0`, `ruff>=0.4.0`.
+**Dependency declaration before import** — add any new dependency to `requirements.txt` before importing. CI installs from this file; missing entries cause import errors in GitHub Actions even if locally installed. The venv at `fanfest/backend/.venv/` currently declares: `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `python-multipart`, `google-auth`, `google-api-python-client`, `pytest`, `httpx`, `ruff`.
 
-**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. `test_health.py` is the first test file (covers `GET /health` 200 response and 404 for unknown paths). `pyproject.toml` sets `pythonpath = ["."]` so `from app.main import app` resolves when pytest runs from `fanfest/backend/`.
+**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. 8 tests exist in `tests/test_events.py` covering the events domain.
