@@ -84,3 +84,23 @@ class Photo:
     uploader_id: str
     uploader_name: str
     uploaded_at: datetime
+
+
+@dataclass
+class RecapSlide:
+    label: str
+    description: str
+
+
+@dataclass
+class Recap:
+    event_id: str
+    narrative: str
+    slides: list[RecapSlide]
+    home_team: str
+    away_team: str
+    home_score: int
+    away_score: int
+    photo_count: int
+    correct_predictors: list[str] = field(default_factory=list)
+    fallback: bool = True

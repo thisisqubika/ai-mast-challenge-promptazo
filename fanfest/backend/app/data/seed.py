@@ -18,6 +18,8 @@ from app.models.entities import (
     Match,
     Photo,
     Prediction,
+    Recap,
+    RecapSlide,
     Registration,
 )
 
@@ -398,6 +400,59 @@ PHOTOS: list[Photo] = [
     Photo("photo-008", "evt-002", "https://picsum.photos/400/300?random=8",  "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 25, 20, 30, tzinfo=_utc)),
     Photo("photo-009", "evt-002", "https://picsum.photos/400/300?random=9",  "user_009", "Iván",     uploaded_at=datetime(2026, 6, 25, 21,  0, tzinfo=_utc)),
     Photo("photo-010", "evt-003", "https://picsum.photos/400/300?random=10", "user_002", "Bob",      uploaded_at=datetime(2026, 6, 26, 18, 40, tzinfo=_utc)),
+    Photo("photo-011", "evt-004", "https://picsum.photos/400/300?random=11", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc)),
+    Photo("photo-012", "evt-004", "https://picsum.photos/400/300?random=12", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc)),
+    Photo("photo-013", "evt-004", "https://picsum.photos/400/300?random=13", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc)),
+    Photo("photo-014", "evt-006", "https://picsum.photos/400/300?random=14", "user_004", "Diana",    uploaded_at=datetime(2026, 6, 28, 20, 40, tzinfo=_utc)),
+    Photo("photo-015", "evt-006", "https://picsum.photos/400/300?random=15", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 28, 21, 30, tzinfo=_utc)),
+]
+
+# ── Recaps (pre-generated for past events) ────────────────────────────────────
+
+RECAPS: list[Recap] = [
+    Recap(
+        event_id="evt-004",
+        narrative=(
+            "Una noche épica en El Nacional Bar de Córdoba. México dominó el partido "
+            "con garra y talento, llevándose la victoria 2-1 ante USA en un duelo "
+            "vibrante que tuvo a los fanáticos de pie durante los 90 minutos."
+        ),
+        slides=[
+            RecapSlide(label="Resultado final",       description="México 2 - 1 USA"),
+            RecapSlide(label="Gol de Lozano",         description="Chucky Lozano abre el marcador en el minuto 12 con un disparo potente"),
+            RecapSlide(label="Empate de Pulisic",     description="USA empata en el minuto 55 con un golazo de media distancia de Pulisic"),
+            RecapSlide(label="Gol de la victoria",    description="Jiménez sentencia el partido en el minuto 78 de cabeza"),
+        ],
+        home_team="México",
+        away_team="USA",
+        home_score=2,
+        away_score=1,
+        photo_count=3,
+        correct_predictors=[],
+        fallback=True,
+    ),
+    Recap(
+        event_id="evt-006",
+        narrative=(
+            "The English Pub fue testigo de un thriller europeo. Inglaterra remontó "
+            "el duelo ante Italia con tres goles en un partido que no decepcionó a nadie. "
+            "La genialidad de Saka en el minuto 65 resultó definitiva."
+        ),
+        slides=[
+            RecapSlide(label="Resultado final",       description="Inglaterra 3 - 2 Italia"),
+            RecapSlide(label="Gol de Kane",           description="Kane abre el marcador de penal en el minuto 20"),
+            RecapSlide(label="Gol de Bellingham",     description="Bellingham amplía con un golazo de volea en el minuto 35"),
+            RecapSlide(label="Reacción italiana",     description="Immobile y Verratti descuentan en los minutos 50 y 80"),
+            RecapSlide(label="Saka define",           description="Saka sella la victoria inglesa en el minuto 65"),
+        ],
+        home_team="Inglaterra",
+        away_team="Italia",
+        home_score=3,
+        away_score=2,
+        photo_count=2,
+        correct_predictors=[],
+        fallback=True,
+    ),
 ]
 
 # ── Convenience lookups (used by services) ────────────────────────────────────
