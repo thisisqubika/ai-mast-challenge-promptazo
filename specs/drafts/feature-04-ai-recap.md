@@ -32,7 +32,6 @@ The recap screen displays:
 - [ ] Recap ends with **next-event suggestions** (mocked recommendations are fine).
 - [ ] A loading state ("Analizando la vibra del evento...") shows while the recap generates.
 - [ ] Recap generation is resilient — if the AI call fails, show a graceful fallback (cached/templated summary) so the demo never breaks.
-- [ ] Recap endpoint accepts `tone` (emocionante / inspirador / humorístico / nostálgico) and a target length / slide count, and reflects both in the narrative voice and number of moment slides (drives the [`feature-06-recap-screen`](./feature-06-recap-screen.md) customization panel).
 
 ## AI / QAF notes
 
