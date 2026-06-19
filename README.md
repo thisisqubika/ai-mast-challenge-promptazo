@@ -18,7 +18,12 @@ Fan Fest is a web platform that takes fans through the full arc of a watch party
 ## How AI Was Used
 
 **In the product:**
-Claude (Anthropic) generates the post-event AI recap. Given the event context — location, date, attendee count, uploaded photos, and match highlights — Claude produces a narrative summary personalized to each fan. The output feels less like a report and more like a story, which is the effect we were aiming for.
+Claude (Anthropic) generates the post-event AI recap via `POST /api/v1/events/{id}/recap`. Key design choices:
+
+- **Structured JSON prompt:** event context (venue, date, teams, final score, goals list, photo count) is serialized to JSON and injected into a single prompt block, making the AI usage auditable and the output predictable.
+- **Shaped output:** Claude is asked to return a JSON object with two keys — `highlights` (an array of `{label, description}` moment objects) and `narrative` (a short paragraph in Spanish). Callers control the number of highlights via `slide_count` (1–10) and the narrative voice via `tone` (`emocionante`, `inspirador`, `humorístico`, `nostálgico`).
+- **Graceful fallback:** if the Anthropic API is unavailable (network error, quota, empty key), the endpoint returns a templated HTTP 200 response with `"fallback": true` — the demo never surfaces a 500 to the frontend.
+- **Loading state:** the frontend shows "Analizando la vibra del evento..." while the recap generates, keeping the experience smooth even when the API call takes a few seconds.
 
 **To build it:**
 - **Claude Code CLI** was used end-to-end: scaffolding the project structure, generating backend API routes in FastAPI, writing frontend components, and iterating on bugs — all through natural-language prompts in the terminal.

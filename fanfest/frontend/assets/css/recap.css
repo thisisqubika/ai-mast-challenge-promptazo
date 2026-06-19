@@ -1,0 +1,322 @@
+/* Recap Screen */
+
+#recapView {
+  display: none;
+  padding: 16px 20px 40px;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #f1f5f9;
+  background: #0f172a;
+  min-height: 100%;
+}
+
+#recapView.recap-view--visible {
+  display: block;
+}
+
+/* LOADING STATE */
+.recap-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.recap-loading__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(124, 58, 237, 0.2);
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: recapSpin 0.8s linear infinite;
+}
+
+@keyframes recapSpin {
+  to { transform: rotate(360deg); }
+}
+
+.recap-loading__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0;
+  text-align: center;
+}
+
+/* FINAL SCORE */
+.recap-scorefinal {
+  background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #5b21b6 100%);
+  border-radius: 18px;
+  padding: 20px 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.recap-scorefinal__label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+}
+
+.recap-scorefinal__teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.recap-scorefinal__team {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  flex: 1;
+  text-align: center;
+}
+
+.recap-scorefinal__score {
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  flex: none;
+}
+
+/* NARRATIVE */
+.recap-narrative {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.recap-narrative__label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #7c3aed;
+  margin-bottom: 8px;
+}
+
+.recap-narrative__text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* HIGHLIGHTS CAROUSEL */
+.recap-highlights {
+  margin-bottom: 16px;
+}
+
+.recap-highlights__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.recap-carousel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.recap-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.recap-slide {
+  flex: none;
+  width: 200px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.recap-slide__label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #10b981;
+  margin-bottom: 6px;
+}
+
+.recap-slide__desc {
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* PREDICTIONS */
+.recap-predictions {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.recap-predictions__title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.recap-predictions__names {
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981;
+  margin: 0;
+}
+
+.recap-predictions--empty .recap-predictions__coming-soon {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  margin: 0;
+}
+
+/* PHOTOS */
+.recap-photos {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.recap-photos__title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.recap-photos__count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.recap-photos__empty {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  margin: 0;
+}
+
+/* ACTION BUTTONS */
+.recap-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.recap-btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.recap-btn:active {
+  opacity: 0.8;
+}
+
+.recap-btn--share {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.recap-btn--react {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.recap-btn--reacted {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+/* NEXT EVENTS */
+.recap-next {
+  margin-bottom: 16px;
+}
+
+.recap-next__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.recap-next__card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.recap-next__event {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 3px;
+}
+
+.recap-next__location {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* FALLBACK NOTICE */
+.recap-fallback-notice {
+  font-size: 11px;
+  font-weight: 500;
+  color: #475569;
+  text-align: center;
+  padding: 8px 12px;
+  background: rgba(71, 85, 105, 0.1);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+/* ERROR STATE */
+.recap-error {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  padding: 40px 0;
+  margin: 0;
+}

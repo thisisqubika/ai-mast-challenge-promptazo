@@ -34,3 +34,13 @@ export async function advanceMatchState(eventId, action, data = {}) {
   if (!res.ok) throw new Error(`advanceMatchState ${res.status}`);
   return res.json();
 }
+
+export async function fetchRecap(eventId, tone = 'emocionante', slideCount = 4) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/recap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tone, slide_count: slideCount }),
+  });
+  if (!res.ok) throw new Error(`fetchRecap ${res.status}`);
+  return res.json();
+}
