@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+import unicodedata
+
+from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 
 from app.schemas.events import (
     AttendeeOut,
     CheckinRequest,
     CheckinResponse,
     EventDetail,
+    EventSummary,
     MatchState,
     MatchStateUpdate,
     Photo,
@@ -14,6 +17,13 @@ from app.schemas.events import (
     RecapRequest,
     RecapResponse,
 )
+
+
+def _abbr(name: str) -> str:
+    """3-char uppercase abbreviation stripping diacritics (e.g. 'México' → 'MEX')."""
+    nfd = unicodedata.normalize("NFD", name)
+    ascii_only = "".join(c for c in nfd if unicodedata.category(c) != "Mn")
+    return ascii_only[:3].upper()
 from app.services import events_service
 from app.services import match_state as match_state_service
 from app.services import photos_service
@@ -21,6 +31,53 @@ from app.services import recap_service
 from app.services import registry
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+
+# ---------------------------------------------------------------------------
+# Events list (must be before /{event_id} to avoid path-param capture)
+# ---------------------------------------------------------------------------
+
+
+@router.get("", response_model=list[EventSummary])
+def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
+    """Return events, optionally filtered by status ('future', 'live', 'past').
+
+    For past events the final score and photo count are joined from match-state
+    and photos services so the client can render recap cards without extra calls.
+    """
+    raw_events = events_service.list_events(status)
+    result: list[EventSummary] = []
+    for e in raw_events:
+        home_score = None
+        away_score = None
+        photo_count = 0
+        recap_id: str | None = e.get("recap_event_id")
+        if recap_id:
+            try:
+                state = match_state_service.get_state(recap_id)
+                home_score = state.home_score
+                away_score = state.away_score
+            except HTTPException:
+                pass
+            photo_count = len(photos_service.list_photos(e["id"]))
+        result.append(
+            EventSummary(
+                id=e["id"],
+                home_team=e["home_team"],
+                home_flag=e["home_flag"],
+                home_abbr=_abbr(e["home_team"]),
+                away_team=e["away_team"],
+                away_flag=e["away_flag"],
+                away_abbr=_abbr(e["away_team"]),
+                kickoff_iso=e["kickoff_iso"],
+                status=e.get("status", "future"),
+                recap_event_id=recap_id,
+                home_score=home_score,
+                away_score=away_score,
+                photo_count=photo_count,
+            )
+        )
+    return result
 
 
 # ---------------------------------------------------------------------------

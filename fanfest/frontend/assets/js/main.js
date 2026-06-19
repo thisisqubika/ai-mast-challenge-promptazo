@@ -37,10 +37,33 @@ const worldCards = [
     amenities: [['🍷', 'Vinos'], ['📺', 'Pantalla']] },
 ];
 
-const recapCards = [
-  { id: 'evt-006', result: 'ING 3–2 ITA', stage: 'Grupo D · 28 jun 2026', photos: '0', homeFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', oppFlag: '🇮🇹' },
-  { id: 'evt-004', result: 'MEX 2–1 USA', stage: 'Grupo B · 24 jun 2026', photos: '0', homeFlag: '🇲🇽', oppFlag: '🇺🇸' },
-];
+// Recap cards — loaded from API; static array is a render-before-fetch placeholder
+let recapCards = [];
+
+const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function _fmtDate(iso) {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+async function loadRecapCards() {
+  try {
+    const res = await fetch('http://localhost:8000/api/v1/events?status=past');
+    if (!res.ok) throw new Error('api error');
+    const events = await res.json();
+    recapCards = events.map((e) => ({
+      id: e.id,
+      homeFlag: e.home_flag,
+      oppFlag: e.away_flag,
+      result: `${e.home_abbr} ${e.home_score ?? '?'}–${e.away_score ?? '?'} ${e.away_abbr}`,
+      stage: _fmtDate(e.kickoff_iso),
+      photos: String(e.photo_count),
+    }));
+    renderRecap();
+  } catch (_) {
+    // backend unavailable — section stays empty
+  }
+}
 
 const upcomingCards = [
   { home: 'España', homeFlag: '🇪🇸', away: 'Alemania', awayFlag: '🇩🇪',
@@ -208,9 +231,9 @@ $('rowSeleccion').addEventListener('click', (e) => {
 renderCategories();
 renderSeleccion();
 renderWorld();
-renderRecap();
 renderUpcoming();
 renderNav();
+loadRecapCards();
 
 $('rowRecap').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-recap-event-id]');

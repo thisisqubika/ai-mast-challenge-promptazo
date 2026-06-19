@@ -56,6 +56,14 @@ def _get_attendee_set(event_id: str) -> set:
 # ---------------------------------------------------------------------------
 
 
+def list_events(status: str | None = None) -> list[dict]:
+    """Return all events, optionally filtered by status ('future', 'live', 'past')."""
+    events = list(_events.values())
+    if status:
+        events = [e for e in events if e.get("status") == status]
+    return events
+
+
 def get_event(event_id: str) -> dict:
     """Return the event dict or raise 404."""
     event = _events.get(event_id)
