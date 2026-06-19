@@ -42,6 +42,21 @@ Slices are independent enough to demo on their own, but the end-to-end story
 (discover → join → live → recap) is what the jury scores. Slice 4 carries the
 "visible, explainable AI" requirement — prioritize it.
 
+## Infra / DevOps track (build now, while product defines features)
+
+CI/CD groundwork, captured as drafts so it runs through the same QAF plan→implement
+flow. Decisions already made: GitHub Pages deploy, Docker `compose up` now, minimal
+backend `/health` so the pipeline runs green.
+
+| # | Draft | What |
+|---|---|---|
+| 1 | [`drafts/infra-01-ci-and-backend-health.md`](./drafts/infra-01-ci-and-backend-health.md) | GitHub Actions CI + minimal FastAPI `/health` |
+| 2 | [`drafts/infra-02-docker-compose.md`](./drafts/infra-02-docker-compose.md) | Backend Dockerfile + `docker compose up` (serves frontend too) |
+| 3 | [`drafts/infra-03-deploy-frontend-pages.md`](./drafts/infra-03-deploy-frontend-pages.md) | Auto-deploy static frontend to GitHub Pages |
+
+Order: infra-01 → infra-02 (depends on the health app); infra-03 is independent
+and can ship anytime. Backend deploy waits until the backend has real endpoints.
+
 ## Convention
 
 - App code lives under `fanfest/` (backend: FastAPI in `fanfest/backend/app`, frontend: `fanfest/frontend`).
