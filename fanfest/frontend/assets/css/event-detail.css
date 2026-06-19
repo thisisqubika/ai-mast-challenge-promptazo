@@ -84,10 +84,6 @@
   font-size: 13px; font-weight: 700; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
-.ed-btn--upload {
-  background: var(--card); border: 1px solid var(--hair-soft);
-  color: var(--dim); cursor: not-allowed; opacity: 0.45;
-}
 .ed-btn--predict { background: var(--accent); color: var(--accent-ink); }
 .ed-btn--predict.is-open {
   background: rgba(16,185,129,0.12); border: 1.5px solid var(--accent); color: var(--accent);

@@ -282,35 +282,21 @@
   display: none;
 }
 
-.hype-upload__label {
-  display: inline-flex;
+.hype-upload__cta {
+  display: flex;
   align-items: center;
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9px;
-  padding: 8px 12px;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: #10b981;
+  border-radius: 12px;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: #cbd5e1;
-  cursor: pointer;
-}
-
-.hype-upload__btn {
-  background: #7c3aed;
-  border: none;
-  border-radius: 9px;
-  padding: 8px 14px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: #fff;
   cursor: pointer;
-}
-
-.hype-upload__btn:disabled {
-  opacity: 0.5;
-  cursor: default;
+  box-sizing: border-box;
 }
 
 .hype-upload__status {
