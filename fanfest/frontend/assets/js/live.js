@@ -1,6 +1,6 @@
 import { fetchMatchState, fetchPhotos, uploadPhoto } from './api.js';
 
-const EVENT_ID = 1;
+const EVENT_ID = 'event_001';
 const POLL_INTERVAL = 3000;
 const UPLOADER_KEY = 'live_uploader_name';
 const UPLOADER_ID_KEY = 'live_uploader_id';
