@@ -30,8 +30,9 @@ def reset_services() -> None:
     """Reset mutable in-memory state between tests."""
     import app.services.match_state as ms
     import app.services.photos_service as ps
-    from app.data.seed import FANS, MATCHES
-    from app.schemas.events import Goal, MatchState
+    import app.services.recap_service as rs
+    from app.data.seed import FANS, MATCHES, RECAPS
+    from app.schemas.events import Goal, MatchState, RecapHighlight, RecapResponse
 
     def _to_state(m) -> MatchState:
         return MatchState(
@@ -49,3 +50,18 @@ def reset_services() -> None:
     ms._states = {m.event_id: _to_state(m) for m in MATCHES}
     ps._photos = {}
     registry._checked_in = {f.user_id: f.name for f in FANS}
+    rs._store = {
+        r.event_id: RecapResponse(
+            event_id=r.event_id,
+            narrative=r.narrative,
+            highlights=[RecapHighlight(label=s.label, description=s.description) for s in r.slides],
+            correct_predictors=r.correct_predictors,
+            fallback=r.fallback,
+            home_score=r.home_score,
+            away_score=r.away_score,
+            home_team=r.home_team,
+            away_team=r.away_team,
+            photo_count=r.photo_count,
+        )
+        for r in RECAPS
+    }
