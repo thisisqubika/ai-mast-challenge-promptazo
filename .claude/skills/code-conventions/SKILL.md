@@ -63,24 +63,24 @@ def get_event(event_id: int):
 
 ## Code-Style Conventions
 
-- Python: PEP 8, line length 88 (Black default).
+- Python: PEP 8, line length 88; linter is `ruff` (`ruff check .` from `fanfest/backend/`).
 - Import order: stdlib → third-party → local (isort-compatible).
 - Frontend: no inline styles; all CSS in `fanfest/frontend/assets/css/`.
 - All API calls from the browser go through `api.js` — no `fetch()` calls scattered in `main.js`.
 
 ## Gotchas
 
-### Declare New Dependencies in requirements.txt Before Importing
+### Declare in requirements.txt Before Importing
 
-Any new backend dependency must be pinned in `fanfest/backend/requirements.txt` before importing it in code.
+Any new backend dependency must be added to `fanfest/backend/requirements.txt` before importing. CI installs from this file; missing entries cause import errors in GitHub Actions even if locally installed.
 
 ```python
-# WRONG — import will fail in a fresh virtualenv
-import newlib
-newlib.do_something()
+# WRONG — import will fail in CI (not in requirements.txt)
+from anthropic import Anthropic
+client = Anthropic()
 
 # CORRECT — add to requirements.txt first, then import
-# requirements.txt: newlib>=1.0.0
-import newlib
-newlib.do_something()
+# fanfest/backend/requirements.txt: anthropic>=0.25.0
+from anthropic import Anthropic
+client = Anthropic()
 ```

@@ -17,7 +17,7 @@ tags:
 
 FanFest is a single-repository project (not a monorepo) containing two runtime components under a shared `fanfest/` directory. There is no workspace tool, no monorepo configuration file (no `pnpm-workspace.yaml`, `lerna.json`, `nx.json`, or equivalent), and no build graph linking the two components. Each component is independently started with its own shell command.
 
-The top-level layout is flat: `fanfest/backend/` holds the Python service and `fanfest/frontend/` holds all browser-delivered assets. Alongside these sit documentation, a root `README.md`, and project metadata. No CI pipeline directory, no Makefile, and no task runner are present.
+The top-level layout is flat: `fanfest/backend/` holds the Python service and `fanfest/frontend/` holds all browser-delivered assets. Alongside these sit documentation, a root `README.md`, project metadata, and `.github/workflows/` for CI. No Makefile and no task runner are present.
 
 | Workspace / Directory | Language | Role |
 |-----------------------|----------|------|
@@ -146,18 +146,23 @@ No emulators (Firebase, DynamoDB Local, etc.) are required because no database o
 
 ## Automation & CI
 
-No CI provider is configured. No GitHub Actions workflow, no CircleCI config, no Makefile, no Justfile, and no `package.json` scripts exist. All operations are raw shell commands documented in `README.md`.
+GitHub Actions CI is configured at `.github/workflows/ci.yml`. The workflow triggers on every `push` and `pull_request` with `permissions: contents: read` (least privilege) and runs two parallel jobs.
+
+| Job | Runner | Steps |
+|-----|--------|-------|
+| `backend` | `ubuntu-latest` | checkout → Python 3.12 setup → `pip install -r requirements.txt` → `ruff check .` → `pytest` |
+| `frontend` | `ubuntu-latest` | checkout → `node --check fanfest/frontend/assets/js/main.js` |
+
+All third-party actions are pinned to major version tags (`actions/checkout@v4`, `actions/setup-python@v5`). The backend job uses `defaults.run.working-directory: fanfest/backend` so all commands resolve relative to the backend root. Local operations continue to be raw shell commands documented in `README.md`.
 
 | Concern | Tool | Status |
 |---------|------|--------|
-| Dependency install | `pip install -r requirements.txt` | Manual |
+| Dependency install | `pip install -r requirements.txt` | CI + manual |
 | Backend server | `uvicorn` | Manual |
 | Frontend server | `python -m http.server` | Manual |
-| Test runner | (not determined by analysis) | Not configured |
-| CI pipeline | (not determined by analysis) | Not configured |
-| Linting / formatting | (not determined by analysis) | Not configured |
-
-This is an intentional tradeoff for hackathon scope: simplicity over process.
+| Test runner | `pytest` (backend) | CI + manual |
+| CI pipeline | GitHub Actions | Configured |
+| Linting | `ruff check .` | CI + manual |
 
 ---
 

@@ -24,6 +24,7 @@ All routes are under `app/api/v1/endpoints/events.py`, mounted at `/api/v1`:
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/health` | Infrastructure health probe; no auth required |
 | `GET` | `/api/v1/events/{id}/match-state` | Returns live scoreboard, clock, venue, goals list |
 | `POST` | `/api/v1/events/{id}/match-state` | Dev control: advance state (`action: goal|end|reset`) |
 | `POST` | `/api/v1/events/{id}/photos` | Upload Hype Wall photo (multipart); 403 if uploader not checked in |
@@ -101,6 +102,6 @@ The Anthropic integration generates a personalized narrative recap given event c
 
 **HTTPException for error paths** — error responses use `raise HTTPException(status_code=..., detail=...)` directly; silent exception swallowing (bare `except` returning an error dict) is explicitly prohibited by convention.
 
-**Dependency declaration before import** — add any new dependency to `requirements.txt` before importing. The venv at `fanfest/backend/.venv/` currently declares: `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `python-multipart`, `google-auth`, `google-api-python-client`, `pytest`, `httpx`.
+**Dependency declaration before import** — add any new dependency to `requirements.txt` before importing. CI installs from this file; missing entries cause import errors in GitHub Actions even if locally installed. The venv at `fanfest/backend/.venv/` currently declares: `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `python-multipart`, `google-auth`, `google-api-python-client`, `pytest`, `httpx`, `ruff`.
 
 **Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. 8 tests exist in `tests/test_events.py` covering the events domain.

@@ -38,6 +38,7 @@ Read the product context first: [`docs/product/`](../docs/product). Canonical fl
 | 3 | [`drafts/feature-03-live-event-hype-wall.md`](./drafts/feature-03-live-event-hype-wall.md) | 5–6 | Live scoreboard + Hype Wall photo upload |
 | 4 | [`drafts/feature-04-ai-recap.md`](./drafts/feature-04-ai-recap.md) | 7–10 | **AI recap** — the hero / AI moment |
 | 5 | [`drafts/feature-05-event-detail-screen.md`](./drafts/feature-05-event-detail-screen.md) | 3–6 | Event Detail (Previa) screen — UI for features 02 + 03 |
+| 6 | [`drafts/feature-06-recap-screen.md`](./drafts/feature-06-recap-screen.md) | 7–10 | Recap screen — UI for feature 04 (tone + length customization) |
 
 Slices are independent enough to demo on their own, but the end-to-end story
 (discover → join → live → recap) is what the jury scores. Slice 4 carries the
