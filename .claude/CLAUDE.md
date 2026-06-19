@@ -13,6 +13,8 @@
 | FastAPI app entry | `fanfest/backend/app/main.py` | `fanfest/backend/app/main.py` |
 | Core config module | `fanfest/backend/app/core/{module}.py` | `fanfest/backend/app/core/config.py` |
 | API endpoints package | `fanfest/backend/app/api/v1/endpoints/__init__.py` | `fanfest/backend/app/api/v1/endpoints/__init__.py` |
+| Service module | `fanfest/backend/app/services/{domain}_service.py` | `fanfest/backend/app/services/events_service.py` |
+| Pydantic schemas | `fanfest/backend/app/schemas/{domain}.py` | `fanfest/backend/app/schemas/events.py` |
 | Python package init | `fanfest/backend/app/{module}/__init__.py` | `fanfest/backend/app/__init__.py` |
 | Test package | `fanfest/backend/tests/__init__.py` | `fanfest/backend/tests/__init__.py` |
 | **Frontend** | | |

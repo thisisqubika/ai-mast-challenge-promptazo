@@ -53,6 +53,19 @@ def sample_event():
     return {"name": "Test Fest", "date": "2026-07-01", "location": "Buenos Aires"}
 ```
 
+When a service module uses an in-process dict/set store (e.g. `_predictions`, `_attendees`), add an `autouse` fixture in the test module to reset that state before every test. Without this, tests leak state and order-dependently fail.
+
+```python
+# fanfest/backend/tests/test_{domain}.py
+import pytest
+from app.services import {domain}_service
+
+@pytest.fixture(autouse=True)
+def reset_state():
+    {domain}_service._store.clear()
+    yield
+```
+
 ## Coverage Expectations
 
 No formal threshold. Cover all route handlers and any non-trivial business logic before merging. External API integration paths should have at least one test with a mocked client.
