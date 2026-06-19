@@ -1,0 +1,7 @@
+{
+  "version": "1",
+  "command": "code-review-graph",
+  "args": [],
+  "resolved_at": "2026-06-19T13:27:17Z",
+  "tool_version": "code-review-graph 2.3.6"
+}

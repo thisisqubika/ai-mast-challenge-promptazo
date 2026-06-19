@@ -1,0 +1,7 @@
+# AI Agentic Framework files
+.claude-temp/
+.codex-temp/
+.claude-backups/
+.codex-backups/
+qubika-agentic-framework/
+.mcp.json
