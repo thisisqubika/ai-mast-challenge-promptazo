@@ -4,7 +4,7 @@ summary: >-
   The backend is a Python FastAPI server (port 8000) that acts as the sole API
   layer for the FanFest platform. It is responsible for serving the REST API
   consu...
-last_updated: '2026-06-19T16:30:00.000Z'
+last_updated: '2026-06-19T18:45:00.000Z'
 tags:
   - service
   - python
@@ -23,6 +23,9 @@ The backend is a Python FastAPI server (port 8000) that acts as the sole API lay
 | Method | Path | Response | Notes |
 |--------|------|----------|-------|
 | `GET` | `/health` | `{"status": "ok"}` (HTTP 200) | Infrastructure health probe; no auth required |
+| `GET` | `/api/v1/events/{event_id}` | `EventDetail` (HTTP 200) | Full event detail: teams, venue, time, organizer, attendees, invite/calendar/maps links |
+| `POST` | `/api/v1/events/{event_id}/predictions` | `PredictionResponse` (HTTP 200) | Submit or overwrite a per-user scoreline prediction; locked (HTTP 409) after mocked match-start time |
+| `POST` | `/api/v1/events/{event_id}/checkin` | `CheckinResponse` (HTTP 200) | Mark user present; idempotent. HTTP 400 if no user identity supplied |
 
 The intended pattern for product routes places handlers under `fanfest/backend/app/api/v1/endpoints/{domain}.py`, each domain in its own module, routers registered in `fanfest/backend/app/main.py` via `app.include_router(router)`. The `/health` endpoint is an infra-only exception defined inline in `main.py`. FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc` once the server is running.
 
@@ -44,7 +47,7 @@ fanfest/backend/
 └── tests/                    # pytest test suite
 ```
 
-`app/main.py` contains the live FastAPI app. `tests/test_health.py` is the first implemented test. Other subdirectories (`api/v1/endpoints/`, `core/`, `models/`, `schemas/`, `services/`) are still empty stubs. No ORM, auth library, database client, or migration tool has been declared. The structure establishes placement conventions without constraining future implementation choices.
+`app/main.py` contains the live FastAPI app. `api/v1/endpoints/events.py` is the first product-domain endpoint module; `schemas/events.py` holds its Pydantic models; `services/events_service.py` holds business logic and the in-process store. `tests/test_health.py` and `tests/test_events.py` are the implemented test files. `core/` and `models/` remain empty stubs. No ORM, auth library, or database client has been declared.
 
 ## Request Lifecycle
 
@@ -58,7 +61,15 @@ CORS middleware is configured in `main.py` allowing `http://localhost:8080` (the
 
 ## Data Layer
 
-(not determined by analysis) — no database, ORM, cache, or object store has been declared or configured. No DB client appears in `requirements.txt`. Persistence layer is entirely unimplemented.
+An in-process dict store introduced by FEST-02 provides lightweight persistence for the lifetime of the running process. Three module-level dicts in `app/services/events_service.py`:
+
+| Store | Key | Value |
+|-------|-----|-------|
+| `_events` | `event_id: str` | event detail dict (seeded with mock event `evt-001`) |
+| `_predictions` | `(user_id, event_id): tuple` | prediction dict `{user_id, event_id, home_score, away_score}` |
+| `_attendees` | `event_id: str` | `set[str]` of checked-in user IDs |
+
+No external database, ORM, cache, or object store. State resets on server restart. No DB client in `requirements.txt`.
 
 ## Configuration
 
@@ -97,4 +108,4 @@ The Anthropic integration generates a personalized narrative recap given event c
 
 **Dependency declaration before import** — any new dependency must be declared in `requirements.txt` before importing the library. Importing an undeclared package fails in a fresh virtualenv or CI. Current declared deps: `fastapi>=0.110.0`, `uvicorn[standard]>=0.29.0`, `pytest>=8.0.0`, `httpx>=0.27.0`, `ruff>=0.4.0`.
 
-**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. `test_health.py` is the first test file (covers `GET /health` 200 response and 404 for unknown paths). `pyproject.toml` sets `pythonpath = ["."]` so `from app.main import app` resolves when pytest runs from `fanfest/backend/`.
+**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. `test_health.py` covers `GET /health`; `test_events.py` covers all five FEST-02 BDD scenarios (9 test functions). `pyproject.toml` sets `pythonpath = ["."]` so `from app.main import app` resolves when pytest runs from `fanfest/backend/`.
