@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     drive_enabled: bool = False
     google_service_account_file: str = ""
     google_drive_folder_id: str = ""
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-6"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

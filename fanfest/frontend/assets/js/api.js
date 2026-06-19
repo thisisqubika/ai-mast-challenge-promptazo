@@ -64,19 +64,19 @@ async function checkIn(eventId, { userId, name }) {
 // FEST-03: Live match state, Hype Wall photos
 // ---------------------------------------------------------------------------
 
-async function fetchMatchState(eventId) {
+export async function fetchMatchState(eventId) {
   const res = await fetch(`${API_BASE}/events/${eventId}/match-state`);
   if (!res.ok) throw new Error(`fetchMatchState ${res.status}`);
   return res.json();
 }
 
-async function fetchPhotos(eventId) {
+export async function fetchPhotos(eventId) {
   const res = await fetch(`${API_BASE}/events/${eventId}/photos`);
   if (!res.ok) throw new Error(`fetchPhotos ${res.status}`);
   return res.json();
 }
 
-async function uploadPhoto(eventId, file, uploaderId, uploaderName) {
+export async function uploadPhoto(eventId, file, uploaderId, uploaderName) {
   const form = new FormData();
   form.append("file", file);
   form.append("uploader_id", uploaderId);
@@ -89,12 +89,26 @@ async function uploadPhoto(eventId, file, uploaderId, uploaderName) {
   return res.json();
 }
 
-async function advanceMatchState(eventId, action, data = {}) {
+export async function advanceMatchState(eventId, action, data = {}) {
   const res = await fetch(`${API_BASE}/events/${eventId}/match-state`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action, ...data }),
   });
   if (!res.ok) throw new Error(`advanceMatchState ${res.status}`);
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// FEST-04: AI-generated event recap
+// ---------------------------------------------------------------------------
+
+export async function fetchRecap(eventId, tone = 'emocionante', slideCount = 4) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/recap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tone, slide_count: slideCount }),
+  });
+  if (!res.ok) throw new Error(`fetchRecap ${res.status}`);
   return res.json();
 }

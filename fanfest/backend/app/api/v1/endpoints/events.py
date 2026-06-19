@@ -11,10 +11,13 @@ from app.schemas.events import (
     PhotoList,
     PredictionRequest,
     PredictionResponse,
+    RecapRequest,
+    RecapResponse,
 )
 from app.services import events_service
 from app.services import match_state as match_state_service
 from app.services import photos_service
+from app.services import recap_service
 from app.services import registry
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -136,3 +139,20 @@ async def create_photo(
 async def list_photos(event_id: str) -> PhotoList:
     photos = photos_service.list_photos(event_id)
     return PhotoList(photos=photos)
+
+
+# ---------------------------------------------------------------------------
+# FEST-04: AI-generated event recap
+# ---------------------------------------------------------------------------
+
+
+@router.post("/{event_id}/recap", response_model=RecapResponse)
+async def create_recap(event_id: str, body: RecapRequest) -> RecapResponse:
+    state = match_state_service.get_state(event_id)
+    if state.status != "ended":
+        raise HTTPException(
+            status_code=409,
+            detail="Recap is only available after the match ends",
+        )
+    photos = photos_service.list_photos(event_id)
+    return recap_service.generate_recap(event_id, state, photos, body.tone, body.slide_count)

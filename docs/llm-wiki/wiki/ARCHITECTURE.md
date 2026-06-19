@@ -4,7 +4,7 @@ summary: >-
   FanFest is a single-repository project (not a monorepo) containing two runtime
   components under a shared `fanfest/` directory. There is no workspace tool,
   no...
-last_updated: '2026-06-19T18:50:00.000Z'
+last_updated: '2026-06-19T19:45:00.000Z'
 tags:
   - architecture
   - topology
@@ -34,7 +34,7 @@ The top-level layout is flat: `fanfest/backend/` holds the Python service and `f
 | [[backend]] | backend | Python (FastAPI) | 8000 | REST API; AI recap via Claude; planned Google integrations |
 | [[frontend]] | frontend | JavaScript (vanilla) | 8080 | Single-page app served via `python -m http.server` |
 
-The backend follows a layered layout (`app/api/v1/endpoints/`, `app/core/`, `app/models/`, `app/schemas/`, `app/services/`). As of FEST-03 the core app is bootstrapped with a working FastAPI instance, CORSMiddleware, and an events domain (`endpoints/events.py`, `schemas/events.py`, `services/match_state.py`, `services/photos_service.py`, `services/registry.py`). The frontend is five JS/CSS files: one HTML entry point, two JS application modules (`main.js` for Feature 01 discovery, `live.js` for live event + Hype Wall), one shared API client (`api.js`), and two CSS stylesheets.
+The backend follows a layered layout (`app/api/v1/endpoints/`, `app/core/`, `app/models/`, `app/schemas/`, `app/services/`). As of FEST-04 the core app is bootstrapped with a working FastAPI instance, CORSMiddleware, and an events domain (`endpoints/events.py`, `schemas/events.py`, `services/match_state.py`, `services/photos_service.py`, `services/registry.py`, `services/recap_service.py`). The frontend is seven JS/CSS files: one HTML entry point, three JS application modules (`main.js` for Feature 01 discovery, `live.js` for live event + Hype Wall, `recap.js` for AI-generated recap screen), one shared API client (`api.js`), and three CSS stylesheets (`main.css`, `live.css`, `recap.css`).
 
 ---
 
@@ -44,7 +44,7 @@ The only inter-service channel is browser-to-backend HTTP. The frontend's `fanfe
 
 | Source | Target | Protocol | Notes |
 |--------|--------|----------|-------|
-| frontend (`api.js`) | backend (`app/main.py`) | HTTP / REST | JSON request/response; active endpoints: `GET/POST /api/v1/events/{id}/match-state`, `POST/GET /api/v1/events/{id}/photos` |
+| frontend (`api.js`) | backend (`app/main.py`) | HTTP / REST | JSON request/response; active endpoints: `GET/POST /api/v1/events/{id}/match-state`, `POST/GET /api/v1/events/{id}/photos`, `POST /api/v1/events/{id}/recap` |
 
 No backend-to-frontend push channel (SSE, WebSocket) has been implemented. No service mesh, proxy, or API gateway sits between the two.
 
@@ -52,11 +52,11 @@ No backend-to-frontend push channel (SSE, WebSocket) has been implemented. No se
 
 ## External Integrations
 
-Three external vendors are declared via environment variables; no in-repo client wrapper beyond the `ANTHROPIC_API_KEY` usage has been scaffolded for the Google integrations.
+Three external vendors are declared via environment variables. The Anthropic client is now implemented (`app/services/recap_service.py`); no in-repo client wrapper has been scaffolded for the Google integrations beyond Drive.
 
 | Vendor | Purpose | In-repo client path | Auth mechanism | Environments |
 |--------|---------|---------------------|----------------|--------------|
-| Anthropic (Claude API) | AI-generated post-event recap narrative | (not determined by analysis) | Bearer API key via `ANTHROPIC_API_KEY` env var | local; production (not determined by analysis) |
+| Anthropic (Claude API) | AI-generated post-event recap narrative | `app/services/recap_service.py` | Bearer API key via `ANTHROPIC_API_KEY` env var | local; production (not determined by analysis) |
 | Google OAuth | User authentication (planned) | (not determined by analysis) | OAuth 2.0 client credentials via env vars | local; production (not determined by analysis) |
 | Google Calendar API | Calendar integration (planned) | (not determined by analysis) | Google OAuth token (same credential set) | local; production (not determined by analysis) |
 | Google Maps API | Maps integration (planned) | (not determined by analysis) | Google OAuth token (same credential set) | local; production (not determined by analysis) |
@@ -81,10 +81,10 @@ When implemented, the expected shape is standard OAuth 2.0 Authorization Code fl
 1. User interacts with the SPA (`fanfest/frontend/index.html` bootstraps `assets/js/main.js`).
 2. `main.js` calls a function in `assets/js/api.js` to POST event details to the backend.
 3. `api.js` issues `fetch('http://localhost:8000/...')` with a JSON body.
-4. The FastAPI router in `fanfest/backend/app/main.py` matches the route and dispatches to a handler (exact handler path not determined by analysis).
-5. The handler calls the Anthropic Claude API with event context to generate a recap narrative.
-6. The backend returns the generated text as a JSON response.
-7. `api.js` resolves the promise; `main.js` renders the recap into the DOM.
+4. The FastAPI router in `fanfest/backend/app/main.py` matches the route and dispatches to `create_recap` in `app/api/v1/endpoints/events.py`.
+5. `create_recap` validates match status (409 if not ended) then calls `recap_service.generate_recap` which invokes the Anthropic Claude API to generate a narrative + labeled highlights.
+6. The backend returns a `RecapResponse` JSON (with `fallback: true` when the Anthropic call fails).
+7. `api.js` resolves the promise; `recap.js` renders the recap screen into `#recapView`.
 
 **Static asset request:**
 
@@ -98,7 +98,7 @@ When implemented, the expected shape is standard OAuth 2.0 Authorization Code fl
 
 An in-process dict store (introduced by FEST-02) is the current persistence layer. It lives in `fanfest/backend/app/services/events_service.py` as three module-level Python dicts (`_events`, `_predictions`, `_attendees`), seeded with mock event data at import time. State persists for the lifetime of the running process but resets on server restart.
 
-No durable database or object store has been declared. All state is in-memory in module-level Python dicts across multiple service modules, and resets on server restart. The scaffolded `app/models/` directory remains an empty stub for future ORM models.
+No durable database or object store has been declared. All state is in-memory: match state and Hype Wall photos are held in module-level Python dicts in `services/match_state.py` and `services/photos_service.py` and reset on server restart. If persistence is added, the scaffolded `app/models/` and `app/schemas/` directories provide the intended placement.
 
 | Store | Technology | Status |
 |-------|-----------|--------|
