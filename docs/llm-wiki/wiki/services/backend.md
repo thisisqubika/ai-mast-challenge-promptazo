@@ -4,7 +4,7 @@ summary: >-
   The backend is a Python FastAPI server (port 8000) that acts as the sole API
   layer for the FanFest platform. It is responsible for serving the REST API
   consu...
-last_updated: '2026-06-19T16:01:37.120Z'
+last_updated: '2026-06-19T16:30:00.000Z'
 tags:
   - service
   - python
@@ -16,11 +16,15 @@ service_id: backend
 
 ## Purpose
 
-The backend is a Python FastAPI server (port 8000) that acts as the sole API layer for the FanFest platform. It is responsible for serving the REST API consumed by the [[frontend]], proxying all calls to external third-party services (Anthropic, Google), and owning the AI-generated event recap feature. At the time of scaffolding the backend is a complete directory skeleton with no implemented logic; all Python source files are empty stubs and `requirements.txt` is blank.
+The backend is a Python FastAPI server (port 8000) that acts as the sole API layer for the FanFest platform. It is responsible for serving the REST API consumed by the [[frontend]], proxying all calls to external third-party services (Anthropic, Google), and owning the AI-generated event recap feature. The backend is operational at the infra baseline: `app/main.py` has a working FastAPI application and `requirements.txt` declares pinned runtime dependencies.
 
 ## Public API / Surface
 
-(not determined by analysis) — no routes have been implemented yet. The intended pattern from `code-conventions` places all route handlers under `fanfest/backend/app/api/v1/endpoints/{domain}.py`, each domain in its own module, routers registered in `fanfest/backend/app/main.py` via `app.include_router(router)`. When routes exist, FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc`.
+| Method | Path | Response | Notes |
+|--------|------|----------|-------|
+| `GET` | `/health` | `{"status": "ok"}` (HTTP 200) | Infrastructure health probe; no auth required |
+
+The intended pattern for product routes places handlers under `fanfest/backend/app/api/v1/endpoints/{domain}.py`, each domain in its own module, routers registered in `fanfest/backend/app/main.py` via `app.include_router(router)`. The `/health` endpoint is an infra-only exception defined inline in `main.py`. FastAPI auto-generates OpenAPI docs at `/docs` and `/redoc` once the server is running.
 
 ## Internal Architecture
 
@@ -40,23 +44,21 @@ fanfest/backend/
 └── tests/                    # pytest test suite
 ```
 
-All subdirectories are empty stubs. No ORM, auth library, database client, or migration tool has been declared. The structure establishes placement conventions without constraining future implementation choices.
+`app/main.py` contains the live FastAPI app. `tests/test_health.py` is the first implemented test. Other subdirectories (`api/v1/endpoints/`, `core/`, `models/`, `schemas/`, `services/`) are still empty stubs. No ORM, auth library, database client, or migration tool has been declared. The structure establishes placement conventions without constraining future implementation choices.
 
 ## Request Lifecycle
 
-All backend Python files are 1-line empty stubs. No handlers, middleware, or routes exist. Intended lifecycle once implemented:
-
 1. HTTP request arrives at uvicorn on port 8000
-2. FastAPI routes to the matching handler in `api/v1/endpoints/{domain}.py`
-3. Handler calls into `services/` for business logic
+2. FastAPI routes to the matching handler (`GET /health` is inline in `main.py`; product routes will live in `api/v1/endpoints/{domain}.py`)
+3. Handler calls into `services/` for business logic (product routes only)
 4. Service calls external APIs (Anthropic, Google) using credentials from env vars
 5. Response serialized via Pydantic schema and returned
 
-CORS must be configured in `main.py` because the [[frontend]] runs on a separate origin (port 8080) with no reverse proxy in local development.
+CORS middleware is configured in `main.py` allowing `http://localhost:8080` (the [[frontend]] origin) because there is no reverse proxy in local development. `allow_credentials=True` is set with the explicit single origin.
 
 ## Data Layer
 
-(not determined by analysis) — no database, ORM, cache, or object store has been declared or configured. No DB client appears in `requirements.txt` (which is empty). Persistence layer is entirely unimplemented.
+(not determined by analysis) — no database, ORM, cache, or object store has been declared or configured. No DB client appears in `requirements.txt`. Persistence layer is entirely unimplemented.
 
 ## Configuration
 
@@ -93,6 +95,6 @@ The Anthropic integration generates a personalized narrative recap given event c
 
 **HTTPException for error paths** — error responses use `raise HTTPException(status_code=..., detail=...)` directly; silent exception swallowing (bare `except` returning an error dict) is explicitly prohibited by convention.
 
-**Dependency declaration before import** — because `requirements.txt` starts blank, any new dependency must be added there before importing the library. Importing an undeclared package fails in a fresh virtualenv.
+**Dependency declaration before import** — any new dependency must be declared in `requirements.txt` before importing the library. Importing an undeclared package fails in a fresh virtualenv or CI. Current declared deps: `fastapi>=0.110.0`, `uvicorn[standard]>=0.29.0`, `pytest>=8.0.0`, `httpx>=0.27.0`, `ruff>=0.4.0`.
 
-**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. No tests exist yet.
+**Testing via FastAPI TestClient** — tests live in `fanfest/backend/tests/test_{domain}.py`, use `fastapi.testclient.TestClient`, and mock external third-party APIs (Anthropic, Google) to avoid billing and flakiness. Shared fixtures go in `tests/conftest.py`. `test_health.py` is the first test file (covers `GET /health` 200 response and 404 for unknown paths). `pyproject.toml` sets `pythonpath = ["."]` so `from app.main import app` resolves when pytest runs from `fanfest/backend/`.
