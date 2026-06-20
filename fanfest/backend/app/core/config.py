@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     google_drive_folder_id: str = ""
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-6"
+    media_storage_backend: str = "mock"  # "mock" | "local" | "drive" | "s3"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

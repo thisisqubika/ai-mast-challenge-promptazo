@@ -242,11 +242,12 @@ $('rowRecap').addEventListener('click', (e) => {
   }
 });
 
+const livebar = document.querySelector('.live-bar');
 const liveCta = document.querySelector('.live-bar__cta');
 if (liveCta) {
   liveCta.addEventListener('click', () => {
-    if (typeof window.showEvent === 'function') {
-      window.showEvent('evt-001');
+    if (typeof window.performEstoyAqui === 'function') {
+      window.performEstoyAqui();
     }
   });
 }

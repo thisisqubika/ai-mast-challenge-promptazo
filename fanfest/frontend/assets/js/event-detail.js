@@ -1,10 +1,11 @@
-/* Event Detail (Previa) — FEST-05
-   Vanilla port of Tribuna Event Detail.dc.html (Previa state).
-   Mock data is inline; prediction/upload calls are mocked until backends land. */
+/* Event Detail (Previa) — FEST-05 / FEST-08
+   Hype Wall wired to real /media API. Upload modal with file + caption. */
+
+import { fetchMedia, uploadMedia, likeMedia } from './api.js';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 const edEvent = {
-  id: 'event_001',
+  id: 'evt-004',
   venueName: 'La Mona Sports Bar',
   venueDistance: '400m · Güemes',
   attending: '47 van a ir',
@@ -20,29 +21,23 @@ const edEvent = {
   },
 };
 
-const hypePosts = [
-  {
-    type: 'photo',
-    handle: '@juancruz_arg', initials: 'JC', avatarColor: '#7c3aed',
-    timeAgo: 'hace 5 min',
-    caption: '¡Llegando al fan fest! El ambiente está increíble 🔥🇦🇷',
-    likes: 24, comments: 3,
-  },
-  {
-    type: 'video',
-    handle: '@rp_mati', initials: 'RP', avatarColor: '#0ea5e9',
-    timeAgo: 'hace 12 min',
-    caption: 'El pantallón ya está listo 📺⚡',
-    duration: '0:28', likes: 61, comments: 8,
-  },
-  {
-    type: 'text',
-    handle: '@sofiaG', initials: 'SG', avatarColor: '#f59e0b',
-    timeAgo: 'hace 18 min',
-    caption: 'Alguien más yendo desde Nueva Córdoba? Busco con quien ir 🙋‍♀️',
-    likes: null, comments: 5,
-  },
-];
+// ── Hype Wall state ───────────────────────────────────────────────────────────
+let hypePosts = [];
+const edCurrentUser = { id: 'user_003', name: 'Carlos', handle: '@carlos_fan' };
+
+// ── Check-in state ────────────────────────────────────────────────────────────
+let edCheckedIn = false;
+
+async function _checkIn(eventId) {
+  try {
+    await fetch(`http://localhost:8000/api/v1/events/${eventId}/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: edCurrentUser.id, name: edCurrentUser.name }),
+    });
+    edCheckedIn = true;
+  } catch (_) {}
+}
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const edState = {
@@ -154,36 +149,73 @@ function renderPredictPanel() {
     </div>`;
 }
 
+const AVATAR_COLORS = ['#7c3aed','#0ea5e9','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4'];
+
+function _avatarColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function _initials(name) {
+  return (name || '?').replace(/^@/, '').split(/[\s_]/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
+}
+
+function _timeAgo(isoStr) {
+  const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+  if (diff < 60)   return 'hace un momento';
+  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
+  return `hace ${Math.floor(diff / 86400)} días`;
+}
+
 function renderHypePost(post) {
+  const handle = post.uploader_handle || post.handle || '@fan';
+  const name   = post.uploader_name  || handle;
+  const bg     = _avatarColor(handle);
+  const initials = _initials(handle);
+  const timeAgo  = post.uploaded_at ? _timeAgo(post.uploaded_at) : (post.timeAgo || '');
+  const likes    = post.likes_count  != null ? post.likes_count  : (post.likes  || 0);
+  const comments = post.comments     ? post.comments.length     : (post.comment_count || 0);
+  const mediaType = post.media_type || post.type || 'photo';
+  const caption   = post.caption || '';
+
   let mediaHtml = '';
-  if (post.type === 'photo') {
-    mediaHtml = `<div class="hype-post__media"><span class="hype-post__media-icon">🖼️</span></div>`;
-  } else if (post.type === 'video') {
+  if (mediaType === 'photo' && post.url && !post.url.startsWith('/mock')) {
+    mediaHtml = `<div class="hype-post__media"><img src="${post.url}" alt="media" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>`;
+  } else if (mediaType === 'video' && post.url && !post.url.startsWith('/mock')) {
     mediaHtml = `
       <div class="hype-post__media">
-        <span class="hype-post__media-icon">▶️</span>
-        <span class="hype-post__duration">${post.duration}</span>
+        <video src="${post.url}" controls style="width:100%;height:100%;object-fit:cover"></video>
       </div>`;
+  } else if (mediaType === 'video') {
+    mediaHtml = `<div class="hype-post__media"><span class="hype-post__media-icon">▶️</span></div>`;
+  } else {
+    mediaHtml = `<div class="hype-post__media"><span class="hype-post__media-icon">🖼️</span></div>`;
   }
-  const likeCount  = post.likes    != null ? `<span class="hype-post__action-count">${post.likes}</span>`    : '';
-  const commentCount = post.comments ? `<span class="hype-post__action-count">${post.comments}</span>` : '';
+
+  const likedByMe = post._likedByMe || false;
+
   return `
-    <div class="hype-post">
+    <div class="hype-post" data-media-id="${post.id || ''}">
       <div class="hype-post__header">
-        <div class="hype-post__avatar" style="background:${post.avatarColor}">${post.initials}</div>
+        <div class="hype-post__avatar" style="background:${bg}">${initials}</div>
         <div class="hype-post__meta">
-          <div class="hype-post__handle">${post.handle}</div>
-          <div class="hype-post__time">${post.timeAgo}</div>
+          <div class="hype-post__handle">${handle}</div>
+          <div class="hype-post__time">${timeAgo}</div>
         </div>
       </div>
       ${mediaHtml}
-      <div class="hype-post__caption">${post.caption}</div>
+      ${caption ? `<div class="hype-post__caption">${caption}</div>` : ''}
       <div class="hype-post__actions">
-        <button class="hype-post__action" type="button">
-          <span class="hype-post__action-icon">❤️</span>${likeCount}
+        <button class="hype-post__action hype-post__like-btn${likedByMe ? ' is-liked' : ''}"
+                type="button" data-media-id="${post.id || ''}">
+          <span class="hype-post__action-icon">${likedByMe ? '❤️' : '🤍'}</span>
+          <span class="hype-post__action-count hype-post__like-count">${likes}</span>
         </button>
         <button class="hype-post__action" type="button">
-          <span class="hype-post__action-icon">💬</span>${commentCount}
+          <span class="hype-post__action-icon">💬</span>
+          <span class="hype-post__action-count">${comments}</span>
         </button>
         <span class="hype-post__action-sep"></span>
         <button class="hype-post__action" type="button">
@@ -193,9 +225,39 @@ function renderHypePost(post) {
     </div>`;
 }
 
+function renderUploadModal() {
+  return `
+    <div class="ed-upload-modal" id="edUploadModal" hidden>
+      <div class="ed-upload-modal__backdrop" id="edUploadBackdrop"></div>
+      <div class="ed-upload-modal__sheet">
+        <div class="ed-upload-modal__title">Subir foto / video</div>
+        <label class="ed-upload-modal__file-label" for="edMediaInput">
+          <span id="edMediaLabel">📎 Elegir archivo</span>
+          <input type="file" id="edMediaInput" accept="image/jpeg,image/png,image/gif,video/mp4,video/quicktime" style="display:none">
+        </label>
+        <textarea id="edCaptionInput" class="ed-upload-modal__caption"
+          placeholder="Escribe una descripción... (máx. 280 caracteres)" maxlength="280" rows="3"></textarea>
+        <button class="ed-upload-modal__submit" id="edUploadSubmit" type="button">
+          Publicar 🚀
+        </button>
+        <button class="ed-upload-modal__cancel" id="edUploadCancel" type="button">
+          Cancelar
+        </button>
+        <div class="ed-upload-modal__error" id="edUploadError" hidden></div>
+      </div>
+    </div>`;
+}
+
 function renderEventDetail() {
   const container = $ed('eventDetailView');
   if (!container) return;
+  const feedHtml = hypePosts.length
+    ? hypePosts.map(renderHypePost).join('')
+    : `<div class="ed-hype-empty">
+         <div style="font-size:22px;margin-bottom:6px">📸</div>
+         <div style="font-size:11px;color:var(--muted)">Sé el primero en subir una foto o video</div>
+       </div>`;
+
   container.innerHTML =
     renderBackRow(edEvent) +
     renderMatchHeader(edEvent.match) +
@@ -204,10 +266,10 @@ function renderEventDetail() {
     renderPredictPanel() +
     `<div class="ed-divider">
        <div class="ed-divider__line"></div>
-       <div class="ed-divider__label">Previa</div>
+       <div class="ed-divider__label">Hype Wall</div>
        <div class="ed-divider__line"></div>
      </div>` +
-    hypePosts.map(renderHypePost).join('') +
+    feedHtml +
     `<div class="ed-empty-state">
        <div class="ed-empty-state__icon">⚽</div>
        <div class="ed-empty-state__text">
@@ -215,16 +277,26 @@ function renderEventDetail() {
          Inicio · Goles · Entretiempo · Fin
        </div>
      </div>` +
-    `<div class="ed-float-cta">
-       <label class="ed-float-cta__btn" for="edPhotoInput">
-         📸 Subir foto / video
-       </label>
-       <input type="file" id="edPhotoInput" accept="image/*,video/*" style="display:none">
-     </div>`;
+    (edCheckedIn
+      ? `<div class="ed-float-cta">
+           <button class="ed-float-cta__btn" id="edUploadCta" type="button">
+             📸 Subir foto / video
+           </button>
+         </div>` + renderUploadModal()
+      : '');
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-function navigateToEventDetail(venue) {
+async function loadHypeFeed() {
+  try {
+    const data = await fetchMedia(edEvent.id);
+    hypePosts = data.media || [];
+  } catch (_) {
+    hypePosts = [];
+  }
+}
+
+async function navigateToEventDetail(venue) {
   edState.showPredict = false;
   edState.homeScore   = 0;
   edState.awayScore   = 0;
@@ -235,12 +307,14 @@ function navigateToEventDetail(venue) {
     edEvent.venueDistance = venue.distance;
     edEvent.attending     = venue.attending;
     edEvent.amenities     = venue.amenities;
+    if (venue.id) edEvent.id = venue.id;
   }
 
   const homeScroll   = document.querySelector('.phone > .scroll');
   const detailView   = $ed('eventDetailView');
   if (homeScroll)  homeScroll.hidden  = true;
   if (detailView) { detailView.hidden = false; detailView.scrollTop = 0; }
+  await loadHypeFeed();
   renderEventDetail();
 }
 
@@ -251,10 +325,66 @@ function navigateToHome() {
   if (detailView)  detailView.hidden  = true;
 }
 
+// ── Upload modal state ────────────────────────────────────────────────────────
+let _uploadFile = null;
+
+function _openUploadModal() {
+  const modal = $ed('edUploadModal');
+  if (modal) modal.hidden = false;
+}
+
+function _closeUploadModal() {
+  const modal = $ed('edUploadModal');
+  if (modal) modal.hidden = true;
+  _uploadFile = null;
+  const label = $ed('edMediaLabel');
+  if (label) label.textContent = '📎 Elegir archivo';
+  const caption = $ed('edCaptionInput');
+  if (caption) caption.value = '';
+  const err = $ed('edUploadError');
+  if (err) { err.hidden = true; err.textContent = ''; }
+}
+
+async function _submitUpload() {
+  if (!_uploadFile) return;
+  const caption = ($ed('edCaptionInput') || {}).value || '';
+  const errEl = $ed('edUploadError');
+  try {
+    const post = await uploadMedia(
+      edEvent.id, _uploadFile,
+      edCurrentUser.id, edCurrentUser.name, edCurrentUser.handle,
+      caption || null,
+    );
+    _closeUploadModal();
+    hypePosts.unshift(post);
+    renderEventDetail();
+  } catch (err) {
+    const msg = err && err.detail
+      ? (Array.isArray(err.detail) ? err.detail[0].msg : err.detail)
+      : 'Error al subir. Intenta de nuevo.';
+    if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+  }
+}
+
 // ── Event delegation ──────────────────────────────────────────────────────────
-$ed('eventDetailView').addEventListener('click', (e) => {
+$ed('eventDetailView').addEventListener('click', async (e) => {
   if (e.target.closest('#edBackBtn')) {
     navigateToHome();
+    return;
+  }
+
+  if (e.target.closest('#edUploadCta')) {
+    _openUploadModal();
+    return;
+  }
+
+  if (e.target.closest('#edUploadCancel') || e.target.closest('#edUploadBackdrop')) {
+    _closeUploadModal();
+    return;
+  }
+
+  if (e.target.closest('#edUploadSubmit')) {
+    await _submitUpload();
     return;
   }
 
@@ -281,17 +411,47 @@ $ed('eventDetailView').addEventListener('click', (e) => {
     return;
   }
 
+  const likeBtn = e.target.closest('.hype-post__like-btn');
+  if (likeBtn) {
+    const mediaId = likeBtn.dataset.mediaId;
+    if (!mediaId) return;
+    try {
+      const result = await likeMedia(edEvent.id, mediaId, edCurrentUser.id);
+      const post = hypePosts.find(p => p.id === mediaId);
+      if (post) {
+        post.likes_count = result.likes_count;
+        post._likedByMe  = result.liked_by_me;
+      }
+      const countEl = likeBtn.querySelector('.hype-post__like-count');
+      const iconEl  = likeBtn.querySelector('.hype-post__action-icon');
+      if (countEl) countEl.textContent = result.likes_count;
+      if (iconEl)  iconEl.textContent  = result.liked_by_me ? '❤️' : '🤍';
+      likeBtn.classList.toggle('is-liked', result.liked_by_me);
+    } catch (_) { /* optimistic update failed silently */ }
+    return;
+  }
 });
 
 $ed('eventDetailView').addEventListener('change', (e) => {
-  if (e.target.id === 'edPhotoInput') {
+  if (e.target.id === 'edMediaInput') {
     const file = e.target.files && e.target.files[0];
     if (file) {
-      console.log('[FEST-05] Upload selected:', file.name, '— wired to API when backend ready');
-      e.target.value = '';
+      _uploadFile = file;
+      const label = $ed('edMediaLabel');
+      if (label) label.textContent = `📎 ${file.name}`;
     }
   }
 });
 
 // Exposed for main.js navigation
 window.navigateToEventDetail = navigateToEventDetail;
+
+window.performEstoyAqui = async () => {
+  await navigateToEventDetail(null);
+  if (!edCheckedIn) {
+    await _checkIn(edEvent.id);
+    renderEventDetail();
+  }
+  const livebar = document.querySelector('.live-bar');
+  if (livebar) livebar.hidden = true;
+};

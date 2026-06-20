@@ -62,6 +62,31 @@ class CheckinResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class CommentOut(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    user_handle: str
+    text: str
+    created_at: datetime
+
+
+class CommentRequest(BaseModel):
+    user_id: str
+    user_name: str = ""
+    user_handle: str = ""
+    text: str = Field(min_length=1, max_length=280)
+
+
+class LikeRequest(BaseModel):
+    user_id: str
+
+
+class LikeResponse(BaseModel):
+    likes_count: int
+    liked_by_me: bool
+
+
 class Goal(BaseModel):
     player: str
     team: str
@@ -83,12 +108,24 @@ class MatchState(BaseModel):
 class Photo(BaseModel):
     id: str
     url: str
+    uploader_id: str = ""
     uploader_name: str
+    uploader_handle: str = ""
+    uploader_avatar_url: str | None = None
     uploaded_at: datetime
+    media_type: str = "photo"
+    caption: str | None = None
+    likes_count: int = 0
+    liked_by: list[str] = Field(default_factory=list, exclude=True)
+    comments: list[CommentOut] = Field(default_factory=list)
 
 
 class PhotoList(BaseModel):
     photos: list[Photo]
+
+
+class MediaList(BaseModel):
+    media: list[Photo]
 
 
 class PhotoUploadForm(BaseModel):

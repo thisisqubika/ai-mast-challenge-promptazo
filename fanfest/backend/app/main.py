@@ -1,5 +1,8 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.endpoints import events
 from app.core.config import settings
@@ -14,6 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve locally uploaded media files — must be mounted before routers
+os.makedirs("media", exist_ok=True)
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.include_router(events.router, prefix="/api/v1")
 
