@@ -90,10 +90,9 @@ def get_event_detail(event_id: str) -> EventDetail:
     """Return full detail for a single event."""
     event = events_service.get_event(event_id)
 
-    attendee_set = events_service._attendees.get(event_id, set())
     attendees = [
-        AttendeeOut(user_id=uid, name=uid, checked_in=True)
-        for uid in attendee_set
+        AttendeeOut(user_id=a["user_id"], name=a["name"], checked_in=True)
+        for a in events_service.get_attendees(event_id)
     ]
 
     return EventDetail(
