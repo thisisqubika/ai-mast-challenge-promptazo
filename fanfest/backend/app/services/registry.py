@@ -1,13 +1,19 @@
-"""In-memory check-in registry seeded with demo users."""
+"""Check-in registry backed by the registrations DB table."""
 
-from app.data.seed import FANS
-
-_checked_in: dict[str, str] = {f.user_id: f.name for f in FANS}
+from app.db.database import get_session
+from app.db.models import RegistrationModel
 
 
 def is_checked_in(user_id: str) -> bool:
-    return user_id in _checked_in
+    with get_session() as db:
+        return (
+            db.query(RegistrationModel)
+            .filter_by(user_id=user_id, checked_in=True)
+            .count()
+            > 0
+        )
 
 
 def register(user_id: str, name: str) -> None:
-    _checked_in[user_id] = name
+    # No-op: checkin_user in events_service persists directly to DB.
+    pass

@@ -8,6 +8,10 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.55; }
 }
+@keyframes liveGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.5), 0 0 0 1px rgba(239,68,68,0.4); }
+  50%       { box-shadow: 0 0 22px rgba(239,68,68,0.9), 0 0 0 1px rgba(239,68,68,0.7); }
+}
 
 /* ── Back row ─────────────────────────────────────────────────────────────── */
 .ed-back {
@@ -35,6 +39,37 @@
   font-size: 11px; font-weight: 800; color: var(--accent);
   letter-spacing: 1.8px; text-transform: uppercase;
   animation: previaGlow 2s ease-in-out infinite;
+  display: flex; align-items: center; gap: 6px;
+}
+.ed-match__previa-pill--live {
+  background: rgba(239,68,68,0.1); border-color: #ef4444; color: #ef4444;
+  animation: liveGlow 1.5s ease-in-out infinite;
+}
+.ed-match__previa-pill--ended {
+  background: rgba(100,116,139,0.12); border-color: var(--muted); color: var(--muted);
+  animation: none; letter-spacing: 0.5px;
+}
+/* tiny live dot inside the pill */
+.ed-pill-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; flex: none; }
+
+/* goals listed under each team column */
+.ed-match__team-goals {
+  display: flex; flex-direction: column; gap: 2px; margin-top: 6px;
+}
+.ed-match__team-goal {
+  font-size: 10px; font-weight: 500; color: var(--muted); line-height: 1.4;
+}
+
+/* recap CTA before Hype Wall */
+.ed-recap-cta {
+  margin-bottom: 14px;
+}
+.ed-recap-cta__btn {
+  width: 100%; height: 44px; border-radius: 14px;
+  border: 1.5px solid rgba(16,185,129,0.35);
+  background: rgba(16,185,129,0.07); color: var(--accent);
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .ed-match__teams {
   display: flex; align-items: center; justify-content: space-around;
@@ -51,7 +86,7 @@
 .ed-match__team-name { font-size: 13px; font-weight: 700; color: var(--ink); }
 .ed-match__score {
   flex: none; font-size: 34px; font-weight: 900; color: var(--soft);
-  letter-spacing: 1px; width: 76px; text-align: center;
+  letter-spacing: 1px; min-width: 96px; text-align: center; white-space: nowrap;
 }
 .ed-match__countdown {
   font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 5px;
@@ -187,12 +222,12 @@
 .ed-empty-state__icon { font-size: 22px; margin-bottom: 6px; }
 .ed-empty-state__text { font-size: 11px; font-weight: 500; color: var(--muted); line-height: 1.7; }
 
-/* ── Floating CTA ─────────────────────────────────────────────────────────── */
-.ed-float-cta {
-  position: sticky; bottom: 0;
-  margin: 0 -20px; padding: 48px 20px 16px;
+/* ── Floating upload CTA — phone-level absolute, above bottomnav ──────────── */
+#edFloatCta {
+  position: absolute; left: 0; right: 0; bottom: 84px;
+  padding: 36px 20px 12px;
   background: linear-gradient(to top, var(--screen) 55%, transparent);
-  pointer-events: none;
+  pointer-events: none; z-index: 40;
 }
 .ed-float-cta__btn {
   width: 100%; height: 48px; border-radius: 16px; border: none;

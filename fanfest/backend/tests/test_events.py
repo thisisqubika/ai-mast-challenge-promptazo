@@ -21,11 +21,9 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def reset_fest02_state():
-    """Reset FEST-02 in-process state before every test."""
-    events_service._predictions.clear()
-    events_service._attendees[EVENT_ID] = set()
-    events_service._events[EVENT_ID]["match_start_time"] = datetime(
-        2030, 1, 1, 18, 0, tzinfo=timezone.utc
+    """Ensure evt-001 has a future match_start_time so predictions are open."""
+    events_service.set_match_start_time(
+        EVENT_ID, datetime(2030, 1, 1, 18, 0, tzinfo=timezone.utc)
     )
     yield
 
@@ -59,7 +57,7 @@ def test_submit_prediction_persisted_and_returned():
     assert data["event_id"] == EVENT_ID
     assert data["home_score"] == 2
     assert data["away_score"] == 1
-    assert ("user-1", EVENT_ID) in events_service._predictions
+    assert events_service.has_prediction("user-1", EVENT_ID)
 
 
 def test_checkin_marks_user_present():
@@ -70,7 +68,7 @@ def test_checkin_marks_user_present():
     assert data["user_id"] == "user-2"
     assert data["event_id"] == EVENT_ID
     assert data["checked_in"] is True
-    assert "user-2" in events_service._attendees[EVENT_ID]
+    assert events_service.is_attendee(EVENT_ID, "user-2")
 
 
 # ---------------------------------------------------------------------------
@@ -79,8 +77,8 @@ def test_checkin_marks_user_present():
 
 
 def test_prediction_locked_after_match_start():
-    events_service._events[EVENT_ID]["match_start_time"] = datetime(
-        2000, 1, 1, tzinfo=timezone.utc
+    events_service.set_match_start_time(
+        EVENT_ID, datetime(2000, 1, 1, tzinfo=timezone.utc)
     )
     payload = {"user_id": "user-1", "name": "Alice", "home_score": 1, "away_score": 0}
     response = client.post(f"/api/v1/events/{EVENT_ID}/predictions", json=payload)
@@ -107,7 +105,7 @@ def test_prediction_overwrite_before_match_start():
     data = response.json()
     assert data["home_score"] == 3
     assert data["away_score"] == 2
-    assert len([k for k in events_service._predictions if k[0] == "user-1"]) == 1
+    assert events_service.count_predictions_for_user("user-1") == 1
 
 
 # ---------------------------------------------------------------------------

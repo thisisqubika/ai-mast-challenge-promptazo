@@ -1,25 +1,49 @@
 /* Event Detail (Previa) — FEST-05 / FEST-08
    Hype Wall wired to real /media API. Upload modal with file + caption. */
 
-import { fetchMedia, uploadMedia, likeMedia } from './api.js';
+import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, submitPrediction } from './api.js';
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Event state (populated from API on navigate) ───────────────────────────────
 const edEvent = {
   id: 'evt-004',
-  venueName: 'La Mona Sports Bar',
-  venueDistance: '400m · Güemes',
-  attending: '47 van a ir',
-  amenities: [
-    ['🍔', 'Foodtruck'], ['🐾', 'Pet-friendly'], ['📺', 'Pantalla grande'],
-    ['🍺', 'Cervezas'], ['🎵', 'Música en vivo'],
-  ],
-  match: {
-    home: 'Argentina', homeFlag: '🇦🇷',
-    away: 'México',    awayFlag: '🇲🇽',
-    competition: 'FIFA World Cup 2026 · Grupo C · Jornada 2',
-    countdownLabel: 'Comienza en 10 min',
-  },
+  isPast: false,
+  attendeeCount: 0,
+  matchStatus: 'pre',     // pre | live | ended
+  matchHomeScore: 0,
+  matchAwayScore: 0,
+  matchGoals: [],
+  venueName: '',
+  venueDistance: '',
+  attending: '',
+  amenities: [],
+  match: { home: '', homeFlag: '', away: '', awayFlag: '', competition: '', countdownLabel: '' },
 };
+
+function _computeCountdown(kickoffIso) {
+  const diff = Math.floor((new Date(kickoffIso) - Date.now()) / 1000);
+  if (diff <= 0) return null;
+  if (diff < 3600) return `Comienza en ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `Comienza en ${Math.floor(diff / 3600)} h`;
+  return `Comienza en ${Math.floor(diff / 86400)} días`;
+}
+
+function _applyEventData(data) {
+  edEvent.isPast        = data.status === 'past';
+  edEvent.attendeeCount = data.attendee_count || 0;
+  edCheckedIn = !!(data.attendees && data.attendees.some(a => a.user_id === edCurrentUser.id));
+  edEvent.venueName     = data.venue_name || '';
+  edEvent.venueDistance = data.venue_distance || '';
+  edEvent.attending     = data.attendee_count ? `${data.attendee_count} van a ir` : '';
+  edEvent.amenities     = data.amenities || [];
+  edEvent.match = {
+    home:           data.home_team || '',
+    homeFlag:       data.home_flag || '',
+    away:           data.away_team || '',
+    awayFlag:       data.away_flag || '',
+    competition:    data.competition || '',
+    countdownLabel: _computeCountdown(data.kickoff_iso) || '',
+  };
+}
 
 // ── Hype Wall state ───────────────────────────────────────────────────────────
 let hypePosts = [];
@@ -67,40 +91,82 @@ function renderBackRow(event) {
 }
 
 function renderMatchHeader(match) {
+  const ms = edEvent.matchStatus;
+
+  let pillHtml;
+  if (ms === 'live') {
+    pillHtml = `<div class="ed-match__previa-pill ed-match__previa-pill--live">
+      <div class="ed-pill-dot"></div>LIVE
+    </div>`;
+  } else if (ms === 'ended' || edEvent.isPast) {
+    pillHtml = `<div class="ed-match__previa-pill ed-match__previa-pill--ended">Finalizado</div>`;
+  } else {
+    pillHtml = `<div class="ed-match__previa-pill">PREVIA</div>`;
+  }
+
+  const showScore = ms === 'live' || ms === 'ended';
+  const scoreHtml = showScore
+    ? `${edEvent.matchHomeScore} – ${edEvent.matchAwayScore}`
+    : '– : –';
+
+  const homeGoals = showScore ? edEvent.matchGoals.filter(g => g.team === match.home) : [];
+  const awayGoals = showScore ? edEvent.matchGoals.filter(g => g.team === match.away) : [];
+
+  const _lastName = (name) => name.split(' ').pop();
+  const _goalItems = (goals) => goals.map(g =>
+    `<div class="ed-match__team-goal">⚽ ${g.minute}' ${_lastName(g.player)}</div>`
+  ).join('');
+
+  const homeGoalsHtml = homeGoals.length
+    ? `<div class="ed-match__team-goals">${_goalItems(homeGoals)}</div>` : '';
+  const awayGoalsHtml = awayGoals.length
+    ? `<div class="ed-match__team-goals">${_goalItems(awayGoals)}</div>` : '';
+
+  const countdownHtml = ms === 'pre' && match.countdownLabel
+    ? `<div class="ed-match__countdown">⏱ ${match.countdownLabel}</div>`
+    : '';
+
   return `
     <div class="ed-match">
-      <div class="ed-match__status">
-        <div class="ed-match__previa-pill">PREVIA</div>
-      </div>
+      <div class="ed-match__status">${pillHtml}</div>
       <div class="ed-match__teams">
         <div class="ed-match__team">
           <div class="ed-match__team-flag">${match.homeFlag}</div>
           <div class="ed-match__team-name">${match.home}</div>
+          ${homeGoalsHtml}
         </div>
-        <div class="ed-match__score">– : –</div>
+        <div class="ed-match__score">${scoreHtml}</div>
         <div class="ed-match__team">
           <div class="ed-match__team-flag">${match.awayFlag}</div>
           <div class="ed-match__team-name">${match.away}</div>
+          ${awayGoalsHtml}
         </div>
       </div>
-      <div class="ed-match__countdown">⏱ ${match.countdownLabel}</div>
+      ${countdownHtml}
       <div class="ed-match__competition">${match.competition}</div>
     </div>`;
 }
 
 function renderEventInfo(event) {
   const chips = event.amenities.map(([i, l]) => edChip(i, l)).join('');
+  const attendLabel = edEvent.isPast
+    ? `${edEvent.attendeeCount} personas asistieron`
+    : edEvent.attendeeCount ? `${edEvent.attendeeCount} van a ir` : '';
+  const attendHtml = attendLabel
+    ? `<div class="ed-info__attending">👥 ${attendLabel}</div>`
+    : '';
   return `
     <div class="ed-info">
       <div class="ed-info__venue">${event.venueName}</div>
       <div class="ed-info__loc"><span>📍</span><span>${event.venueDistance}</span></div>
-      <div class="ed-info__attending">👥 ${event.attending}</div>
+      ${attendHtml}
       <div class="ed-info__chips">${chips}</div>
     </div>`;
 }
 
 function renderActionButtons() {
-  const predictOpen = edState.showPredict && !edState.predictSent;
+  if (edEvent.isPast || edState.predictSent) return '';
+  const predictOpen = edState.showPredict;
   return `
     <div class="ed-actions">
       <button class="ed-btn ed-btn--predict${predictOpen ? ' is-open' : ''}"
@@ -116,7 +182,7 @@ function renderPredictPanel() {
       <div class="ed-predict-confirmed">
         <span class="ed-predict-confirmed__icon">✅</span>
         <span class="ed-predict-confirmed__text">
-          Predicción enviada · ${edEvent.match.home} ${edState.homeScore} – ${edState.awayScore} ${edEvent.match.away}
+          Predicción · ${edEvent.match.home} ${edState.homeScore} – ${edState.awayScore} ${edEvent.match.away}
         </span>
       </div>`;
   }
@@ -225,6 +291,16 @@ function renderHypePost(post) {
     </div>`;
 }
 
+function renderRecapBtn() {
+  if (!edEvent.isPast) return '';
+  return `
+    <div class="ed-recap-cta">
+      <button class="ed-recap-cta__btn" id="edRecapBtn" type="button">
+        ✨ Ver crónica del partido
+      </button>
+    </div>`;
+}
+
 function renderUploadModal() {
   return `
     <div class="ed-upload-modal" id="edUploadModal" hidden>
@@ -264,27 +340,45 @@ function renderEventDetail() {
     renderEventInfo(edEvent) +
     renderActionButtons() +
     renderPredictPanel() +
+    renderRecapBtn() +
     `<div class="ed-divider">
        <div class="ed-divider__line"></div>
        <div class="ed-divider__label">Hype Wall</div>
        <div class="ed-divider__line"></div>
      </div>` +
     feedHtml +
-    `<div class="ed-empty-state">
-       <div class="ed-empty-state__icon">⚽</div>
-       <div class="ed-empty-state__text">
-         Los eventos del partido aparecerán aquí<br>
-         Inicio · Goles · Entretiempo · Fin
-       </div>
-     </div>` +
-    (edCheckedIn
-      ? `<div class="ed-float-cta">
-           <button class="ed-float-cta__btn" id="edUploadCta" type="button">
-             📸 Subir foto / video
-           </button>
-         </div>` + renderUploadModal()
-      : '');
+    (hypePosts.length === 0
+      ? `<div class="ed-empty-state">
+           <div class="ed-empty-state__icon">⚽</div>
+           <div class="ed-empty-state__text">
+             Los eventos del partido aparecerán aquí<br>
+             Inicio · Goles · Entretiempo · Fin
+           </div>
+         </div>`
+      : '') +
+    renderUploadModal();
+
+  _updateFloatCta();
 }
+
+// ── Phone-level float CTA ─────────────────────────────────────────────────────
+function _updateFloatCta() {
+  const el = document.getElementById('edFloatCta');
+  if (!el) return;
+  if (!edEvent.isPast && edCheckedIn) {
+    el.innerHTML = `<button class="ed-float-cta__btn" id="edUploadCta" type="button">
+      📸 Subir foto / video
+    </button>`;
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+    el.innerHTML = '';
+  }
+}
+
+document.getElementById('edFloatCta').addEventListener('click', (e) => {
+  if (e.target.closest('#edUploadCta')) _openUploadModal();
+});
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 async function loadHypeFeed() {
@@ -297,21 +391,59 @@ async function loadHypeFeed() {
 }
 
 async function navigateToEventDetail(venue) {
-  edState.showPredict = false;
-  edState.homeScore   = 0;
-  edState.awayScore   = 0;
-  edState.predictSent = false;
+  edState.showPredict     = false;
+  edState.homeScore       = 0;
+  edState.awayScore       = 0;
+  edState.predictSent     = false;
+  edEvent.isPast          = false;
+  edCheckedIn             = false;
 
-  if (venue) {
-    edEvent.venueName     = venue.name;
-    edEvent.venueDistance = venue.distance;
-    edEvent.attending     = venue.attending;
-    edEvent.amenities     = venue.amenities;
-    if (venue.id) edEvent.id = venue.id;
+  // Restore a previously submitted prediction for this event
+  if (venue && venue.id) {
+    const saved = localStorage.getItem(`pred_${venue.id}`);
+    if (saved) {
+      try {
+        const { homeScore, awayScore } = JSON.parse(saved);
+        edState.homeScore   = homeScore;
+        edState.awayScore   = awayScore;
+        edState.predictSent = true;
+      } catch (_) {}
+    }
+  }
+  edEvent.matchStatus     = 'pre';
+  edEvent.matchHomeScore  = 0;
+  edEvent.matchAwayScore  = 0;
+  edEvent.matchGoals      = [];
+  edEvent.attendeeCount   = 0;
+
+  if (venue && venue.id) edEvent.id = venue.id;
+
+  try {
+    const data = await getEventDetail(edEvent.id);
+    _applyEventData(data);
+  } catch (_) {
+    if (venue) {
+      edEvent.venueName     = venue.name     || edEvent.venueName;
+      edEvent.venueDistance = venue.distance || edEvent.venueDistance;
+      edEvent.attending     = venue.attending || edEvent.attending;
+      edEvent.amenities     = venue.amenities || edEvent.amenities;
+      edEvent.isPast        = venue.status === 'past';
+    }
   }
 
-  const homeScroll   = document.querySelector('.phone > .scroll');
-  const detailView   = $ed('eventDetailView');
+  try {
+    const ms = await fetchMatchState(edEvent.id);
+    edEvent.matchStatus    = ms.status;
+    edEvent.matchHomeScore = ms.home_score;
+    edEvent.matchAwayScore = ms.away_score;
+    edEvent.matchGoals     = ms.goals || [];
+  } catch (_) {
+    // match state unavailable — pill will show based on event status
+    if (edEvent.isPast) edEvent.matchStatus = 'ended';
+  }
+
+  const homeScroll = document.querySelector('.phone > .scroll');
+  const detailView = $ed('eventDetailView');
   if (homeScroll)  homeScroll.hidden  = true;
   if (detailView) { detailView.hidden = false; detailView.scrollTop = 0; }
   await loadHypeFeed();
@@ -321,8 +453,10 @@ async function navigateToEventDetail(venue) {
 function navigateToHome() {
   const homeScroll = document.querySelector('.phone > .scroll');
   const detailView = $ed('eventDetailView');
+  const floatCta   = document.getElementById('edFloatCta');
   if (homeScroll)  homeScroll.hidden  = false;
   if (detailView)  detailView.hidden  = true;
+  if (floatCta)  { floatCta.hidden = true; floatCta.innerHTML = ''; }
 }
 
 // ── Upload modal state ────────────────────────────────────────────────────────
@@ -373,6 +507,13 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
     return;
   }
 
+  if (e.target.closest('#edRecapBtn')) {
+    if (typeof window.navigateToRecap === 'function') {
+      window.navigateToRecap(edEvent.id);
+    }
+    return;
+  }
+
   if (e.target.closest('#edUploadCta')) {
     _openUploadModal();
     return;
@@ -408,6 +549,19 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
     edState.predictSent = true;
     edState.showPredict = false;
     renderEventDetail();
+    // Persist to DB and localStorage so state survives navigation
+    try {
+      await submitPrediction(edEvent.id, {
+        userId: edCurrentUser.id,
+        name: edCurrentUser.name,
+        homeScore: edState.homeScore,
+        awayScore: edState.awayScore,
+      });
+    } catch (_) {}
+    localStorage.setItem(`pred_${edEvent.id}`, JSON.stringify({
+      homeScore: edState.homeScore,
+      awayScore: edState.awayScore,
+    }));
     return;
   }
 
@@ -447,11 +601,12 @@ $ed('eventDetailView').addEventListener('change', (e) => {
 window.navigateToEventDetail = navigateToEventDetail;
 
 window.performEstoyAqui = async () => {
-  await navigateToEventDetail(null);
+  const livebar = document.querySelector('.live-bar');
+  const eventId = (livebar && livebar.dataset.eventId) ? livebar.dataset.eventId : edEvent.id;
+  await navigateToEventDetail({ id: eventId });
   if (!edCheckedIn) {
     await _checkIn(edEvent.id);
     renderEventDetail();
   }
-  const livebar = document.querySelector('.live-bar');
   if (livebar) livebar.hidden = true;
 };

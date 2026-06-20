@@ -1,10 +1,10 @@
-/* Tribuna Home — vanilla port of Tribuna Home.dc.html
-   Mock data is inline (Feature 01: discovery feed, mocked dataset). */
+/* Tribuna Home — vanilla JS home feed.
+   Seleccion, Upcoming, and Recap sections are loaded from the real API. */
 
 // ── State ──────────────────────────────────────────────────────────────────
 const state = { activeTab: 'inicio', activeCategory: 'fifa26' };
 
-// ── Data ───────────────────────────────────────────────────────────────────
+// ── Static data ─────────────────────────────────────────────────────────────
 const categories = [
   { id: 'fifa26',   label: 'FIFA 26',   icon: 'ti ti-trophy' },
   { id: 'futbol',   label: 'Fútbol',    icon: 'ti ti-ball-football' },
@@ -14,16 +14,6 @@ const categories = [
   { id: 'cultura',  label: 'Cultura',   icon: 'ti ti-palette' },
   { id: 'otros',    label: 'Otros',     icon: 'ti ti-sparkles' },
 ];
-
-const seleccionVenues = [
-  { name: 'La Mona Sports Bar', distance: '400m · Güemes',
-    amenities: [['🍔', 'Foodtruck'], ['🐾', 'Pet-friendly'], ['📺', 'Pantalla']], attending: '34 van a ir' },
-  { name: 'Terraza El Cerro', distance: '1.2km · Nueva Córdoba',
-    amenities: [['🍺', 'Cervezas'], ['🎵', 'Música'], ['📺', 'Pantalla']], attending: '21 van a ir' },
-  { name: 'Plaza San Martín', distance: '800m · Centro',
-    amenities: [['📺', 'Pantalla gigante'], ['🍔', 'Foodtruck']], attending: '56 van a ir' },
-];
-const seleccionAvatars = [['JL', '#7c3aed'], ['RP', '#0ea5e9'], ['SG', '#f59e0b']];
 
 const worldCards = [
   { isLive: false, home: 'Brasil', homeFlag: '🇧🇷', away: 'França', awayFlag: '🇫🇷',
@@ -40,42 +30,9 @@ const worldCards = [
 // Recap cards — loaded from API; static array is a render-before-fetch placeholder
 let recapCards = [];
 
-const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-function _fmtDate(iso) {
-  const d = new Date(iso);
-  return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
-
-async function loadRecapCards() {
-  try {
-    const res = await fetch('http://localhost:8000/api/v1/events?status=past');
-    if (!res.ok) throw new Error('api error');
-    const events = await res.json();
-    recapCards = events.map((e) => ({
-      id: e.id,
-      homeFlag: e.home_flag,
-      oppFlag: e.away_flag,
-      result: `${e.home_abbr} ${e.home_score ?? '?'}–${e.away_score ?? '?'} ${e.away_abbr}`,
-      stage: _fmtDate(e.kickoff_iso),
-      photos: String(e.photo_count),
-    }));
-    renderRecap();
-  } catch (_) {
-    // backend unavailable — section stays empty
-  }
-}
-
-const upcomingCards = [
-  { home: 'España', homeFlag: '🇪🇸', away: 'Alemania', awayFlag: '🇩🇪',
-    date: '24 jun', kickoff: '18:00', countdown: 'en 2 días', venue: 'Stadium Bar Palermo', distance: '2.3km',
-    amenities: [['📺', 'Pantalla'], ['🍺', 'Cervezas']] },
-  { home: 'Inglaterra', homeFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', away: 'Francia', awayFlag: '🇫🇷',
-    date: '25 jun', kickoff: '21:00', countdown: 'en 3 días', venue: 'Fan Fest Parque Sarmiento', distance: '1.5km',
-    amenities: [['🎶', 'DJ'], ['🍔', 'Foodtruck']] },
-  { home: 'Argentina', homeFlag: '🇦🇷', away: 'Polonia', awayFlag: '🇵🇱',
-    date: '26 jun', kickoff: '18:00', countdown: 'en 4 días', venue: 'La Mona Sports Bar', distance: '400m',
-    amenities: [['🍔', 'Foodtruck'], ['🐾', 'Pet-friendly']] },
-];
+// Events cached for live-bar registration logic
+let _seleccionEvents = [];
+let _upcomingEvents  = [];
 
 const navIcons = {
   inicio:  '<svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
@@ -92,10 +49,44 @@ const navTabs = [
   { id: 'perfil', label: 'Perfil' },
 ];
 
+// ── Date / time helpers ──────────────────────────────────────────────────────
+const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+function _fmtDate(iso) {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+function _fmtShortDate(iso) {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]}`;
+}
+
+function _fmtTime(iso) {
+  const d = new Date(iso);
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+function _fmtCountdown(iso) {
+  const diffDays = Math.floor((new Date(iso) - Date.now()) / 86400000);
+  if (diffDays < 0) return null;
+  if (diffDays === 0) return 'Hoy';
+  if (diffDays === 1) return 'Mañana';
+  return `en ${diffDays} días`;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 const tags = (list) => `<div class="tags">${list.map(([icon, label]) =>
   `<div class="tag"><span>${icon}</span><span>${label}</span></div>`).join('')}</div>`;
+
+const _AVATAR_COLORS = ['#7c3aed', '#0ea5e9', '#f59e0b', '#10b981', '#ef4444'];
+function _miniAvatars(count) {
+  const pairs = [['FA','#7c3aed'], ['RP','#0ea5e9'], ['SG','#f59e0b']];
+  return pairs.slice(0, Math.min(count, 3))
+    .map(([ini, bg]) => `<div class="mini-avatar" style="background:${bg}">${ini}</div>`)
+    .join('');
+}
 
 // ── Renderers ────────────────────────────────────────────────────────────────
 function renderCategories() {
@@ -105,26 +96,36 @@ function renderCategories() {
     </button>`).join('');
 }
 
-function renderSeleccion() {
-  const avatars = seleccionAvatars.map(([ini, bg]) =>
-    `<div class="mini-avatar" style="background:${bg}">${ini}</div>`).join('');
-  $('rowSeleccion').innerHTML = seleccionVenues.map((v, i) => `
-    <div class="card-sel" data-event-card data-venue-idx="${i}" style="cursor:pointer">
+function renderSeleccion(events) {
+  if (!events.length) {
+    $('rowSeleccion').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">Sin partidos disponibles</div>';
+    return;
+  }
+  $('rowSeleccion').innerHTML = events.map((e) => {
+    const countdown = _fmtCountdown(e.kickoff_iso);
+    const timeStr = _fmtTime(e.kickoff_iso);
+    const matchLabel = countdown === 'Hoy' ? `Hoy · ${timeStr}` : `${_fmtShortDate(e.kickoff_iso)} · ${timeStr}`;
+    const avatars = _miniAvatars(e.attendee_count);
+    const attendLabel = e.attendee_count ? `${e.attendee_count} van a ir` : 'Sé el primero';
+    return `
+    <div class="card-sel" data-event-id="${e.id}" style="cursor:pointer">
       <div class="card-sel__match">
-        <div class="card-sel__match-teams">🇦🇷 Argentina vs 🇲🇽 México</div>
-        <div class="card-sel__match-time">Hoy · 21:00</div>
+        <div class="card-sel__match-teams">${e.home_flag} ${e.home_team} vs ${e.away_flag} ${e.away_team}</div>
+        <div class="card-sel__match-time">${matchLabel}</div>
       </div>
-      <div class="card-sel__name">${v.name}</div>
-      <div class="card-sel__loc"><span>📍</span><span>${v.distance}</span></div>
-      ${tags(v.amenities)}
+      <div class="card-sel__name">${e.venue_name}</div>
+      <div class="card-sel__loc"><span>📍</span><span>${e.venue_distance}</span></div>
+      ${tags(e.amenities)}
       <div class="card-sel__foot">
         <div class="attend">
           <div class="avatar-stack">${avatars}</div>
-          <span class="attend__count">${v.attending}</span>
+          <span class="attend__count">${attendLabel}</span>
         </div>
-        <button class="btn-apuntar" type="button">Me apunto</button>
+        <button class="btn-apuntar${!!localStorage.getItem('apuntado_'+e.id) ? ' is-apuntado' : ''}"
+                type="button">${!!localStorage.getItem('apuntado_'+e.id) ? '✓ Apuntado' : 'Me apunto'}</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderWorld() {
@@ -166,7 +167,10 @@ function renderRecap() {
         </div>
       </div>
       <div class="card-recap__body">
-        <div class="card-recap__result">${r.result}</div>
+        <div class="card-recap__result"
+             style="cursor:pointer"
+             data-recap-detail-id="${r.id}"
+             data-recap-status="${r.status}">${r.result}</div>
         <div class="card-recap__stage">${r.stage}</div>
         <div class="divider"></div>
         <button class="card-recap__cronica" type="button" data-recap-event-id="${r.id}">✨ Ver crónica</button>
@@ -175,25 +179,33 @@ function renderRecap() {
     </div>`).join('');
 }
 
-function renderUpcoming() {
-  $('rowUpcoming').innerHTML = upcomingCards.map((u) => `
-    <div class="card-up">
+function renderUpcoming(events) {
+  if (!events.length) {
+    $('rowUpcoming').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">Sin próximos eventos</div>';
+    return;
+  }
+  $('rowUpcoming').innerHTML = events.map((u) => {
+    const countdown = _fmtCountdown(u.kickoff_iso) || 'Próximamente';
+    return `
+    <div class="card-up" data-event-id="${u.id}" style="cursor:pointer">
       <div class="card-up__head">
-        <div class="team"><div class="team__flag">${u.homeFlag}</div><div class="team__name">${u.home}</div></div>
+        <div class="team"><div class="team__flag">${u.home_flag}</div><div class="team__name">${u.home_team}</div></div>
         <div class="when">
-          <div class="when__date">${u.date}</div>
-          <div class="when__kickoff">${u.kickoff}</div>
-          <div class="when__countdown">${u.countdown}</div>
+          <div class="when__date">${_fmtShortDate(u.kickoff_iso)}</div>
+          <div class="when__kickoff">${_fmtTime(u.kickoff_iso)}</div>
+          <div class="when__countdown">${countdown}</div>
         </div>
-        <div class="team"><div class="team__flag">${u.awayFlag}</div><div class="team__name">${u.away}</div></div>
+        <div class="team"><div class="team__flag">${u.away_flag}</div><div class="team__name">${u.away_team}</div></div>
       </div>
       <div class="card-up__body">
-        <div class="card-up__venue">${u.venue}</div>
-        <div class="card-up__loc"><span>📍</span><span>${u.distance}</span></div>
+        <div class="card-up__venue">${u.venue_name}</div>
+        <div class="card-up__loc"><span>📍</span><span>${u.venue_distance}</span></div>
         ${tags(u.amenities)}
-        <div class="card-up__foot"><button class="btn-apuntar" type="button">Me apunto</button></div>
+        <div class="card-up__foot"><button class="btn-apuntar${!!localStorage.getItem('apuntado_'+u.id) ? ' is-apuntado' : ''}"
+                type="button">${!!localStorage.getItem('apuntado_'+u.id) ? '✓ Apuntado' : 'Me apunto'}</button></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderNav() {
@@ -203,6 +215,95 @@ function renderNav() {
       <span>${t.label}</span>
       <div class="navtab__dot"></div>
     </button>`).join('');
+}
+
+// ── Registration helpers ──────────────────────────────────────────────────────
+function apuntarseAlEvento(eventId) {
+  if (localStorage.getItem(`apuntado_${eventId}`)) return;
+  localStorage.setItem(`apuntado_${eventId}`, '1');
+  document.querySelectorAll(`[data-event-id="${eventId}"] .btn-apuntar`).forEach(btn => {
+    btn.textContent = '✓ Apuntado';
+    btn.classList.add('is-apuntado');
+  });
+  _updateLiveBar();
+}
+
+function _updateLiveBar() {
+  const livebar = document.querySelector('.live-bar');
+  if (!livebar) return;
+  const allEvents = [..._seleccionEvents, ..._upcomingEvents];
+  const registered = allEvents.find(e =>
+    localStorage.getItem(`apuntado_${e.id}`) && e.status !== 'past'
+  );
+  if (registered) {
+    const matchEl = livebar.querySelector('.live-bar__match');
+    const labelEl = livebar.querySelector('.live-bar__label');
+    if (matchEl) matchEl.textContent = `${registered.home_team} vs ${registered.away_team}`;
+    if (labelEl) labelEl.textContent = registered.status === 'live' ? 'Partido en vivo' : 'Previa';
+    livebar.dataset.eventId = registered.id;
+    livebar.hidden = false;
+  } else {
+    livebar.hidden = true;
+    delete livebar.dataset.eventId;
+  }
+}
+
+// ── API loaders ───────────────────────────────────────────────────────────────
+async function loadRecapCards() {
+  try {
+    const res = await fetch('http://localhost:8000/api/v1/events?status=past');
+    if (!res.ok) throw new Error('api error');
+    const events = await res.json();
+    recapCards = events.map((e) => ({
+      id: e.id,
+      status: e.status,
+      homeFlag: e.home_flag,
+      oppFlag: e.away_flag,
+      result: `${e.home_abbr} ${e.home_score ?? '?'}–${e.away_score ?? '?'} ${e.away_abbr}`,
+      stage: _fmtDate(e.kickoff_iso),
+      photos: String(e.photo_count),
+    }));
+    renderRecap();
+  } catch (_) {
+    // backend unavailable — section stays empty
+  }
+}
+
+async function loadSeleccionCards() {
+  try {
+    const res = await fetch('http://localhost:8000/api/v1/events');
+    if (!res.ok) throw new Error('api error');
+    const events = await res.json();
+    const selEvents = events.filter((e) =>
+      (e.home_team === 'Argentina' || e.away_team === 'Argentina') && e.status !== 'past'
+    );
+    const subtitle = $('seleccionSubtitle');
+    if (subtitle && selEvents.length) {
+      const first = selEvents[0];
+      const countdown = _fmtCountdown(first.kickoff_iso);
+      const timeStr = _fmtTime(first.kickoff_iso);
+      const label = countdown === 'Hoy' ? `Hoy ${timeStr}` : `${_fmtShortDate(first.kickoff_iso)} · ${timeStr}`;
+      subtitle.textContent = `${first.home_team} vs ${first.away_team} · ${label}`;
+    }
+    _seleccionEvents = selEvents;
+    renderSeleccion(selEvents);
+    _updateLiveBar();
+  } catch (_) {
+    $('rowSeleccion').innerHTML = '';
+  }
+}
+
+async function loadUpcomingCards() {
+  try {
+    const res = await fetch('http://localhost:8000/api/v1/events?status=future');
+    if (!res.ok) throw new Error('api error');
+    const events = await res.json();
+    _upcomingEvents = events;
+    renderUpcoming(events);
+    _updateLiveBar();
+  } catch (_) {
+    $('rowUpcoming').innerHTML = '';
+  }
 }
 
 // ── Wire up ──────────────────────────────────────────────────────────────────
@@ -221,28 +322,50 @@ $('navTabs').addEventListener('click', (e) => {
 });
 
 $('rowSeleccion').addEventListener('click', (e) => {
-  const card = e.target.closest('[data-event-card]');
+  if (e.target.closest('.btn-apuntar')) {
+    const card = e.target.closest('[data-event-id]');
+    if (card) apuntarseAlEvento(card.dataset.eventId);
+    return;
+  }
+  const card = e.target.closest('[data-event-id]');
   if (card && typeof window.navigateToEventDetail === 'function') {
-    const idx = parseInt(card.dataset.venueIdx, 10);
-    window.navigateToEventDetail(seleccionVenues[idx]);
+    window.navigateToEventDetail({ id: card.dataset.eventId });
+  }
+});
+
+$('rowUpcoming').addEventListener('click', (e) => {
+  if (e.target.closest('.btn-apuntar')) {
+    const card = e.target.closest('[data-event-id]');
+    if (card) apuntarseAlEvento(card.dataset.eventId);
+    return;
+  }
+  const card = e.target.closest('[data-event-id]');
+  if (card && typeof window.navigateToEventDetail === 'function') {
+    window.navigateToEventDetail({ id: card.dataset.eventId });
   }
 });
 
 renderCategories();
-renderSeleccion();
 renderWorld();
-renderUpcoming();
 renderNav();
+
+// Async sections
 loadRecapCards();
+loadSeleccionCards();
+loadUpcomingCards();
 
 $('rowRecap').addEventListener('click', (e) => {
+  const resultEl = e.target.closest('[data-recap-detail-id]');
+  if (resultEl && typeof window.navigateToEventDetail === 'function') {
+    window.navigateToEventDetail({ id: resultEl.dataset.recapDetailId, status: resultEl.dataset.recapStatus });
+    return;
+  }
   const btn = e.target.closest('[data-recap-event-id]');
   if (btn && typeof window.navigateToRecap === 'function') {
     window.navigateToRecap(btn.dataset.recapEventId);
   }
 });
 
-const livebar = document.querySelector('.live-bar');
 const liveCta = document.querySelector('.live-bar__cta');
 if (liveCta) {
   liveCta.addEventListener('click', () => {
