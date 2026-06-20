@@ -49,27 +49,34 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Brandsen+805%2C+Buenos+Aires",
         status="future",
+        competition="FIFA World Cup 2026 · Semifinal",
+        venue_distance="2.5km · La Boca",
+        amenities=[["🍺", "Cervezas"], ["🎵", "Música"], ["📺", "Pantalla"], ["🍔", "Foodtruck"]],
     ),
     Event(
         id="evt-002",
-        home_team="España",
-        home_flag="\U0001f1ea\U0001f1f8",
-        away_team="Alemania",
-        away_flag="\U0001f1e9\U0001f1ea",
-        venue_name="Bar Munich",
-        venue_address="Av. Corrientes 1234, Buenos Aires",
+        home_team="Belgrano",
+        home_flag="🔵",
+        away_team="River Plate",
+        away_flag="🔴",
+        venue_name="Estadio Mario Alberto Kempes",
+        venue_address="Calle Crisol S/N, Córdoba",
         organizer="FanFest HQ",
-        kickoff_iso="2026-06-25T20:00:00Z",
-        match_start_time=datetime(2026, 6, 25, 20, 0, tzinfo=_utc),
+        kickoff_iso="2026-06-15T21:00:00Z",
+        match_start_time=datetime(2026, 6, 15, 21, 0, tzinfo=_utc),
         invite_link="http://localhost:8000/api/v1/events/evt-002/invite",
         calendar_link=(
             "https://calendar.google.com/calendar/render"
-            "?action=TEMPLATE&text=Espa%C3%B1a+vs+Alemania"
-            "&dates=20260625T200000Z/20260625T220000Z"
-            "&location=Av.+Corrientes+1234%2C+Buenos+Aires"
+            "?action=TEMPLATE&text=Belgrano+vs+River+Plate"
+            "&dates=20260615T210000Z/20260615T230000Z"
+            "&location=Calle+Crisol+S%2FN%2C+C%C3%B3rdoba"
         ),
-        maps_link="https://www.google.com/maps/dir/?api=1&destination=Av.+Corrientes+1234%2C+Buenos+Aires",
-        status="future",
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Calle+Crisol+S%2FN%2C+C%C3%B3rdoba",
+        status="past",
+        recap_event_id="evt-002",
+        competition="Torneo Apertura 2026 · Final",
+        venue_distance="5.0km · Alberdi",
+        amenities=[["🍺", "Cervezas"], ["📺", "Pantalla gigante"], ["🔵", "Barra Belgrano"], ["🎵", "Música"]],
     ),
     Event(
         id="evt-003",
@@ -91,28 +98,34 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Thames+1800%2C+Buenos+Aires",
         status="live",
+        competition="FIFA World Cup 2026 · Cuartos de Final",
+        venue_distance="800m · Soho",
+        amenities=[["🍷", "Vinos"], ["📺", "Pantalla"], ["🎵", "Música en vivo"]],
     ),
     Event(
         id="evt-004",
-        home_team="México",
-        home_flag="\U0001f1f2\U0001f1fd",
-        away_team="USA",
-        away_flag="\U0001f1fa\U0001f1f8",
-        venue_name="El Nacional Bar",
-        venue_address="Sarmiento 567, Córdoba",
+        home_team="Argentina",
+        home_flag="\U0001f1e6\U0001f1f7",
+        away_team="México",
+        away_flag="\U0001f1f2\U0001f1fd",
+        venue_name="La Mona Sports Bar",
+        venue_address="Güemes 456, Córdoba",
         organizer="FanFest HQ",
         kickoff_iso="2026-06-24T21:00:00Z",
         match_start_time=datetime(2026, 6, 24, 21, 0, tzinfo=_utc),
         invite_link="http://localhost:8000/api/v1/events/evt-004/invite",
         calendar_link=(
             "https://calendar.google.com/calendar/render"
-            "?action=TEMPLATE&text=M%C3%A9xico+vs+USA"
+            "?action=TEMPLATE&text=Argentina+vs+M%C3%A9xico"
             "&dates=20260624T210000Z/20260624T230000Z"
-            "&location=Sarmiento+567%2C+C%C3%B3rdoba"
+            "&location=G%C3%BCemes+456%2C+C%C3%B3rdoba"
         ),
-        maps_link="https://www.google.com/maps/dir/?api=1&destination=Sarmiento+567%2C+C%C3%B3rdoba",
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=G%C3%BCemes+456%2C+C%C3%B3rdoba",
         status="past",
         recap_event_id="evt-004",
+        competition="FIFA World Cup 2026 · Grupo C · Jornada 2",
+        venue_distance="400m · Güemes",
+        amenities=[["🍔", "Foodtruck"], ["🐾", "Pet-friendly"], ["📺", "Pantalla"], ["🍺", "Cervezas"], ["🎵", "Música en vivo"]],
     ),
     Event(
         id="evt-005",
@@ -134,6 +147,9 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=San+Mart%C3%ADn+890%2C+Rosario",
         status="future",
+        competition="FIFA World Cup 2026 · Grupo F · Jornada 3",
+        venue_distance="1.5km · Pichincha",
+        amenities=[["🍺", "Cervezas"], ["📺", "Pantalla"], ["🍔", "Foodtruck"]],
     ),
     Event(
         id="evt-006",
@@ -156,6 +172,9 @@ EVENTS: list[Event] = [
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Reconquista+456%2C+Buenos+Aires",
         status="past",
         recap_event_id="evt-006",
+        competition="FIFA World Cup 2026 · Grupo D · Jornada 2",
+        venue_distance="900m · Microcentro",
+        amenities=[["🍺", "Cervezas"], ["📺", "Pantalla"], ["🎵", "Música"]],
     ),
     Event(
         id="evt-007",
@@ -177,6 +196,9 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Pellegrini+123%2C+Rosario",
         status="future",
+        competition="FIFA World Cup 2026 · Grupo E · Jornada 1",
+        venue_distance="600m · República",
+        amenities=[["🍺", "Cervezas"], ["🎶", "DJ"], ["📺", "Pantalla"]],
     ),
     Event(
         id="evt-008",
@@ -198,6 +220,9 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Corrientes+2345%2C+Buenos+Aires",
         status="live",
+        competition="FIFA World Cup 2026 · Grupo H · Jornada 3",
+        venue_distance="2.0km · Abasto",
+        amenities=[["🍜", "Ramen"], ["📺", "Pantalla"], ["🍺", "Cervezas"]],
     ),
     Event(
         id="evt-009",
@@ -219,6 +244,9 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=G%C3%BCemes+789%2C+C%C3%B3rdoba",
         status="future",
+        competition="FIFA World Cup 2026 · Grupo G · Jornada 2",
+        venue_distance="1.8km · Alberdi",
+        amenities=[["☕", "Café"], ["📺", "Pantalla"], ["🍔", "Foodtruck"]],
     ),
     Event(
         id="evt-010",
@@ -240,6 +268,9 @@ EVENTS: list[Event] = [
         ),
         maps_link="https://www.google.com/maps/dir/?api=1&destination=Pueyrred%C3%B3n+1111%2C+Buenos+Aires",
         status="future",
+        competition="FIFA World Cup 2026 · Grupo A · Jornada 3",
+        venue_distance="3.2km · Recoleta",
+        amenities=[["🍺", "Cervezas"], ["🎵", "Samba en vivo"], ["📺", "Pantalla"], ["🍔", "Churrasco"]],
     ),
 ]
 
@@ -270,14 +301,14 @@ REGISTRATIONS: list[Registration] = [
     Registration("user_005", "evt-001", datetime(2029, 12, 14, 15, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 18, 5,  tzinfo=_utc)),
     Registration("user_006", "evt-001", datetime(2029, 12, 15,  8, 0, tzinfo=_utc), checked_in=False),
     Registration("user_007", "evt-001", datetime(2029, 12, 16, 12, 0, tzinfo=_utc), checked_in=False),
-    Registration("user_001", "evt-002", datetime(2026, 6, 10, 10, 0, tzinfo=_utc),  checked_in=False),
+    Registration("user_001", "evt-002", datetime(2026, 6,  5, 10, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 15, 20, 45, tzinfo=_utc)),
     Registration("user_002", "evt-003", datetime(2026, 6, 11, 14, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 26, 17, 55, tzinfo=_utc)),
     Registration("user_003", "evt-004", datetime(2026, 6, 12,  9, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 24, 20, 50, tzinfo=_utc)),
-    Registration("user_004", "evt-002", datetime(2026, 6, 13, 11, 0, tzinfo=_utc),  checked_in=False),
+    Registration("user_004", "evt-002", datetime(2026, 6,  8, 11, 0, tzinfo=_utc),  checked_in=False),
     Registration("user_005", "evt-003", datetime(2026, 6, 14, 15, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 26, 17, 40, tzinfo=_utc)),
-    Registration("user_007", "evt-002", datetime(2026, 6, 16, 12, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 25, 19, 55, tzinfo=_utc)),
+    Registration("user_007", "evt-002", datetime(2026, 6,  5, 12, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 15, 20, 55, tzinfo=_utc)),
     Registration("user_008", "evt-005", datetime(2026, 6, 17,  9, 0, tzinfo=_utc),  checked_in=False),
-    Registration("user_009", "evt-002", datetime(2026, 6, 18, 16, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 25, 19, 50, tzinfo=_utc)),
+    Registration("user_009", "evt-002", datetime(2026, 6,  6, 16, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 15, 20, 50, tzinfo=_utc)),
 ]
 
 # ── Matches ───────────────────────────────────────────────────────────────────
@@ -300,9 +331,16 @@ MATCHES: list[Match] = [
     ),
     Match(
         event_id="evt-002",
-        home_team="España", away_team="Alemania",
-        venue="Bar Munich",
-        home_score=0, away_score=0, status="pre", clock_seconds=0,
+        home_team="Belgrano", away_team="River Plate",
+        venue="Estadio Mario Alberto Kempes",
+        home_score=3, away_score=2, status="ended", clock_seconds=5700,
+        goals=[
+            Goal(player="Facundo Colidio",  team="River Plate", minute=17),
+            Goal(player="Leonardo Morales", team="Belgrano",    minute=25),
+            Goal(player="Tomás Galván",     team="River Plate", minute=55),
+            Goal(player="Uvita Fernández",  team="Belgrano",    minute=82),
+            Goal(player="Uvita Fernández",  team="Belgrano",    minute=90),
+        ],
     ),
     Match(
         event_id="evt-003",
@@ -313,13 +351,13 @@ MATCHES: list[Match] = [
     ),
     Match(
         event_id="evt-004",
-        home_team="México", away_team="USA",
-        venue="El Nacional Bar",
+        home_team="Argentina", away_team="México",
+        venue="La Mona Sports Bar",
         home_score=2, away_score=1, status="ended", clock_seconds=5400,
         goals=[
-            Goal(player="Lozano",  team="México", minute=12),
-            Goal(player="Pulisic", team="USA",    minute=55),
-            Goal(player="Jiménez", team="México", minute=78),
+            Goal(player="Messi",   team="Argentina", minute=22),
+            Goal(player="Lozano",  team="México",    minute=55),
+            Goal(player="Di María", team="Argentina", minute=78),
         ],
     ),
     Match(
@@ -398,8 +436,14 @@ PHOTOS: list[Photo] = [
     Photo("photo-005", "evt-001", "https://picsum.photos/400/300?random=5",  "user_002", "Bob",      uploaded_at=datetime(2030, 1, 1, 19, 20, tzinfo=_utc)),
     Photo("photo-006", "evt-001", "https://picsum.photos/400/300?random=6",  "user_005", "Elena",    uploaded_at=datetime(2030, 1, 1, 19, 35, tzinfo=_utc)),
     Photo("photo-007", "evt-001", "https://picsum.photos/400/300?random=7",  "user_001", "Alice",    uploaded_at=datetime(2030, 1, 1, 19, 50, tzinfo=_utc)),
-    Photo("photo-008", "evt-002", "https://picsum.photos/400/300?random=8",  "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 25, 20, 30, tzinfo=_utc)),
-    Photo("photo-009", "evt-002", "https://picsum.photos/400/300?random=9",  "user_009", "Iván",     uploaded_at=datetime(2026, 6, 25, 21,  0, tzinfo=_utc)),
+    Photo("photo-008", "evt-002", "http://localhost:8000/media/evt-002/belgrano1.jpg",                                        "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 15, 21, 30, tzinfo=_utc), uploader_handle="@gaby_celeste",  caption="La previa en el Kempes. Una noche para la historia 🔵", likes_count=41),
+    Photo("photo-009", "evt-002", "http://localhost:8000/media/evt-002/balgrano2.jpeg",                                       "user_009", "Iván",     uploaded_at=datetime(2026, 6, 15, 21, 50, tzinfo=_utc), uploader_handle="@ivan_bel",      caption="El banco de Belgrano, atentos al partido 💪", likes_count=18),
+    Photo("photo-016", "evt-002", "http://localhost:8000/media/evt-002/belgrano3.jpeg",                                       "user_001", "Alice",    uploaded_at=datetime(2026, 6, 15, 22, 10, tzinfo=_utc), uploader_handle="@alice_fan",     caption="Celebración celeste en el Kempes. ¡Campeones! 🏆🔵", likes_count=93),
+    Photo("photo-017", "evt-002", "http://localhost:8000/media/evt-002/belgrano4.jpeg",                                       "user_004", "Diana",    uploaded_at=datetime(2026, 6, 15, 22, 30, tzinfo=_utc), uploader_handle="@diana_mv",      caption="Llanto y alegría. Belgrano campeón Apertura 2026 ✨", likes_count=55),
+    Photo("photo-018", "evt-002", "http://localhost:8000/media/evt-002/belgrano-2509-optimized.jpg",                          "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 15, 22, 45, tzinfo=_utc), uploader_handle="@carlos_fan",    caption="El Kempes repleto de azul. ¡Qué noche! 🔵⚪", likes_count=72),
+    Photo("photo-019", "evt-002", "http://localhost:8000/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.58.46.jpeg",   "user_002", "Bob",      uploaded_at=datetime(2026, 6, 15, 22, 58, tzinfo=_utc), uploader_handle="@bob_ftw",       caption="El momento del penal decisivo. El Kempes se paralizó 😤⚽", likes_count=34),
+    Photo("photo-020", "evt-002", "http://localhost:8000/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.47.42.jpeg",   "user_006", "Fernando", uploaded_at=datetime(2026, 6, 15, 23,  5, tzinfo=_utc), uploader_handle="@fer_nando",     caption="Uvita celebra el gol del título 🙌🔵", likes_count=127),
+    Photo("photo-021", "evt-002", "http://localhost:8000/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.58.47.jpeg",   "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 15, 23, 15, tzinfo=_utc), uploader_handle="@gaby_celeste",  caption="Locura en la tribuna. ¡Primer Apertura de Belgrano! 🎉", likes_count=211),
     Photo("photo-010", "evt-003", "https://picsum.photos/400/300?random=10", "user_002", "Bob",      uploaded_at=datetime(2026, 6, 26, 18, 40, tzinfo=_utc)),
     Photo("photo-011", "evt-004", "http://localhost:8000/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
     Photo("photo-012", "evt-004", "http://localhost:8000/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
@@ -437,20 +481,46 @@ COMMENTS: list[Comment] = [
 
 RECAPS: list[Recap] = [
     Recap(
+        event_id="evt-002",
+        narrative=(
+            "Una noche histórica en el Estadio Mario Alberto Kempes de Córdoba. "
+            "Belgrano consiguió el primer título Apertura de su historia al remontar "
+            "un 2-1 adverso ante River Plate. El héroe fue Nicolás 'Uvita' Fernández, "
+            "que anotó un doblete en los minutos finales — el primero de penal tras "
+            "una revisión del VAR, el segundo en el tiempo de descuento — para desatar "
+            "la locura en todo Córdoba."
+        ),
+        slides=[
+            RecapSlide(label="Resultado final",          description="Belgrano 3 - 2 River Plate"),
+            RecapSlide(label="Colidio abre el marcador", description="Facundo Colidio pone en ventaja a River en el minuto 17"),
+            RecapSlide(label="Morales empata de cabeza", description="Leonardo Morales iguala con un remate fuerte en el minuto 25"),
+            RecapSlide(label="Galván vuelve a adelantar a River", description="Tomás Galván restaura la ventaja riverplatense en el minuto 55"),
+            RecapSlide(label="Penal histórico (VAR)",    description="El VAR sanciona pena máxima; Uvita Fernández la convierte en el minuto 82"),
+            RecapSlide(label="Campeón en el descuento",  description="Uvita Fernández sella el 3-2 en el último minuto y hace historia"),
+        ],
+        home_team="Belgrano",
+        away_team="River Plate",
+        home_score=3,
+        away_score=2,
+        photo_count=8,
+        correct_predictors=[],
+        fallback=True,
+    ),
+    Recap(
         event_id="evt-004",
         narrative=(
-            "Una noche épica en El Nacional Bar de Córdoba. México dominó el partido "
-            "con garra y talento, llevándose la victoria 2-1 ante USA en un duelo "
+            "Una noche épica en La Mona Sports Bar de Córdoba. Argentina brilló con "
+            "la magia de Messi y Di María para vencer 2-1 a México en un duelo "
             "vibrante que tuvo a los fanáticos de pie durante los 90 minutos."
         ),
         slides=[
-            RecapSlide(label="Resultado final",       description="México 2 - 1 USA"),
-            RecapSlide(label="Gol de Lozano",         description="Chucky Lozano abre el marcador en el minuto 12 con un disparo potente"),
-            RecapSlide(label="Empate de Pulisic",     description="USA empata en el minuto 55 con un golazo de media distancia de Pulisic"),
-            RecapSlide(label="Gol de la victoria",    description="Jiménez sentencia el partido en el minuto 78 de cabeza"),
+            RecapSlide(label="Resultado final",       description="Argentina 2 - 1 México"),
+            RecapSlide(label="Gol de Messi",          description="Messi abre el marcador en el minuto 22 con un disparo inatajable"),
+            RecapSlide(label="Empate de Lozano",      description="Chucky Lozano empata en el minuto 55 con un golazo de media distancia"),
+            RecapSlide(label="Gol de la victoria",    description="Di María sentencia el partido en el minuto 78 con un remate de zurda"),
         ],
-        home_team="México",
-        away_team="USA",
+        home_team="Argentina",
+        away_team="México",
         home_score=2,
         away_score=1,
         photo_count=3,

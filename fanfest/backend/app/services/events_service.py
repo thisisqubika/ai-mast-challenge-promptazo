@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
@@ -15,6 +16,9 @@ def _event_to_dict(e: EventModel) -> dict:
         "away_flag": e.away_flag,
         "venue_name": e.venue_name,
         "venue_address": e.venue_address,
+        "venue_distance": e.venue_distance or "",
+        "competition": e.competition or "",
+        "amenities": json.loads(e.amenities) if e.amenities else [],
         "organizer": e.organizer,
         "kickoff_iso": e.kickoff_iso,
         "match_start_time": e.match_start_time,
@@ -40,6 +44,11 @@ def get_event(event_id: str) -> dict:
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     return _event_to_dict(event)
+
+
+def count_registrations(event_id: str) -> int:
+    with get_session() as db:
+        return db.query(RegistrationModel).filter_by(event_id=event_id).count()
 
 
 def get_attendees(event_id: str) -> list[dict]:

@@ -25,6 +25,9 @@ class EventModel(Base):
     maps_link: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(String, default="future")
     recap_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    competition: Mapped[str] = mapped_column(String, default="")
+    venue_distance: Mapped[str] = mapped_column(String, default="")
+    amenities: Mapped[str] = mapped_column(String, default="[]")  # JSON array of [icon, label] pairs
 
     registrations: Mapped[list["RegistrationModel"]] = relationship(back_populates="event")
     predictions: Mapped[list["PredictionModel"]] = relationship(back_populates="event")

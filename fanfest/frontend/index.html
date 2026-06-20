@@ -62,7 +62,7 @@
           <div class="section__title">Apoyá a la Selección 🇦🇷</div>
           <button class="see-all" type="button">Ver todos →</button>
         </div>
-        <div class="section__sub">Argentina vs México · Hoy 21:00</div>
+        <div class="section__sub" id="seleccionSubtitle">Argentina vs México · Hoy 21:00</div>
       </div>
       <div class="row">
         <div class="row__scroll"><div class="row__track" id="rowSeleccion"></div></div>
@@ -112,7 +112,7 @@
 
     <!-- BOTTOM NAV -->
     <div class="bottomnav">
-      <div class="live-bar">
+      <div class="live-bar" hidden>
         <div class="live-bar__info">
           <div class="live-bar__label">Partido en vivo</div>
           <div class="live-bar__match">Argentina vs México</div>
@@ -123,6 +123,9 @@
     </div>
 
     <div id="eventView"></div>
+
+    <!-- Floating upload CTA — phone-level so it sits above the bottomnav overlay -->
+    <div id="edFloatCta" hidden></div>
 
   </div>
 </div>

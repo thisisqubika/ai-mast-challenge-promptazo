@@ -76,6 +76,11 @@ def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
                 away_abbr=_abbr(e["away_team"]),
                 kickoff_iso=e["kickoff_iso"],
                 status=e.get("status", "future"),
+                venue_name=e.get("venue_name", ""),
+                venue_distance=e.get("venue_distance", ""),
+                amenities=e.get("amenities", []),
+                competition=e.get("competition", ""),
+                attendee_count=events_service.count_registrations(e["id"]),
                 recap_event_id=recap_id,
                 home_score=home_score,
                 away_score=away_score,
@@ -99,6 +104,7 @@ def get_event_detail(event_id: str) -> EventDetail:
         AttendeeOut(user_id=a["user_id"], name=a["name"], checked_in=True)
         for a in events_service.get_attendees(event_id)
     ]
+    attendee_count = events_service.count_registrations(event_id)
 
     return EventDetail(
         id=event["id"],
@@ -108,10 +114,15 @@ def get_event_detail(event_id: str) -> EventDetail:
         away_flag=event["away_flag"],
         kickoff_iso=event["kickoff_iso"],
         match_start_time=event["match_start_time"],
+        status=event.get("status", "future"),
         venue_name=event["venue_name"],
         venue_address=event["venue_address"],
+        venue_distance=event["venue_distance"],
+        competition=event["competition"],
+        amenities=event["amenities"],
         organizer=event["organizer"],
         attendees=attendees,
+        attendee_count=attendee_count,
         invite_link=event["invite_link"],
         calendar_link=event["calendar_link"],
         maps_link=event["maps_link"],

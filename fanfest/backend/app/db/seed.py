@@ -1,5 +1,7 @@
 """Idempotent seed: runs once on first boot, skipped on restarts."""
 
+import json
+
 from app.data.seed import EVENTS, PHOTOS, REGISTRATIONS
 from app.db.database import get_session
 from app.db.models import EventModel, PhotoModel, RegistrationModel
@@ -28,6 +30,9 @@ def run_seed() -> None:
                     maps_link=e.maps_link,
                     status=e.status,
                     recap_event_id=e.recap_event_id,
+                    competition=e.competition,
+                    venue_distance=e.venue_distance,
+                    amenities=json.dumps(e.amenities),
                 )
             )
 

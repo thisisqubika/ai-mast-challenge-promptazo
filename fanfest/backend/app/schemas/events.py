@@ -23,10 +23,15 @@ class EventDetail(BaseModel):
     away_flag: str
     kickoff_iso: str
     match_start_time: datetime
+    status: str = "future"
     venue_name: str
     venue_address: str
+    venue_distance: str = ""
+    competition: str = ""
+    amenities: list[list[str]] = []
     organizer: str
     attendees: list[AttendeeOut]
+    attendee_count: int = 0
     invite_link: str
     calendar_link: str
     maps_link: str
@@ -183,6 +188,11 @@ class EventSummary(BaseModel):
     away_abbr: str
     kickoff_iso: str
     status: str
+    venue_name: str = ""
+    venue_distance: str = ""
+    amenities: list[list[str]] = []
+    competition: str = ""
+    attendee_count: int = 0
     recap_event_id: str | None = None
     home_score: int | None = None
     away_score: int | None = None

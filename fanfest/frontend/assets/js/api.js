@@ -5,7 +5,7 @@ const API_BASE = `${BASE_URL}/api/v1`;
 // FEST-02: Event detail, predictions, check-in
 // ---------------------------------------------------------------------------
 
-async function getEventDetail(eventId) {
+export async function getEventDetail(eventId) {
   const response = await fetch(`${API_BASE}/events/${eventId}`);
   if (!response.ok) {
     let errBody;
@@ -19,7 +19,7 @@ async function getEventDetail(eventId) {
   return response.json();
 }
 
-async function submitPrediction(eventId, { userId, name, homeScore, awayScore }) {
+export async function submitPrediction(eventId, { userId, name, homeScore, awayScore }) {
   const response = await fetch(`${API_BASE}/events/${eventId}/predictions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -170,5 +170,12 @@ export async function fetchRecap(eventId, tone = 'emocionante', slideCount = 4) 
 export async function fetchPastEvents() {
   const res = await fetch(`${API_BASE}/events?status=past`);
   if (!res.ok) throw new Error(`fetchPastEvents ${res.status}`);
+  return res.json();
+}
+
+export async function fetchEvents(status = null) {
+  const url = status ? `${API_BASE}/events?status=${encodeURIComponent(status)}` : `${API_BASE}/events`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`fetchEvents ${res.status}`);
   return res.json();
 }

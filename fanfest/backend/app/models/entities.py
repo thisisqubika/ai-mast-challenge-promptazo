@@ -29,6 +29,9 @@ class Event:
     status: str = "future"
     # ID of the match state entity used for AI recap (only set when status="past")
     recap_event_id: str | None = None
+    competition: str = ""
+    venue_distance: str = ""
+    amenities: list[list[str]] = field(default_factory=list)
 
 
 @dataclass
