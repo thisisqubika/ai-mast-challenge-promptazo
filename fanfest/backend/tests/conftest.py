@@ -53,6 +53,9 @@ def reset_services() -> None:
             goals=[Goal(player=g.player, team=g.team, minute=g.minute) for g in m.goals],
         )
 
+    import app.services.photos_service as ps
+    ps._photos = {}
+
     ms._states = {m.event_id: _to_state(m) for m in MATCHES}
     rs._store = {
         r.event_id: RecapResponse(
