@@ -20,6 +20,9 @@ __pycache__/
 venv/
 .pytest_cache/
 
+# Media uploads (local dev)
+fanfest/backend/media/
+
 # Node
 node_modules/
 dist/
