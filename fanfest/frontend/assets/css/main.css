@@ -270,7 +270,10 @@
 }
 .live-bar {
   background: var(--accent); border-radius: 16px; padding: 11px 12px 11px 16px;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;
+  align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;
+}
+.live-bar:not([hidden]) {
+  display: flex;
 }
 .live-bar__info { min-width: 0; }
 .live-bar__label {

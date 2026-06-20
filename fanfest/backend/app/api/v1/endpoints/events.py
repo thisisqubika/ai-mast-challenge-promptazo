@@ -6,10 +6,15 @@ from app.schemas.events import (
     AttendeeOut,
     CheckinRequest,
     CheckinResponse,
+    CommentOut,
+    CommentRequest,
     EventDetail,
     EventSummary,
+    LikeRequest,
+    LikeResponse,
     MatchState,
     MatchStateUpdate,
+    MediaList,
     Photo,
     PhotoList,
     PredictionRequest,
@@ -195,6 +200,88 @@ async def create_photo(
 async def list_photos(event_id: str) -> PhotoList:
     photos = photos_service.list_photos(event_id)
     return PhotoList(photos=photos)
+
+
+# ---------------------------------------------------------------------------
+# FEST-08: Hype Wall — media upload with caption, likes & comments
+# ---------------------------------------------------------------------------
+
+_ALLOWED_MIME = {"image/jpeg", "image/png", "image/gif", "video/mp4", "video/quicktime"}
+_MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+
+
+@router.post("/{event_id}/media", response_model=Photo, status_code=201)
+async def create_media(
+    event_id: str,
+    file: UploadFile,
+    uploader_id: str = Form(...),
+    uploader_name: str = Form(...),
+    uploader_handle: str = Form(default=""),
+    caption: str | None = Form(default=None),
+) -> Photo:
+    if not registry.is_checked_in(uploader_id):
+        raise HTTPException(status_code=403, detail="User is not checked in")
+    if file.content_type not in _ALLOWED_MIME:
+        raise HTTPException(
+            status_code=415,
+            detail="Unsupported media type. Only JPEG, PNG, GIF, MP4, MOV allowed.",
+        )
+    if caption and len(caption) > 280:
+        raise HTTPException(
+            status_code=422,
+            detail=[{"loc": ["body", "caption"], "msg": "Caption exceeds 280 characters", "type": "value_error"}],
+        )
+    file_bytes = await file.read()
+    if len(file_bytes) > _MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="Payload Too Large")
+    return photos_service.upload_media(
+        event_id=event_id,
+        file_bytes=file_bytes,
+        content_type=file.content_type or "image/jpeg",
+        filename=file.filename or "media",
+        uploader_id=uploader_id,
+        uploader_name=uploader_name,
+        uploader_handle=uploader_handle,
+        caption=caption,
+    )
+
+
+@router.get("/{event_id}/media", response_model=MediaList)
+async def list_media(event_id: str) -> MediaList:
+    return MediaList(media=photos_service.list_media(event_id))
+
+
+@router.post("/{event_id}/media/{media_id}/likes", response_model=LikeResponse)
+async def toggle_like(event_id: str, media_id: str, body: LikeRequest) -> LikeResponse:
+    result = photos_service.like_media(event_id, media_id, body.user_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Media not found")
+    return result
+
+
+@router.post("/{event_id}/media/{media_id}/comments", response_model=CommentOut, status_code=201)
+async def create_comment(event_id: str, media_id: str, body: CommentRequest) -> CommentOut:
+    user_name = body.user_name or body.user_id
+    user_handle = body.user_handle or ("@" + user_name.lower().replace(" ", "_"))
+    result = photos_service.add_comment(
+        event_id=event_id,
+        media_id=media_id,
+        user_id=body.user_id,
+        user_name=user_name,
+        user_handle=user_handle,
+        text=body.text,
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Media not found")
+    return result
+
+
+@router.get("/{event_id}/media/{media_id}/comments", response_model=list[CommentOut])
+async def list_comments(event_id: str, media_id: str) -> list[CommentOut]:
+    result = photos_service.list_comments(event_id, media_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Media not found")
+    return result
 
 
 # ---------------------------------------------------------------------------

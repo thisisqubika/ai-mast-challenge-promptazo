@@ -89,6 +89,60 @@ export async function uploadPhoto(eventId, file, uploaderId, uploaderName) {
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// FEST-08: Hype Wall — media upload, likes, comments
+// ---------------------------------------------------------------------------
+
+export async function fetchMedia(eventId) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/media`);
+  if (!res.ok) throw new Error(`fetchMedia ${res.status}`);
+  return res.json();
+}
+
+export async function uploadMedia(eventId, file, uploaderId, uploaderName, uploaderHandle, caption) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("uploader_id", uploaderId);
+  form.append("uploader_name", uploaderName);
+  if (uploaderHandle) form.append("uploader_handle", uploaderHandle);
+  if (caption) form.append("caption", caption);
+  const res = await fetch(`${API_BASE}/events/${eventId}/media`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw err;
+  }
+  return res.json();
+}
+
+export async function likeMedia(eventId, mediaId, userId) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/media/${mediaId}/likes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) throw new Error(`likeMedia ${res.status}`);
+  return res.json();
+}
+
+export async function addComment(eventId, mediaId, userId, userName, userHandle, text) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/media/${mediaId}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, user_name: userName, user_handle: userHandle, text }),
+  });
+  if (!res.ok) throw new Error(`addComment ${res.status}`);
+  return res.json();
+}
+
+export async function listComments(eventId, mediaId) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/media/${mediaId}/comments`);
+  if (!res.ok) throw new Error(`listComments ${res.status}`);
+  return res.json();
+}
+
 export async function advanceMatchState(eventId, action, data = {}) {
   const res = await fetch(`${API_BASE}/events/${eventId}/match-state`, {
     method: "POST",

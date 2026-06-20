@@ -201,3 +201,62 @@
   display: flex; align-items: center; justify-content: center; gap: 8px;
   pointer-events: auto;
 }
+
+/* ── Like button active state ─────────────────────────────────────────────── */
+.hype-post__like-btn.is-liked .hype-post__action-count { color: #ef4444; }
+
+/* ── Hype feed empty state ────────────────────────────────────────────────── */
+.ed-hype-empty {
+  text-align: center; padding: 24px 16px; background: var(--card);
+  border-radius: 14px; margin-bottom: 12px; border: 1px solid var(--hair-soft);
+}
+
+/* ── Upload modal ─────────────────────────────────────────────────────────── */
+#eventDetailView { position: relative; }
+
+.ed-upload-modal {
+  position: absolute; inset: 0; z-index: 100;
+}
+.ed-upload-modal:not([hidden]) {
+  display: flex; align-items: flex-end;
+}
+.ed-upload-modal__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+}
+.ed-upload-modal__sheet {
+  position: relative; z-index: 1;
+  width: 100%; background: var(--card);
+  border-radius: 22px 22px 0 0; padding: 20px 20px 28px;
+  border-top: 1px solid var(--hair-soft);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.ed-upload-modal__title {
+  font-size: 15px; font-weight: 800; color: var(--ink); text-align: center;
+}
+.ed-upload-modal__file-label {
+  display: flex; align-items: center; justify-content: center;
+  height: 44px; border-radius: 12px;
+  border: 1.5px dashed rgba(16,185,129,0.4); background: rgba(16,185,129,0.05);
+  font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer;
+}
+.ed-upload-modal__caption {
+  width: 100%; min-height: 72px; border-radius: 12px; border: 1px solid var(--hair-soft);
+  background: var(--frame); color: var(--ink);
+  font-family: inherit; font-size: 13px; padding: 10px 12px; resize: none;
+  outline: none; box-sizing: border-box;
+}
+.ed-upload-modal__caption:focus { border-color: var(--accent); }
+.ed-upload-modal__submit {
+  height: 46px; border-radius: 14px; border: none;
+  background: var(--accent); color: var(--accent-ink);
+  font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.ed-upload-modal__cancel {
+  height: 40px; border-radius: 12px; border: 1px solid var(--hair-soft);
+  background: none; color: var(--muted);
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.ed-upload-modal__error {
+  font-size: 12px; color: #ef4444; font-weight: 600; text-align: center;
+}

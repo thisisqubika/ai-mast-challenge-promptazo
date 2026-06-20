@@ -77,6 +77,17 @@ class Prediction:
 
 
 @dataclass
+class Comment:
+    id: str
+    photo_id: str
+    user_id: str
+    user_name: str
+    user_handle: str
+    text: str
+    created_at: datetime
+
+
+@dataclass
 class Photo:
     id: str
     event_id: str
@@ -84,6 +95,13 @@ class Photo:
     uploader_id: str
     uploader_name: str
     uploaded_at: datetime
+    media_type: str = "photo"
+    uploader_handle: str = ""
+    uploader_avatar_url: str | None = None
+    caption: str | None = None
+    likes_count: int = 0
+    liked_by: list[str] = field(default_factory=list)
+    comments: list["Comment"] = field(default_factory=list)
 
 
 @dataclass

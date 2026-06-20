@@ -12,6 +12,7 @@ Import from here in tests instead of hand-rolling inline dicts.
 from datetime import datetime, timezone
 
 from app.models.entities import (
+    Comment,
     Event,
     Fan,
     Goal,
@@ -400,11 +401,36 @@ PHOTOS: list[Photo] = [
     Photo("photo-008", "evt-002", "https://picsum.photos/400/300?random=8",  "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 25, 20, 30, tzinfo=_utc)),
     Photo("photo-009", "evt-002", "https://picsum.photos/400/300?random=9",  "user_009", "Iván",     uploaded_at=datetime(2026, 6, 25, 21,  0, tzinfo=_utc)),
     Photo("photo-010", "evt-003", "https://picsum.photos/400/300?random=10", "user_002", "Bob",      uploaded_at=datetime(2026, 6, 26, 18, 40, tzinfo=_utc)),
-    Photo("photo-011", "evt-004", "https://picsum.photos/400/300?random=11", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc)),
-    Photo("photo-012", "evt-004", "https://picsum.photos/400/300?random=12", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc)),
-    Photo("photo-013", "evt-004", "https://picsum.photos/400/300?random=13", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc)),
-    Photo("photo-014", "evt-006", "https://picsum.photos/400/300?random=14", "user_004", "Diana",    uploaded_at=datetime(2026, 6, 28, 20, 40, tzinfo=_utc)),
-    Photo("photo-015", "evt-006", "https://picsum.photos/400/300?random=15", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 28, 21, 30, tzinfo=_utc)),
+    Photo("photo-011", "evt-004", "http://localhost:8000/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
+    Photo("photo-012", "evt-004", "http://localhost:8000/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
+    Photo("photo-013", "evt-004", "http://localhost:8000/media/evt-004/mundial3.jpg", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc), uploader_handle="@fer_nando",    caption="El pub lleno a reventar, increíble noche 🍺🎉", likes_count=8),
+    Photo("photo-014", "evt-006", "https://picsum.photos/400/300?random=14", "user_004", "Diana",    uploaded_at=datetime(2026, 6, 28, 20, 40, tzinfo=_utc), uploader_handle="@diana_mv",     caption="Kane desde el punto del penal 🏴󠁧󠁢󠁥󠁮󠁧󠁿"),
+    Photo("photo-015", "evt-006", "https://picsum.photos/400/300?random=15", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 28, 21, 30, tzinfo=_utc), uploader_handle="@fer_nando",    caption="Three Lions! 🦁🦁🦁", likes_count=61),
+]
+
+# ── Seed comments (for demo richness) ─────────────────────────────────────────
+
+_comment_t = datetime(2026, 6, 24, 21, 30, tzinfo=_utc)
+
+COMMENTS: list[Comment] = [
+    Comment(
+        id="comment-001", photo_id="photo-011",
+        user_id="user_005", user_name="Elena", user_handle="@elena_fan",
+        text="¡Qué fotos! 🙌 El ambiente se ve increíble",
+        created_at=_comment_t,
+    ),
+    Comment(
+        id="comment-002", photo_id="photo-011",
+        user_id="user_002", user_name="Bob", user_handle="@bob_ftw",
+        text="Ojalá hubiera podido ir 😭",
+        created_at=datetime(2026, 6, 24, 21, 45, tzinfo=_utc),
+    ),
+    Comment(
+        id="comment-003", photo_id="photo-013",
+        user_id="user_003", user_name="Carlos", user_handle="@carlos_fan",
+        text="¡Una noche para no olvidar! México campeón 🏆",
+        created_at=datetime(2026, 6, 24, 22, 20, tzinfo=_utc),
+    ),
 ]
 
 # ── Recaps (pre-generated for past events) ────────────────────────────────────
