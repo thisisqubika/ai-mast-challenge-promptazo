@@ -179,3 +179,20 @@ export async function fetchEvents(status = null) {
   if (!res.ok) throw new Error(`fetchEvents ${res.status}`);
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// FEST-10: Create new event
+// ---------------------------------------------------------------------------
+
+export async function createEvent(data) {
+  const res = await fetch(`${API_BASE}/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw err;
+  }
+  return res.json();
+}

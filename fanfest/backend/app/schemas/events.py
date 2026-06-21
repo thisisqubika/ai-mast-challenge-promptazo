@@ -178,6 +178,23 @@ class RecapResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class EventCreate(BaseModel):
+    home_team: str
+    away_team: str
+    venue_name: str
+    venue_address: str
+    organizer: str
+    kickoff_iso: str
+    home_flag: str = ""
+    away_flag: str = ""
+    invite_link: str = ""
+    calendar_link: str = ""
+    maps_link: str = ""
+    competition: str = ""
+    venue_distance: str = ""
+    amenities: list[list[str]] = []
+
+
 class EventSummary(BaseModel):
     id: str
     home_team: str
@@ -189,6 +206,7 @@ class EventSummary(BaseModel):
     kickoff_iso: str
     status: str
     venue_name: str = ""
+    venue_address: str = ""
     venue_distance: str = ""
     amenities: list[list[str]] = []
     competition: str = ""

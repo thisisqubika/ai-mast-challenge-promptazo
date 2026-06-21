@@ -114,7 +114,7 @@ function renderSeleccion(events) {
         <div class="card-sel__match-time">${matchLabel}</div>
       </div>
       <div class="card-sel__name">${e.venue_name}</div>
-      <div class="card-sel__loc"><span>📍</span><span>${e.venue_distance}</span></div>
+      <div class="card-sel__loc"><span>📍</span><span>${e.venue_distance || e.venue_address || ''}</span></div>
       ${tags(e.amenities)}
       <div class="card-sel__foot">
         <div class="attend">
@@ -199,7 +199,7 @@ function renderUpcoming(events) {
       </div>
       <div class="card-up__body">
         <div class="card-up__venue">${u.venue_name}</div>
-        <div class="card-up__loc"><span>📍</span><span>${u.venue_distance}</span></div>
+        <div class="card-up__loc"><span>📍</span><span>${u.venue_distance || u.venue_address || ''}</span></div>
         ${tags(u.amenities)}
         <div class="card-up__foot"><button class="btn-apuntar${!!localStorage.getItem('apuntado_'+u.id) ? ' is-apuntado' : ''}"
                 type="button">${!!localStorage.getItem('apuntado_'+u.id) ? '✓ Apuntado' : 'Me apunto'}</button></div>
@@ -224,6 +224,15 @@ function apuntarseAlEvento(eventId) {
   document.querySelectorAll(`[data-event-id="${eventId}"] .btn-apuntar`).forEach(btn => {
     btn.textContent = '✓ Apuntado';
     btn.classList.add('is-apuntado');
+  });
+  // Increment attendance counter in the DOM and in cached event arrays
+  document.querySelectorAll(`[data-event-id="${eventId}"] .attend__count`).forEach(el => {
+    const current = parseInt(el.textContent) || 0;
+    el.textContent = `${current + 1} van a ir`;
+  });
+  [_seleccionEvents, _upcomingEvents].forEach(arr => {
+    const ev = arr.find(e => e.id === eventId);
+    if (ev) ev.attendee_count = (ev.attendee_count || 0) + 1;
   });
   _updateLiveBar();
 }
@@ -274,9 +283,9 @@ async function loadSeleccionCards() {
     const res = await fetch('http://localhost:8000/api/v1/events');
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
-    const selEvents = events.filter((e) =>
-      (e.home_team === 'Argentina' || e.away_team === 'Argentina') && e.status !== 'past'
-    );
+    const selEvents = events
+      .filter((e) => (e.home_team === 'Argentina' || e.away_team === 'Argentina') && e.status !== 'past')
+      .sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));
     const subtitle = $('seleccionSubtitle');
     if (subtitle && selEvents.length) {
       const first = selEvents[0];
@@ -298,6 +307,7 @@ async function loadUpcomingCards() {
     const res = await fetch('http://localhost:8000/api/v1/events?status=future');
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
+    events.sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));
     _upcomingEvents = events;
     renderUpcoming(events);
     _updateLiveBar();
@@ -317,6 +327,10 @@ $('catTabs').addEventListener('click', (e) => {
 $('navTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-tab]');
   if (!btn) return;
+  if (btn.dataset.tab === 'crear' && typeof window.navigateToCreateEvent === 'function') {
+    window.navigateToCreateEvent();
+    return;
+  }
   state.activeTab = btn.dataset.tab;
   renderNav();
 });

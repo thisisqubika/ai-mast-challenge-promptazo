@@ -1,0 +1,232 @@
+/* FEST-10: Create Event screen */
+
+#createEventView { position: relative; }
+
+/* ── Screen header ──────────────────────────────────────────────────────────── */
+
+.ce-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--screen);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 12px;
+  margin: 0 -20px;
+  border-bottom: 0.5px solid var(--hair);
+}
+
+.ce-back {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--card);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 18px;
+  flex: none;
+}
+
+.ce-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+/* ── Form ───────────────────────────────────────────────────────────────────── */
+
+.ce-form {
+  padding-top: 4px;
+}
+
+.ce-section {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 20px 0 10px;
+}
+
+.ce-field {
+  margin-bottom: 14px;
+}
+
+.ce-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.ce-req {
+  color: var(--accent);
+}
+
+.ce-field input {
+  width: 100%;
+  background: var(--card);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.12s ease;
+  -webkit-appearance: none;
+}
+
+.ce-field input::placeholder {
+  color: var(--dim);
+}
+
+.ce-field input:focus {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.ce-field input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
+
+/* ── Amenity tag picker ─────────────────────────────────────────────────────── */
+
+.ce-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.ce-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--card);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.ce-tag--on {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #4ade80;
+}
+
+/* ── Error banner ───────────────────────────────────────────────────────────── */
+
+.ce-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 0.5px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #f87171;
+  margin-bottom: 12px;
+}
+
+/* ── Submit button ──────────────────────────────────────────────────────────── */
+
+.ce-submit {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 40px;
+  transition: opacity 0.15s ease;
+}
+
+.ce-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Success overlay ────────────────────────────────────────────────────────── */
+
+.ce-success[hidden] { display: none; }
+
+.ce-success {
+  position: absolute;
+  inset: 0;
+  background: var(--screen);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 12px;
+  text-align: center;
+  z-index: 20;
+}
+
+.ce-success__icon {
+  font-size: 52px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.ce-success__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.4px;
+}
+
+.ce-success__sub {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+.ce-success__btn-primary {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.ce-success__btn-secondary {
+  width: 100%;
+  background: var(--card);
+  border: 0.5px solid var(--hair);
+  border-radius: 12px;
+  padding: 13px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
