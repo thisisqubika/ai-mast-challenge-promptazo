@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="./assets/css/live.css">
 <link rel="stylesheet" href="./assets/css/recap.css">
 <link rel="stylesheet" href="./assets/css/event-detail.css">
+<link rel="stylesheet" href="./assets/css/create-event.css">
 </head>
 <body>
 <div class="stage">
@@ -28,7 +29,7 @@
     </div>
 
     <!-- SCROLL AREA -->
-    <div class="scroll">
+    <div id="homeView" class="scroll">
 
       <!-- GREETING -->
       <div class="greeting">
@@ -110,6 +111,9 @@
     <!-- RECAP SCREEN -->
     <div id="recapView" class="scroll" hidden></div>
 
+    <!-- CREATE EVENT SCREEN -->
+    <div id="createEventView" class="scroll" hidden></div>
+
     <!-- BOTTOM NAV -->
     <div class="bottomnav">
       <div class="live-bar" hidden>
@@ -133,6 +137,7 @@
 <script type="module" src="./assets/js/event-detail.js"></script>
 <script type="module" src="./assets/js/recap.js"></script>
 <script type="module" src="./assets/js/event.js"></script>
+<script type="module" src="./assets/js/create-event.js"></script>
 
 </body>
 </html>

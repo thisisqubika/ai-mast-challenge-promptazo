@@ -239,6 +239,61 @@ def test_upload_photo_not_checked_in_returns_403(
     assert response.status_code == 403
 
 
+# ---------------------------------------------------------------------------
+# FEST-10 — Create new event
+# ---------------------------------------------------------------------------
+
+_VALID_EVENT = {
+    "home_team": "Argentina",
+    "home_flag": "🇦🇷",
+    "away_team": "Chile",
+    "away_flag": "🇨🇱",
+    "venue_name": "Estadio Único",
+    "venue_address": "Av. 32, La Plata",
+    "organizer": "FanFest Test",
+    "kickoff_iso": "2030-06-15T20:00:00",
+}
+
+
+def test_create_event_returns_201():
+    response = client.post("/api/v1/events", json=_VALID_EVENT)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "future"
+    assert data["id"]
+    assert data["home_team"] == "Argentina"
+    assert data["away_team"] == "Chile"
+    assert data["attendees"] == []
+    assert data["attendee_count"] == 0
+
+
+def test_create_event_status_always_future():
+    payload = {**_VALID_EVENT, "status": "live"}
+    response = client.post("/api/v1/events", json=payload)
+    assert response.status_code == 201
+    assert response.json()["status"] == "future"
+
+
+def test_create_event_missing_required_field():
+    payload = {k: v for k, v in _VALID_EVENT.items() if k != "venue_name"}
+    response = client.post("/api/v1/events", json=payload)
+    assert response.status_code == 422
+
+
+def test_create_event_invalid_kickoff_iso():
+    response = client.post("/api/v1/events", json={**_VALID_EVENT, "kickoff_iso": "not-a-date"})
+    assert response.status_code == 422
+
+
+def test_create_event_appears_in_list():
+    response = client.post("/api/v1/events", json=_VALID_EVENT)
+    assert response.status_code == 201
+    new_id = response.json()["id"]
+    list_response = client.get("/api/v1/events?status=future")
+    assert list_response.status_code == 200
+    assert any(e["id"] == new_id for e in list_response.json())
+
+
 def test_list_photos_returns_uploader(
     client: TestClient,
     sample_event_id: str,

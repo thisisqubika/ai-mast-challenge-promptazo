@@ -8,6 +8,7 @@ from app.schemas.events import (
     CheckinResponse,
     CommentOut,
     CommentRequest,
+    EventCreate,
     EventDetail,
     EventSummary,
     LikeRequest,
@@ -77,6 +78,7 @@ def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
                 kickoff_iso=e["kickoff_iso"],
                 status=e.get("status", "future"),
                 venue_name=e.get("venue_name", ""),
+                venue_address=e.get("venue_address", ""),
                 venue_distance=e.get("venue_distance", ""),
                 amenities=e.get("amenities", []),
                 competition=e.get("competition", ""),
@@ -88,6 +90,37 @@ def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
             )
         )
     return result
+
+
+# ---------------------------------------------------------------------------
+# FEST-10: Create event
+# ---------------------------------------------------------------------------
+
+
+@router.post("", response_model=EventDetail, status_code=201)
+def create_event_handler(body: EventCreate) -> EventDetail:
+    event = events_service.create_event(body)
+    return EventDetail(
+        id=event["id"],
+        home_team=event["home_team"],
+        home_flag=event["home_flag"],
+        away_team=event["away_team"],
+        away_flag=event["away_flag"],
+        kickoff_iso=event["kickoff_iso"],
+        match_start_time=event["match_start_time"],
+        status=event.get("status", "future"),
+        venue_name=event["venue_name"],
+        venue_address=event["venue_address"],
+        venue_distance=event.get("venue_distance", ""),
+        competition=event.get("competition", ""),
+        amenities=event.get("amenities", []),
+        organizer=event["organizer"],
+        attendees=[],
+        attendee_count=0,
+        invite_link=event["invite_link"],
+        calendar_link=event["calendar_link"],
+        maps_link=event["maps_link"],
+    )
 
 
 # ---------------------------------------------------------------------------
