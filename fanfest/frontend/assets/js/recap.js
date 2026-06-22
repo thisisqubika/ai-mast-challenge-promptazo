@@ -71,11 +71,8 @@ function _collageUrls() {
 }
 
 // Render the fan photo strip for the post-match screen.
-function _renderPhotoStrip() {
-  if (_mediaList.length === 0) {
-    return `<div style="padding:0 20px 20px;font-size:13px;color:#475569;text-align:center">No photos uploaded yet.</div>`;
-  }
-  const cards = _mediaList.slice(0, 12).map(m => `
+function _renderPhotoGroup(photos) {
+  const cards = photos.slice(0, 12).map(m => `
     <div style="width:140px;height:110px;border-radius:10px;overflow:hidden;flex:none;position:relative">
       <img src="${m.url}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" loading="lazy">
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.6))"></div>
@@ -88,6 +85,37 @@ function _renderPhotoStrip() {
       </div>
       <div style="position:absolute;right:0;top:0;bottom:4px;width:48px;background:linear-gradient(to right,rgba(7,9,13,0),rgba(7,9,13,.92));pointer-events:none"></div>
     </div>`;
+}
+
+function _renderPhotoStrip() {
+  if (_mediaList.length === 0) {
+    return `<div style="padding:0 20px 20px;font-size:13px;color:#475569;text-align:center">No photos uploaded yet.</div>`;
+  }
+
+  const pre    = _mediaList.filter(m => m.phase === 'pre');
+  const during = _mediaList.filter(m => m.phase === 'during');
+  const post   = _mediaList.filter(m => m.phase === 'post');
+  const hasGroups = pre.length || during.length || post.length;
+
+  if (!hasGroups) {
+    return _renderPhotoGroup(_mediaList);
+  }
+
+  const groups = [
+    { label: 'Pre-match',    icon: '🍺', photos: pre },
+    { label: 'During match', icon: '⚽', photos: during },
+    { label: 'Post-match',   icon: '🎉', photos: post },
+  ].filter(g => g.photos.length > 0);
+
+  return groups.map(g => `
+    <div style="margin:0 0 16px">
+      <div style="padding:0 20px 6px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px">${g.icon}</span>
+        <span style="font-size:13px;font-weight:700;color:#F1F5F9">${g.label}</span>
+        <span style="font-size:11px;color:#475569">${g.photos.length} photo${g.photos.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${_renderPhotoGroup(g.photos)}
+    </div>`).join('');
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -137,6 +165,7 @@ function showView() {
   if (view)   { view.hidden = false; view.scrollTop = 0; }
   if (livebar)  livebar.hidden  = true;
   if (floatCta) floatCta.hidden = true;
+  if (typeof window._setNavContext === 'function') window._setNavContext('detail');
 }
 
 function hideView() {
@@ -161,7 +190,21 @@ window._rcGoBack = function () {
   }
 };
 
-window._rcExit = function () { hideView(); };
+window._rcExit = function () {
+  if (_phraseTimer) { clearInterval(_phraseTimer); _phraseTimer = null; }
+  const view = $r('recapView');
+  const floatCta = document.getElementById('edFloatCta');
+  _allPhoneViews().forEach(v => { v.hidden = true; });
+  if (view) view.innerHTML = '';
+  if (floatCta) floatCta.hidden = true;
+  if (typeof window.navigateToHome === 'function') {
+    window.navigateToHome();
+  } else {
+    const home = homeScroll();
+    if (home) home.hidden = false;
+    if (typeof window._updateLiveBar === 'function') window._updateLiveBar();
+  }
+};
 
 window._rcGoNext = function () {
   const pos = _activeIdx.indexOf(_rcCurrent);
@@ -331,8 +374,8 @@ function renderPostMatch(event) {
 
         <!-- Photo strip -->
         <div style="margin:20px 20px 12px">
-          <div style="font-size:16px;font-weight:800;color:#F1F5F9;margin-bottom:4px">Match moments</div>
-          <div style="font-size:12px;color:#475569">${_mediaList.length > 0 ? `${_mediaList.length} photos from fans` : 'Fan photos'}</div>
+          <div style="font-size:16px;font-weight:800;color:#F1F5F9;margin-bottom:4px">Fan photos</div>
+          <div style="font-size:12px;color:#475569">${_mediaList.length > 0 ? `${_mediaList.length} photos from fans` : 'No photos yet'}</div>
         </div>
         ${_renderPhotoStrip()}
 
@@ -548,6 +591,16 @@ function _buildAllSlides(recap, event) {
   const fanVibesValue  = predPct !== null ? `${predPct}%` : '100%';
   const fanVibesLabel  = predPct !== null ? 'Got the score right' : 'Fan vibes';
 
+  // Time-of-day aware opening headline
+  const _kickoffHour = event.kickoff_iso
+    ? new Date(event.kickoff_iso).getHours()
+    : new Date().getHours();
+  const _openingLine = _kickoffHour < 12
+    ? 'A MORNING<br>TO REMEMBER'
+    : _kickoffHour < 17
+      ? 'AN AFTERNOON<br>TO REMEMBER'
+      : 'A NIGHT<br>TO REMEMBER';
+
   const collage = _collageUrls();
   const h = i => highlights[i] || {};  // safe highlight accessor
 
@@ -560,7 +613,7 @@ function _buildAllSlides(recap, event) {
       ${_chrome(0)}
       <div class="rc-s1-content">
         <div style="font-size:10px;font-weight:800;color:#75AADB;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">TRIBUNA.AI</div>
-        <div style="font-size:30px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.08;margin-bottom:10px">A NIGHT<br>TO REMEMBER</div>
+        <div style="font-size:30px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.08;margin-bottom:10px">${_openingLine}</div>
         <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:14px">${homeTeam} ${homeScore} – ${awayScore} ${awayTeam}${venue ? ' · ' + venue : ''}</div>
         ${h(0).description ? `<div style="font-size:13px;color:rgba(255,255,255,.75);font-style:italic;line-height:1.5;margin-bottom:14px">"${h(0).description}"</div>` : ''}
         <div style="display:flex;gap:8px;flex-wrap:wrap">

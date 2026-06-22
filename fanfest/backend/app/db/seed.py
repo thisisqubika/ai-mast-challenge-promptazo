@@ -7,9 +7,8 @@ from app.db.database import get_session
 from app.db.models import EventModel, PhotoModel, RegistrationModel
 
 # Pre-generated recap videos shipped with the repo (event_id → relative URL).
-_PRE_GENERATED_VIDEOS: dict[str, str] = {
-    "evt-002": "/media/recap/evt-002/recap-video.mp4",
-}
+# evt-002 removed so the AI video generation can be triggered fresh.
+_PRE_GENERATED_VIDEOS: dict[str, str] = {}
 
 
 def run_seed() -> None:
