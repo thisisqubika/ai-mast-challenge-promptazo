@@ -181,6 +181,27 @@ export async function fetchEvents(status = null) {
 }
 
 // ---------------------------------------------------------------------------
+// Video recap (AI-generated MP4)
+// ---------------------------------------------------------------------------
+
+export async function fetchVideoRecap(eventId) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/recap/video`);
+  if (!res.ok) throw new Error(`fetchVideoRecap ${res.status}`);
+  return res.json();
+}
+
+export async function generateVideoRecap(eventId) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/recap/video`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw err;
+  }
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
 // FEST-10: Create new event
 // ---------------------------------------------------------------------------
 

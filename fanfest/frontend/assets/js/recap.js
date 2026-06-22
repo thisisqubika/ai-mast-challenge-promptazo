@@ -2,7 +2,7 @@
    Renders the AI-generated event recap inside the phone frame.
    Entry point: window.navigateToRecap(eventId) called from main.js. */
 
-import { fetchRecap, fetchMatchState } from './api.js';
+import { fetchRecap, fetchMatchState, fetchVideoRecap } from './api.js';
 
 const $r = (id) => document.getElementById(id);
 const homeScroll = () => document.querySelector('.phone > .scroll');
@@ -37,7 +37,20 @@ function renderError(msg) {
     </div>`;
 }
 
-function renderRecapContent(data) {
+function renderVideoPlayer(videoUrl) {
+  if (!videoUrl) return '';
+  const src = `http://localhost:8000${videoUrl}`;
+  return `
+    <div class="recap-video-section">
+      <div class="recap-video-section__label">🎬 Recap Video</div>
+      <video class="recap-video-player" src="${src}"
+             controls playsinline preload="metadata">
+        Tu navegador no soporta video HTML5.
+      </video>
+    </div>`;
+}
+
+function renderRecapContent(data, videoUrl) {
   const highlights = (data.highlights || []).map((h) => `
     <div class="recap-slide">
       <div class="recap-slide__label">${h.label}</div>
@@ -57,6 +70,7 @@ function renderRecapContent(data) {
 
   return renderBackRow() +
     fallbackNotice +
+    renderVideoPlayer(videoUrl) +
     `<div class="recap-scorefinal">
        <div class="recap-scorefinal__label">Resultado Final</div>
        <div class="recap-scorefinal__teams">
@@ -73,18 +87,23 @@ function renderRecapContent(data) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
+let _previousView = null;
+
 function showView() {
   const home = homeScroll();
+  const eventDetail = $r('eventDetailView');
   const view = $r('recapView');
+  // Remember what was visible so we can restore it on back
+  _previousView = (eventDetail && !eventDetail.hidden) ? eventDetail : home;
   if (home) home.hidden = true;
+  if (eventDetail) eventDetail.hidden = true;
   if (view) { view.hidden = false; view.scrollTop = 0; }
 }
 
 function hideView() {
-  const home = homeScroll();
   const view = $r('recapView');
-  if (home) home.hidden = false;
   if (view) view.hidden = true;
+  if (_previousView) _previousView.hidden = false;
 }
 
 function wireBack() {
@@ -120,10 +139,21 @@ async function navigateToRecap(eventId) {
     return;
   }
 
-  // Fetch AI recap
+  // Fetch AI recap and video (in parallel; video is optional)
   try {
-    const data = await fetchRecap(eventId);
-    view.innerHTML = renderRecapContent(data);
+    const [data, videoResult] = await Promise.allSettled([
+      fetchRecap(eventId),
+      fetchVideoRecap(eventId),
+    ]);
+
+    if (data.status === 'rejected') {
+      view.innerHTML = renderError('No se pudo generar la crónica. Intenta nuevamente.');
+      wireBack();
+      return;
+    }
+
+    const videoUrl = videoResult.status === 'fulfilled' ? videoResult.value.video_url : null;
+    view.innerHTML = renderRecapContent(data.value, videoUrl);
     wireBack();
   } catch (_) {
     view.innerHTML = renderError('No se pudo generar la crónica. Intenta nuevamente.');

@@ -110,6 +110,7 @@ def _event_to_dict(e: EventModel) -> dict:
         "maps_link": e.maps_link,
         "status": e.status,
         "recap_event_id": e.recap_event_id,
+        "recap_video_url": e.recap_video_url,
     }
 
 
