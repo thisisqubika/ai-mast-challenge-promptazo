@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.services import events_service
 
-EVENT_ID = "evt-001"
+EVENT_ID = "evt-010"
 MISSING_ID = "evt-999"
 
 client = TestClient(app)
@@ -21,7 +21,7 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def reset_fest02_state():
-    """Ensure evt-001 has a future match_start_time so predictions are open."""
+    """Ensure evt-010 has a future match_start_time so predictions are open."""
     events_service.set_match_start_time(
         EVENT_ID, datetime(2030, 1, 1, 18, 0, tzinfo=timezone.utc)
     )
@@ -38,9 +38,9 @@ def test_get_event_detail_returns_full_data():
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == EVENT_ID
-    assert data["home_team"] == "Argentina"
-    assert data["away_team"] == "Brasil"
-    assert data["venue_name"] == "La Bombonera"
+    assert data["home_team"] == "Brasil"
+    assert data["away_team"] == "Argentina"
+    assert data["venue_name"] == "Maracanã Fan Bar"
     assert data["organizer"] == "FanFest HQ"
     assert "invite_link" in data
     assert "calendar_link" in data
