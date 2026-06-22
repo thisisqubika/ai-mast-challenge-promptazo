@@ -31,10 +31,9 @@ from app.services import football_api
 from app.services import match_state as match_state_service
 from app.services import photos_service
 from app.services import recap_service
-from app.services.video_recap.errors import RecapError
 from app.services import registry
 from app.services import video_recap_service
-from app.services import events_service
+from app.services.video_recap.errors import RecapError
 
 
 def _abbr(name: str) -> str:
