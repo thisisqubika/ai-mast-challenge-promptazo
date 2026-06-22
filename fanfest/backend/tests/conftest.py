@@ -57,6 +57,8 @@ def reset_services() -> None:
     ps._photos = {}
 
     ms._states = {m.event_id: _to_state(m) for m in MATCHES}
+    ms._fixture_links = {}
+    ms._last_sync = {}
     rs._store = {
         r.event_id: RecapResponse(
             event_id=r.event_id,

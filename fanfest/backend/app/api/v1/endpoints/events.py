@@ -2,6 +2,7 @@ import unicodedata
 
 from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 
+from app.core.config import settings
 from app.schemas.events import (
     AttendeeOut,
     CheckinRequest,
@@ -13,6 +14,7 @@ from app.schemas.events import (
     EventSummary,
     LikeRequest,
     LikeResponse,
+    LinkFixtureRequest,
     MatchState,
     MatchStateUpdate,
     MediaList,
@@ -25,12 +27,14 @@ from app.schemas.events import (
     VideoRecapResponse,
 )
 from app.services import events_service
+from app.services import football_api
 from app.services import match_state as match_state_service
 from app.services import photos_service
 from app.services import recap_service
 from app.services.video_recap.errors import RecapError
 from app.services import registry
 from app.services import video_recap_service
+from app.services import events_service
 
 
 def _abbr(name: str) -> str:
@@ -57,17 +61,19 @@ def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
     raw_events = events_service.list_events(status)
     result: list[EventSummary] = []
     for e in raw_events:
-        home_score = None
-        away_score = None
+        # DB-persisted score (survives restarts); fall back to in-memory match state
+        home_score = e.get("home_score")
+        away_score = e.get("away_score")
         photo_count = 0
-        recap_id: str | None = e.get("recap_event_id")
+        recap_id: str | None = e.get("recap_event_id") or e["id"]
         if recap_id:
-            try:
-                state = match_state_service.get_state(recap_id)
-                home_score = state.home_score
-                away_score = state.away_score
-            except HTTPException:
-                pass
+            if home_score is None or away_score is None:
+                try:
+                    state = match_state_service.get_state(recap_id)
+                    home_score = state.home_score
+                    away_score = state.away_score
+                except HTTPException:
+                    pass
             photo_count = len(photos_service.list_photos(e["id"]))
         result.append(
             EventSummary(
@@ -196,6 +202,35 @@ def create_checkin(event_id: str, body: CheckinRequest) -> CheckinResponse:
         name=name,
     )
     return CheckinResponse(**result)
+
+
+# ---------------------------------------------------------------------------
+# FEST-13: API-Football integration
+# ---------------------------------------------------------------------------
+
+
+@router.get("/fixtures/search")
+async def search_fixtures_endpoint(
+    team: str = Query(...), date: str = Query(...)
+) -> list[dict]:
+    """Search API-Football for fixtures matching a team name substring and date."""
+    if not settings.api_football_key:
+        raise HTTPException(503, "API_FOOTBALL_KEY is not configured")
+    return await football_api.search_fixtures(team, date)
+
+
+@router.post("/{event_id}/link-fixture", response_model=MatchState)
+async def link_fixture_endpoint(event_id: str, body: LinkFixtureRequest) -> MatchState:
+    """Link an API-Football fixture to a FanFest event and perform an initial sync."""
+    match_state_service.get_state(event_id)
+    match_state_service.link_fixture(event_id, body.fixture_id)
+    return await match_state_service.sync_from_api(event_id)
+
+
+@router.post("/{event_id}/sync-fixture", response_model=MatchState)
+async def sync_fixture_endpoint(event_id: str) -> MatchState:
+    """Re-fetch fixture state from API-Football, subject to the 60 s throttle."""
+    return await match_state_service.sync_from_api(event_id)
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +379,9 @@ async def get_recap(event_id: str) -> RecapResponse:
     recap = recap_service.get_recap(event_id)
     if recap is None:
         raise HTTPException(status_code=404, detail="No recap found for this event")
+    recap.prediction_pct = events_service.get_prediction_pct(
+        event_id, recap.home_score, recap.away_score
+    )
     return recap
 
 
@@ -356,7 +394,11 @@ async def create_recap(event_id: str, body: RecapRequest) -> RecapResponse:
             detail="Recap is only available after the match ends",
         )
     photos = photos_service.list_photos(event_id)
-    return recap_service.generate_recap(event_id, state, photos, body.tone, body.slide_count)
+    recap = recap_service.generate_recap(event_id, state, photos, body.tone, body.slide_count)
+    recap.prediction_pct = events_service.get_prediction_pct(
+        event_id, recap.home_score, recap.away_score
+    )
+    return recap
 
 
 # ---------------------------------------------------------------------------

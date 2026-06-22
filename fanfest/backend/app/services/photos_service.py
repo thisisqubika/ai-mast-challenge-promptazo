@@ -115,8 +115,24 @@ def upload_media(
 
 
 def list_media(event_id: str) -> list[Photo]:
-    posts = _photos.get(event_id, [])
-    return sorted(posts, key=lambda p: p.uploaded_at, reverse=True)
+    posts = _photos.get(event_id)
+    if not posts:
+        # Rebuild from DB after a server restart
+        db_photos = list_photos(event_id)
+        if db_photos:
+            posts = [
+                Photo(
+                    id=p.id,
+                    url=p.url,
+                    uploader_id="",
+                    uploader_name=p.uploader_name,
+                    uploader_handle="",
+                    uploaded_at=p.uploaded_at,
+                )
+                for p in db_photos
+            ]
+            _photos[event_id] = posts
+    return sorted(posts or [], key=lambda p: p.uploaded_at, reverse=True)
 
 
 def get_media(event_id: str, media_id: str) -> Photo | None:
@@ -210,17 +226,35 @@ def _upload_local(
 
     media_type = media_storage.media_type_for(content_type)
     _, url = media_storage.save_file(event_id, content_type, file_bytes)
+    photo_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
     photo = Photo(
-        id=str(uuid.uuid4()),
+        id=photo_id,
         url=url,
         uploader_id=uploader_id,
         uploader_name=uploader_name,
         uploader_handle=uploader_handle,
-        uploaded_at=datetime.now(timezone.utc),
+        uploaded_at=now,
         media_type=media_type,
         caption=caption,
     )
     _photos.setdefault(event_id, []).append(photo)
+    # Persist to DB so photos survive server restarts
+    try:
+        from app.db.database import get_session
+        from app.db.models import PhotoModel
+        with get_session() as db:
+            db.add(PhotoModel(
+                id=photo_id,
+                event_id=event_id,
+                url=url,
+                uploader_id=uploader_id,
+                uploader_name=uploader_name,
+                uploaded_at=now,
+            ))
+            db.commit()
+    except Exception:
+        pass
     return photo
 
 

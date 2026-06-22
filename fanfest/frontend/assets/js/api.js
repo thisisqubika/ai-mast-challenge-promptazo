@@ -143,6 +143,12 @@ export async function listComments(eventId, mediaId) {
   return res.json();
 }
 
+export async function syncFixture(eventId) {
+  const res = await fetch(`${API_BASE}/events/${eventId}/sync-fixture`, { method: 'POST' });
+  if (!res.ok) throw new Error(`syncFixture ${res.status}`);
+  return res.json();
+}
+
 export async function advanceMatchState(eventId, action, data = {}) {
   const res = await fetch(`${API_BASE}/events/${eventId}/match-state`, {
     method: "POST",

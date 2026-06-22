@@ -15,18 +15,6 @@ const categories = [
   { id: 'otros',    label: 'Otros',     icon: 'ti ti-sparkles' },
 ];
 
-const worldCards = [
-  { isLive: false, home: 'Brazil', homeFlag: '🇧🇷', away: 'France', awayFlag: '🇫🇷',
-    kickoff: '18:00', statusText: 'in 45m', venue: 'Club House Alberdi', distance: '2.1km',
-    amenities: [['🍺', 'Beers'], ['📺', 'Screen']] },
-  { isLive: true, home: 'Spain', homeFlag: '🇪🇸', away: 'Germany', awayFlag: '🇩🇪',
-    score: '1 – 0', statusText: "LIVE 34'", venue: 'Bar Munich', distance: '1.8km',
-    amenities: [['🍺', 'Beers'], ['🎶', 'DJ']] },
-  { isLive: false, home: 'Portugal', homeFlag: '🇵🇹', away: 'Morocco', awayFlag: '🇲🇦',
-    kickoff: '22:00', statusText: 'in 2h 30m', venue: 'Roof Lounge', distance: '3km',
-    amenities: [['🍷', 'Wine'], ['📺', 'Screen']] },
-];
-
 // Recap cards — loaded from API; static array is a render-before-fetch placeholder
 let recapCards = [];
 
@@ -131,31 +119,7 @@ function renderSeleccion(events) {
   }).join('');
 }
 
-function renderWorld() {
-  $('rowWorld').innerHTML = worldCards.map((w) => {
-    const center = w.isLive
-      ? `<div class="score-col__score">${w.score}</div>
-         <div class="live-flag">
-           <div class="live-dot"><div class="live-dot__ring"></div><div class="live-dot__core"></div></div>
-           <span class="live-flag__text">${w.statusText}</span>
-         </div>`
-      : `<div class="score-col__kickoff">${w.kickoff}</div>
-         <div class="score-col__status">${w.statusText}</div>`;
-    return `
-    <div class="card-world${w.isLive ? ' is-live' : ''}">
-      <div class="card-world__head">
-        <div class="team"><div class="team__flag">${w.homeFlag}</div><div class="team__name">${w.home}</div></div>
-        <div class="score-col">${center}</div>
-        <div class="team"><div class="team__flag">${w.awayFlag}</div><div class="team__name">${w.away}</div></div>
-      </div>
-      <div class="card-world__body">
-        <div class="card-world__venue">${w.venue} <span>· ${w.distance}</span></div>
-        ${tags(w.amenities)}
-        <button class="btn-link" type="button">See fan fests →</button>
-      </div>
-    </div>`;
-  }).join('');
-}
+
 
 function renderRecap() {
   const pitch = `<svg width="120" height="50" viewBox="0 0 120 50" fill="none" class="card-recap__pitch"><path d="M0 50 Q15 30 30 40 Q45 22 60 34 Q75 16 90 32 Q105 24 120 36 L120 50Z" fill="#f1f5f9"/></svg>`;
@@ -301,6 +265,7 @@ async function loadRecapCards() {
     const res = await fetch('http://localhost:8000/api/v1/events?status=past');
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
+    events.sort((a, b) => new Date(b.kickoff_iso) - new Date(a.kickoff_iso));
     recapCards = events.map((e) => ({
       id: e.id,
       status: e.status,
@@ -412,7 +377,6 @@ $('rowUpcoming').addEventListener('click', (e) => {
 });
 
 renderCategories();
-renderWorld();
 renderNav();
 
 // Async sections
@@ -422,8 +386,8 @@ loadUpcomingCards();
 
 $('rowRecap').addEventListener('click', (e) => {
   const resultEl = e.target.closest('[data-recap-detail-id]');
-  if (resultEl && typeof window.navigateToEventDetail === 'function') {
-    window.navigateToEventDetail({ id: resultEl.dataset.recapDetailId, status: resultEl.dataset.recapStatus });
+  if (resultEl && typeof window.navigateToRecap === 'function') {
+    window.navigateToRecap(resultEl.dataset.recapDetailId);
     return;
   }
   const btn = e.target.closest('[data-recap-event-id]');

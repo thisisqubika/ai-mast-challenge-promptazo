@@ -119,9 +119,7 @@ def _build_context(state: MatchState, photos: list[Photo]) -> dict:
 
 def _build_prompt(context: dict, tone: str, slide_count: int) -> str:
     home_team  = context.get("home_team", "el equipo local")
-    away_team  = context.get("away_team", "el equipo visitante")
     home_goals = context.get("home_goals", [])
-    home_score = context.get("home_score", 0)
 
     # Explain the highlight strategy to the model explicitly
     if home_goals:

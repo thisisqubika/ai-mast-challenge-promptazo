@@ -1,7 +1,7 @@
 /* Event Detail (Previa) — FEST-05 / FEST-08
    Hype Wall wired to real /media API. Upload modal with file + caption. */
 
-import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, submitPrediction, generateVideoRecap } from './api.js';
+import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, syncFixture, submitPrediction, generateVideoRecap } from './api.js';
 
 // ── Event state (populated from API on navigate) ───────────────────────────────
 const edEvent = {
@@ -13,12 +13,53 @@ const edEvent = {
   matchAwayScore: 0,
   matchGoals: [],
   venueName: '',
+  venueAddress: '',
   venueDistance: '',
   attending: '',
   amenities: [],
   recapVideoUrl: null,
   match: { home: '', homeFlag: '', away: '', awayFlag: '', competition: '', countdownLabel: '' },
 };
+
+// ── Media URL helper (backend on :8000, frontend on :8080) ───────────────────
+const MEDIA_BASE = 'http://localhost:8000';
+function _mediaUrl(url) {
+  if (!url) return '';
+  return url.startsWith('/') ? MEDIA_BASE + url : url;
+}
+
+// ── Live sync (API-Football polling) ──────────────────────────────────────────
+let _syncInterval = null;
+const SYNC_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
+
+function _stopLiveSync() {
+  if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
+}
+
+function _applyMatchState(ms) {
+  edEvent.matchStatus    = ms.status;
+  edEvent.matchHomeScore = ms.home_score;
+  edEvent.matchAwayScore = ms.away_score;
+  edEvent.matchGoals     = ms.goals || [];
+  // Update only the match header in-place to preserve scroll position
+  const matchEl = document.querySelector('.ed-hero-card');
+  if (matchEl) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = renderMatchHeader(edEvent.match);
+    matchEl.replaceWith(tmp.firstElementChild);
+  }
+  if (ms.status === 'ended') _stopLiveSync();
+}
+
+function _startLiveSync(eventId) {
+  _stopLiveSync();
+  _syncInterval = setInterval(async () => {
+    try {
+      const ms = await syncFixture(eventId);
+      _applyMatchState(ms);
+    } catch (_) { /* silently skip failed syncs */ }
+  }, SYNC_INTERVAL_MS);
+}
 
 function _computeCountdown(kickoffIso) {
   const diff = Math.floor((new Date(kickoffIso) - Date.now()) / 1000);
@@ -33,7 +74,9 @@ function _applyEventData(data) {
   edEvent.attendeeCount = data.attendee_count || 0;
   edCheckedIn = !!(data.attendees && data.attendees.some(a => a.user_id === edCurrentUser.id));
   edEvent.venueName     = data.venue_name || '';
+  edEvent.venueAddress  = data.venue_address || '';
   edEvent.venueDistance = data.venue_distance || '';
+  edEvent.kickoffIso    = data.kickoff_iso || null;
   edEvent.attending     = data.attendee_count ? `${data.attendee_count} going` : '';
   edEvent.amenities     = data.amenities || [];
   edEvent.recapVideoUrl = data.recap_video_url || null;
@@ -81,139 +124,161 @@ const edChip = (icon, label) =>
 // ── Renderers ─────────────────────────────────────────────────────────────────
 function renderBackRow(event) {
   return `
-    <div class="ed-back">
+    <div class="ed-nav-header">
       <button class="ed-back__btn" id="edBackBtn" type="button" aria-label="Back">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <span class="ed-back__venue">${event.venueName}</span>
+      <div class="ed-nav-title"><span>${event.venueName}</span></div>
     </div>`;
 }
 
 function renderMatchHeader(match) {
   const ms = edEvent.matchStatus;
 
-  let pillHtml;
-  if (ms === 'live') {
-    pillHtml = `<div class="ed-match__previa-pill ed-match__previa-pill--live">
-      <div class="ed-pill-dot"></div>LIVE
-    </div>`;
-  } else if (ms === 'ended' || edEvent.isPast) {
-    pillHtml = `<div class="ed-match__previa-pill ed-match__previa-pill--ended">Ended</div>`;
-  } else {
-    pillHtml = `<div class="ed-match__previa-pill">PRE-MATCH</div>`;
-  }
+  // Status pill
+  let pillClass = '', pillText = 'PRE-MATCH';
+  if (ms === 'live') { pillClass = 'ed-status-pill--live'; pillText = 'LIVE'; }
+  else if (ms === 'ended' || edEvent.isPast) { pillClass = 'ed-status-pill--ended'; pillText = 'EVENT FINISHED'; }
+  const subText = (ms === 'pre' && match.countdownLabel) ? match.countdownLabel : '';
 
-  const showScore = ms === 'live' || ms === 'ended';
-  const scoreHtml = showScore
-    ? `${edEvent.matchHomeScore} – ${edEvent.matchAwayScore}`
-    : '– : –';
+  const showScore = ms === 'live' || ms === 'ended' || edEvent.isPast;
+  const isPre = !showScore;
 
   const homeGoals = showScore ? edEvent.matchGoals.filter(g => g.team === match.home) : [];
   const awayGoals = showScore ? edEvent.matchGoals.filter(g => g.team === match.away) : [];
-
   const _lastName = (name) => name.split(' ').pop();
   const _goalItems = (goals) => goals.map(g =>
-    `<div class="ed-match__team-goal">⚽ ${g.minute}' ${_lastName(g.player)}</div>`
+    `<div class="ed-team-goal">⚽ ${g.minute}' ${_lastName(g.player)}</div>`
   ).join('');
+  const homeGoalsHtml = homeGoals.length ? `<div class="ed-team-goals">${_goalItems(homeGoals)}</div>` : '';
+  const awayGoalsHtml = awayGoals.length ? `<div class="ed-team-goals">${_goalItems(awayGoals)}</div>` : '';
 
-  const homeGoalsHtml = homeGoals.length
-    ? `<div class="ed-match__team-goals">${_goalItems(homeGoals)}</div>` : '';
-  const awayGoalsHtml = awayGoals.length
-    ? `<div class="ed-match__team-goals">${_goalItems(awayGoals)}</div>` : '';
+  const liveHtml = ms === 'live' ? `
+    <div class="ed-live-indicator">
+      <div class="ed-live-dot-wrap">
+        <div class="ed-live-dot-ring"></div><div class="ed-live-dot-core"></div>
+      </div>
+      <span class="ed-live-label">LIVE</span>
+    </div>` : '';
 
-  const countdownHtml = ms === 'pre' && match.countdownLabel
-    ? `<div class="ed-match__countdown">⏱ ${match.countdownLabel}</div>`
-    : '';
+  const predZone = renderPredictionZone(match);
+  const divider  = predZone ? '<div class="ed-card-divider"></div>' : '';
 
   return `
-    <div class="ed-match">
-      <div class="ed-match__status">${pillHtml}</div>
-      <div class="ed-match__teams">
-        <div class="ed-match__team">
-          <div class="ed-match__team-flag">${match.homeFlag}</div>
-          <div class="ed-match__team-name">${match.home}</div>
+    <div class="ed-hero-card">
+      <div class="ed-status-area">
+        <div class="ed-status-pill ${pillClass}">${pillText}</div>
+        ${subText ? `<span class="ed-status-sub">${subText}</span>` : ''}
+      </div>
+      <div class="ed-score-row">
+        <div class="ed-team-col">
+          <div class="ed-team-flag">${match.homeFlag}</div>
+          <span class="ed-team-name">${match.home}</span>
           ${homeGoalsHtml}
         </div>
-        <div class="ed-match__score">${scoreHtml}</div>
-        <div class="ed-match__team">
-          <div class="ed-match__team-flag">${match.awayFlag}</div>
-          <div class="ed-match__team-name">${match.away}</div>
+        <div class="ed-score-center">
+          <div class="ed-score-pills">
+            <div class="ed-score-digit${isPre ? ' ed-score-digit--pre' : ''}">${showScore ? edEvent.matchHomeScore : '–'}</div>
+            <span class="ed-score-sep">–</span>
+            <div class="ed-score-digit${isPre ? ' ed-score-digit--pre' : ''}">${showScore ? edEvent.matchAwayScore : '–'}</div>
+          </div>
+          ${liveHtml}
+        </div>
+        <div class="ed-team-col">
+          <div class="ed-team-flag">${match.awayFlag}</div>
+          <span class="ed-team-name">${match.away}</span>
           ${awayGoalsHtml}
         </div>
       </div>
-      ${countdownHtml}
-      <div class="ed-match__competition">${match.competition}</div>
+      <div class="ed-competition-line"><span>${match.competition}</span></div>
+      ${divider}${predZone}
+    </div>`;
+}
+
+function renderPredictionZone(match) {
+  if (edEvent.isPast || edEvent.matchStatus === 'live' || edEvent.matchStatus === 'ended') return '';
+  const home = (match && match.home) || edEvent.match.home || 'Home';
+  const away = (match && match.away) || edEvent.match.away || 'Away';
+  if (edState.predictSent) {
+    return `
+      <div class="ed-prediction-zone">
+        <div class="ed-predict-label">YOUR PREDICTION</div>
+        <div class="ed-predict-confirmed-row">
+          <span class="ed-predict-result">${home} ${edState.homeScore} – ${edState.awayScore} ${away}</span>
+          <button class="ed-predict-edit-btn" id="edPredictEditBtn" type="button">✏️ Edit</button>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="ed-prediction-zone">
+      <div class="ed-predict-label">YOUR PREDICTION</div>
+      <div class="ed-predict-subcard">
+        <div class="ed-predict-question">What will the final score be?</div>
+        <div class="ed-steppers-row">
+          <div class="ed-stepper-col">
+            <span class="ed-stepper-team-label">${home.slice(0,3).toUpperCase()}</span>
+            <div class="ed-stepper-controls">
+              <button class="ed-stepper-btn" data-step="home" data-dir="-1" type="button">–</button>
+              <div class="ed-stepper-value">${edState.homeScore}</div>
+              <button class="ed-stepper-btn" data-step="home" data-dir="1" type="button">+</button>
+            </div>
+          </div>
+          <span class="ed-stepper-sep">–</span>
+          <div class="ed-stepper-col">
+            <span class="ed-stepper-team-label">${away.slice(0,3).toUpperCase()}</span>
+            <div class="ed-stepper-controls">
+              <button class="ed-stepper-btn" data-step="away" data-dir="-1" type="button">–</button>
+              <div class="ed-stepper-value">${edState.awayScore}</div>
+              <button class="ed-stepper-btn" data-step="away" data-dir="1" type="button">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="ed-predict-confirm-btn" id="edConfirmBtn" type="button">
+          Confirm prediction →
+        </button>
+      </div>
     </div>`;
 }
 
 function renderEventInfo(event) {
-  const chips = event.amenities.map(([i, l]) => edChip(i, l)).join('');
-  const attendLabel = edEvent.isPast
-    ? `${edEvent.attendeeCount} attended`
-    : edEvent.attendeeCount ? `${edEvent.attendeeCount} going` : '';
-  const attendHtml = attendLabel
-    ? `<div class="ed-info__attending">👥 ${attendLabel}</div>`
-    : '';
-  return `
-    <div class="ed-info">
-      <div class="ed-info__venue">${event.venueName}</div>
-      <div class="ed-info__loc"><span>📍</span><span>${event.venueDistance}</span></div>
-      ${attendHtml}
-      <div class="ed-info__chips">${chips}</div>
-    </div>`;
-}
+  const chips = event.amenities.map(([i, l]) =>
+    `<div class="ed-amenity-chip"><span>${i}</span><span>${l}</span></div>`
+  ).join('');
+  const amenityHtml = chips
+    ? `<div class="ed-amenity-scroll"><div class="ed-amenity-row">${chips}</div></div>` : '';
 
-function renderActionButtons() {
-  if (edEvent.isPast || edState.predictSent) return '';
-  const predictOpen = edState.showPredict;
-  return `
-    <div class="ed-actions">
-      <button class="ed-btn ed-btn--predict${predictOpen ? ' is-open' : ''}"
-              id="edPredictBtn" type="button">
-        ${predictOpen ? '✕ Close' : '🎯 Predict'}
-      </button>
-    </div>`;
-}
+  const dist = event.venueAddress || event.venueDistance;
+  const attendLabel = event.isPast
+    ? `${event.attendeeCount} attended`
+    : event.attendeeCount ? `${event.attendeeCount} going` : '';
 
-function renderPredictPanel() {
-  if (edState.predictSent) {
-    return `
-      <div class="ed-predict-confirmed">
-        <span class="ed-predict-confirmed__icon">✅</span>
-        <span class="ed-predict-confirmed__text">
-          Prediction · ${edEvent.match.home} ${edState.homeScore} – ${edState.awayScore} ${edEvent.match.away}
-        </span>
-      </div>`;
-  }
-  if (!edState.showPredict) return '';
+  const rightHtml = event.isPast
+    ? `<button class="ed-recap-strip-btn" id="edRecapBtn" type="button">✨ AI Recap</button>`
+    : attendLabel
+      ? `<div class="ed-venue-count-pill">👥 ${attendLabel}</div>`
+      : '';
+
   return `
-    <div class="ed-predict-panel" id="edPredictPanel">
-      <div class="ed-predict__title">Your prediction</div>
-      <div class="ed-predict__steppers">
-        <div class="ed-predict__team">
-          <div class="ed-predict__team-label">ARG</div>
-          <div class="ed-predict__stepper">
-            <button class="ed-predict__step-btn" data-step="home" data-dir="-1" type="button">−</button>
-            <div class="ed-predict__val">${edState.homeScore}</div>
-            <button class="ed-predict__step-btn" data-step="home" data-dir="1" type="button">+</button>
-          </div>
+    <div class="ed-venue-strip">
+      <div class="ed-venue-main-row">
+        <div class="ed-venue-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                  stroke="#75AADB" stroke-width="2" stroke-linejoin="round"/>
+            <polyline points="9 22 9 12 15 12 15 22"
+                      stroke="#75AADB" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="ed-predict__sep">–</div>
-        <div class="ed-predict__team">
-          <div class="ed-predict__team-label">MEX</div>
-          <div class="ed-predict__stepper">
-            <button class="ed-predict__step-btn" data-step="away" data-dir="-1" type="button">−</button>
-            <div class="ed-predict__val">${edState.awayScore}</div>
-            <button class="ed-predict__step-btn" data-step="away" data-dir="1" type="button">+</button>
-          </div>
+        <div class="ed-venue-text">
+          <div class="ed-venue-name">${event.venueName}</div>
+          ${dist ? `<div class="ed-venue-dist">${dist}</div>` : ''}
         </div>
+        ${rightHtml}
       </div>
-      <button class="ed-predict__confirm" id="edConfirmBtn" type="button">
-        Confirm prediction →
-      </button>
+      ${amenityHtml}
     </div>`;
 }
 
@@ -237,59 +302,109 @@ function _timeAgo(isoStr) {
   return `${Math.floor(diff / 86400)} days ago`;
 }
 
-function renderHypePost(post) {
-  const handle = post.uploader_handle || post.handle || '@fan';
-  const name   = post.uploader_name  || handle;
-  const bg     = _avatarColor(handle);
-  const initials = _initials(handle);
-  const timeAgo  = post.uploaded_at ? _timeAgo(post.uploaded_at) : (post.timeAgo || '');
-  const likes    = post.likes_count  != null ? post.likes_count  : (post.likes  || 0);
-  const comments = post.comments     ? post.comments.length     : (post.comment_count || 0);
+function _photoCard(post) {
+  const handle    = post.uploader_handle || post.handle || '@fan';
+  const likes     = post.likes_count != null ? post.likes_count : 0;
+  const likedByMe = post._likedByMe || false;
   const mediaType = post.media_type || post.type || 'photo';
-  const caption   = post.caption || '';
+  const realUrl   = post.url && !post.url.startsWith('/mock') ? _mediaUrl(post.url) : null;
+  const mediaId   = post.id || '';
 
-  let mediaHtml = '';
-  if (mediaType === 'photo' && post.url && !post.url.startsWith('/mock')) {
-    mediaHtml = `<div class="hype-post__media"><img src="${post.url}" alt="media" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>`;
-  } else if (mediaType === 'video' && post.url && !post.url.startsWith('/mock')) {
-    mediaHtml = `
-      <div class="hype-post__media">
-        <video src="${post.url}" controls style="width:100%;height:100%;object-fit:cover"></video>
+  if (realUrl && mediaType === 'video') {
+    return `
+      <div class="ed-photo-card" data-media-id="${mediaId}">
+        <video src="${realUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
+        <div class="ed-photo-overlay"></div>
+        <span class="ed-photo-user">${handle}</span>
+        <button class="ed-photo-like hype-post__like-btn${likedByMe ? ' is-liked' : ''}"
+                data-media-id="${mediaId}" type="button">
+          <span class="hype-post__action-icon">${likedByMe ? '❤️' : '🤍'}</span><span class="hype-post__like-count">${likes}</span>
+        </button>
       </div>`;
-  } else if (mediaType === 'video') {
-    mediaHtml = `<div class="hype-post__media"><span class="hype-post__media-icon">▶️</span></div>`;
-  } else {
-    mediaHtml = `<div class="hype-post__media"><span class="hype-post__media-icon">🖼️</span></div>`;
+  }
+  if (realUrl) {
+    return `
+      <div class="ed-photo-card" data-media-id="${mediaId}">
+        <img src="${realUrl}" alt="" loading="lazy">
+        <div class="ed-photo-overlay"></div>
+        <span class="ed-photo-user">${handle}</span>
+        <button class="ed-photo-like hype-post__like-btn${likedByMe ? ' is-liked' : ''}"
+                data-media-id="${mediaId}" type="button">
+          <span class="hype-post__action-icon">${likedByMe ? '❤️' : '🤍'}</span><span class="hype-post__like-count">${likes}</span>
+        </button>
+      </div>`;
+  }
+  return `
+    <div class="ed-photo-card" data-media-id="${mediaId}">
+      <span class="ed-photo-empty-icon">${mediaType === 'video' ? '▶️' : '📸'}</span>
+      <span class="ed-photo-user">${handle}</span>
+    </div>`;
+}
+
+function _milestoneLabel(posts) {
+  if (!edEvent.kickoffIso || !posts.length) return null;
+  const kickoff = new Date(edEvent.kickoffIso).getTime();
+  const firstTs = new Date(posts[0].uploaded_at || 0).getTime();
+  const delta   = firstTs - kickoff;
+  if (delta < -5 * 60 * 1000) return 'Pre-match';   // >5 min before kickoff
+  if (delta < 70 * 60 * 1000) return 'First half';  // up to 70 min after
+  if (delta < 110 * 60 * 1000) return 'Second half';
+  return 'Post-match';
+}
+
+function renderHypeFeed(posts) {
+  if (!posts.length) {
+    return `
+      <div class="ed-timeline">
+        <div class="ed-milestone">
+          <div class="ed-milestone-icon">📸</div>
+          <div class="ed-milestone-content">
+            <div class="ed-milestone-label">No photos yet</div>
+            <div style="font-size:11px;color:#475569">Be the first to upload</div>
+          </div>
+        </div>
+      </div>`;
   }
 
-  const likedByMe = post._likedByMe || false;
+  // Group by upload time relative to kickoff.
+  // Pre-match:    uploaded before kickoff
+  // During match: kickoff → kickoff + 2 h  (covers 90 min + stoppage)
+  // Post-match:   uploaded more than 2 h after kickoff
+  const groups = [];
+  const kickoff = edEvent.kickoffIso ? new Date(edEvent.kickoffIso).getTime() : null;
+  const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-  return `
-    <div class="hype-post" data-media-id="${post.id || ''}">
-      <div class="hype-post__header">
-        <div class="hype-post__avatar" style="background:${bg}">${initials}</div>
-        <div class="hype-post__meta">
-          <div class="hype-post__handle">${handle}</div>
-          <div class="hype-post__time">${timeAgo}</div>
+  if (!kickoff) {
+    groups.push({ label: 'Match moments', icon: '⚽', posts });
+  } else {
+    const ts = p => new Date(p.uploaded_at || 0).getTime();
+    const pre    = posts.filter(p => ts(p) < kickoff);
+    const during = posts.filter(p => ts(p) >= kickoff && ts(p) < kickoff + MATCH_DURATION_MS);
+    const post   = posts.filter(p => ts(p) >= kickoff + MATCH_DURATION_MS);
+    if (pre.length)    groups.push({ label: 'Pre-match',     icon: '🍺', posts: pre });
+    if (during.length) groups.push({ label: 'During match',  icon: '⚽', posts: during });
+    if (post.length)   groups.push({ label: 'Post-match',    icon: '🎉', posts: post });
+    if (!groups.length) groups.push({ label: 'Match moments', icon: '⚽', posts });
+  }
+
+  const milestonesHtml = groups.map(g => `
+    <div class="ed-milestone">
+      <div class="ed-milestone-icon">${g.icon}</div>
+      <div class="ed-milestone-content">
+        <div class="ed-milestone-label">${g.label}</div>
+        <div class="ed-photo-scroll-wrap">
+          <div class="ed-photo-scroll">
+            <div class="ed-photo-row">${g.posts.map(_photoCard).join('')}</div>
+          </div>
+          <div class="ed-photo-fade"></div>
         </div>
       </div>
-      ${mediaHtml}
-      ${caption ? `<div class="hype-post__caption">${caption}</div>` : ''}
-      <div class="hype-post__actions">
-        <button class="hype-post__action hype-post__like-btn${likedByMe ? ' is-liked' : ''}"
-                type="button" data-media-id="${post.id || ''}">
-          <span class="hype-post__action-icon">${likedByMe ? '❤️' : '🤍'}</span>
-          <span class="hype-post__action-count hype-post__like-count">${likes}</span>
-        </button>
-        <button class="hype-post__action" type="button">
-          <span class="hype-post__action-icon">💬</span>
-          <span class="hype-post__action-count">${comments}</span>
-        </button>
-        <span class="hype-post__action-sep"></span>
-        <button class="hype-post__action" type="button">
-          <span class="hype-post__action-icon">↗️</span>
-        </button>
-      </div>
+    </div>`).join('');
+
+  return `
+    <div class="ed-timeline">
+      <div class="ed-timeline-line"></div>
+      ${milestonesHtml}
     </div>`;
 }
 
@@ -297,11 +412,8 @@ function renderRecapBtn() {
   if (!edEvent.isPast) return '';
   const hasVideo = !!edEvent.recapVideoUrl;
   return `
-    <div class="ed-recap-cta">
-      <button class="ed-recap-cta__btn" id="edRecapBtn" type="button">
-        ✨ View match recap
-      </button>
-      <button class="ed-recap-cta__btn ed-recap-cta__btn--video${hasVideo ? ' is-generated' : ''}"
+    <div class="ed-video-cta">
+      <button class="ed-video-cta__btn${hasVideo ? ' is-generated' : ''}"
               id="edGenerateVideoBtn" type="button"${hasVideo ? ' disabled' : ''}>
         🎬 ${hasVideo ? 'Video generated' : 'Generate recap video'}
       </button>
@@ -334,35 +446,18 @@ function renderUploadModal() {
 function renderEventDetail() {
   const container = $ed('eventDetailView');
   if (!container) return;
-  const feedHtml = hypePosts.length
-    ? hypePosts.map(renderHypePost).join('')
-    : `<div class="ed-hype-empty">
-         <div style="font-size:22px;margin-bottom:6px">📸</div>
-         <div style="font-size:11px;color:var(--muted)">Be the first to upload a photo or video</div>
-       </div>`;
+  const photoCount = hypePosts.length;
 
   container.innerHTML =
     renderBackRow(edEvent) +
     renderMatchHeader(edEvent.match) +
     renderEventInfo(edEvent) +
-    renderActionButtons() +
-    renderPredictPanel() +
     renderRecapBtn() +
-    `<div class="ed-divider">
-       <div class="ed-divider__line"></div>
-       <div class="ed-divider__label">Hype Wall</div>
-       <div class="ed-divider__line"></div>
+    `<div class="ed-feed-header">
+       <div class="ed-feed-title">Community moments</div>
+       <div class="ed-feed-sub">${photoCount ? `${photoCount} photo${photoCount !== 1 ? 's' : ''} from fans` : 'Photos and videos from fans at this event'}</div>
      </div>` +
-    feedHtml +
-    (hypePosts.length === 0
-      ? `<div class="ed-empty-state">
-           <div class="ed-empty-state__icon">⚽</div>
-           <div class="ed-empty-state__text">
-             Match events will appear here<br>
-             Kickoff · Goals · Half-time · Final
-           </div>
-         </div>`
-      : '') +
+    renderHypeFeed(hypePosts) +
     renderUploadModal();
 
   _updateFloatCta();
@@ -444,6 +539,7 @@ async function navigateToEventDetail(venue) {
     edEvent.matchHomeScore = ms.home_score;
     edEvent.matchAwayScore = ms.away_score;
     edEvent.matchGoals     = ms.goals || [];
+    if (ms.status === 'live') _startLiveSync(edEvent.id);
   } catch (_) {
     // match state unavailable — pill will show based on event status
     if (edEvent.isPast) edEvent.matchStatus = 'ended';
@@ -464,6 +560,7 @@ async function navigateToEventDetail(venue) {
 }
 
 function navigateToHome() {
+  _stopLiveSync();
   const homeScroll = document.querySelector('.phone > .scroll');
   const floatCta   = document.getElementById('edFloatCta');
   // Hide every non-home view to prevent flex-1 splits
@@ -567,8 +664,8 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
     return;
   }
 
-  if (e.target.closest('#edPredictBtn')) {
-    if (!edState.predictSent) edState.showPredict = !edState.showPredict;
+  if (e.target.closest('#edPredictEditBtn')) {
+    edState.predictSent = false;
     renderEventDetail();
     return;
   }

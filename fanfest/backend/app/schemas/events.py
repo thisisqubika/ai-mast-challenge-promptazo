@@ -146,6 +146,10 @@ class MatchStateUpdate(BaseModel):
     minute: int | None = None
 
 
+class LinkFixtureRequest(BaseModel):
+    fixture_id: int
+
+
 # ---------------------------------------------------------------------------
 # FEST-04: AI-generated event recap
 # ---------------------------------------------------------------------------
@@ -172,6 +176,7 @@ class RecapResponse(BaseModel):
     home_team: str
     away_team: str
     photo_count: int
+    prediction_pct: int | None = None
 
 
 class VideoRecapResponse(BaseModel):

@@ -152,7 +152,16 @@ function hideView() {
 
 // ─── Slide navigation (globals — called from inline onclick in slide HTML) ─────
 
-window._rcGoBack = hideView;
+window._rcGoBack = function () {
+  const pos = _activeIdx.indexOf(_rcCurrent);
+  if (pos > 0) {
+    window._rcGoPrev();
+  } else {
+    renderPostMatch(_eventData);
+  }
+};
+
+window._rcExit = function () { hideView(); };
 
 window._rcGoNext = function () {
   const pos = _activeIdx.indexOf(_rcCurrent);
@@ -494,7 +503,9 @@ function _chrome(idx) {
       <div class="rc-slide-header">
         <button class="rc-slide-back" onclick="window._rcGoBack()">← Back</button>
         <div class="rc-slide-wordmark">TRIBUNA</div>
-        <span class="rc-slide-counter" id="rc-counter-${idx}"></span>
+        <button class="rc-slide-home" onclick="window._rcExit()" title="Back to home" aria-label="Back to home">
+          <i class="ti ti-home" style="font-size:16px"></i>
+        </button>
       </div>
     </div>`;
 }
@@ -532,6 +543,10 @@ function _buildAllSlides(recap, event) {
   const awayScore = recap.away_score ?? '–';
   const highlights = recap.highlights || [];
   const narrative  = recap.narrative  || '';
+
+  const predPct        = recap.prediction_pct ?? null;
+  const fanVibesValue  = predPct !== null ? `${predPct}%` : '100%';
+  const fanVibesLabel  = predPct !== null ? 'Got the score right' : 'Fan vibes';
 
   const collage = _collageUrls();
   const h = i => highlights[i] || {};  // safe highlight accessor
@@ -600,7 +615,7 @@ function _buildAllSlides(recap, event) {
             <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${homeScore} ⚽ ${awayScore}</div><div style="font-size:11px;color:#475569;margin-top:2px">Final score</div></div>
             <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${highlights.length} ⚡</div><div style="font-size:11px;color:#475569;margin-top:2px">Highlights</div></div>
             <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${_mediaList.length} 📸</div><div style="font-size:11px;color:#475569;margin-top:2px">Fan photos</div></div>
-            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">100%</div><div style="font-size:11px;color:#475569;margin-top:2px">Fan vibes</div></div>
+            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${fanVibesValue}</div><div style="font-size:11px;color:#475569;margin-top:2px">${fanVibesLabel}</div></div>
           </div>
           ${h(2).description ? `<div style="font-size:11px;color:#75AADB;font-style:italic;line-height:1.4">"${h(2).description}"</div>` : ''}
         </div>
