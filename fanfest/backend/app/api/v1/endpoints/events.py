@@ -329,9 +329,42 @@ async def create_media(
     )
 
 
+def _photo_phase(uploaded_at, kickoff_iso: str | None) -> str | None:
+    """Return 'pre' | 'during' | 'post' relative to kickoff, or None if unknown."""
+    if not kickoff_iso:
+        return None
+    from datetime import timezone
+    try:
+        kickoff = _parse_kickoff(kickoff_iso)
+        ts = uploaded_at if uploaded_at.tzinfo else uploaded_at.replace(tzinfo=timezone.utc)
+        delta = (ts - kickoff).total_seconds()
+        if delta < 0:
+            return "pre"
+        if delta < 2 * 3600:
+            return "during"
+        return "post"
+    except Exception:
+        return None
+
+
+def _parse_kickoff(kickoff_iso: str):
+    from datetime import datetime, timezone
+    s = kickoff_iso.rstrip("Z")
+    dt = datetime.fromisoformat(s)
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+
+
 @router.get("/{event_id}/media", response_model=MediaList)
 async def list_media(event_id: str) -> MediaList:
-    return MediaList(media=photos_service.list_media(event_id))
+    try:
+        event = events_service.get_event(event_id)
+        kickoff_iso = event.get("kickoff_iso")
+    except Exception:
+        kickoff_iso = None
+    photos = photos_service.list_media(event_id)
+    for p in photos:
+        p.phase = _photo_phase(p.uploaded_at, kickoff_iso)
+    return MediaList(media=photos)
 
 
 @router.post("/{event_id}/media/{media_id}/likes", response_model=LikeResponse)

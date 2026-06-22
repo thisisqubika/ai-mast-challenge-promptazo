@@ -124,6 +124,7 @@ class Photo(BaseModel):
     likes_count: int = 0
     liked_by: list[str] = Field(default_factory=list, exclude=True)
     comments: list[CommentOut] = Field(default_factory=list)
+    phase: str | None = None  # "pre" | "during" | "post" — set by list_media endpoint
 
 
 class PhotoList(BaseModel):

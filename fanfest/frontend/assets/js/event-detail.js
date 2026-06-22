@@ -15,6 +15,7 @@ const edEvent = {
   venueName: '',
   venueAddress: '',
   venueDistance: '',
+  kickoffIso: null,
   attending: '',
   amenities: [],
   recapVideoUrl: null,
@@ -352,7 +353,7 @@ function _milestoneLabel(posts) {
   return 'Post-match';
 }
 
-function renderHypeFeed(posts) {
+function renderHypeFeed(posts, kickoffIso) {
   if (!posts.length) {
     return `
       <div class="ed-timeline">
@@ -366,26 +367,19 @@ function renderHypeFeed(posts) {
       </div>`;
   }
 
-  // Group by upload time relative to kickoff.
-  // Pre-match:    uploaded before kickoff
-  // During match: kickoff → kickoff + 2 h  (covers 90 min + stoppage)
-  // Post-match:   uploaded more than 2 h after kickoff
-  const groups = [];
-  const kickoff = edEvent.kickoffIso ? new Date(edEvent.kickoffIso).getTime() : null;
-  const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+  // Group by backend-computed phase field ('pre' | 'during' | 'post').
+  const phaseMap = { pre: [], during: [], post: [] };
+  const unphased = [];
+  posts.forEach(p => {
+    if (p.phase && phaseMap[p.phase]) phaseMap[p.phase].push(p);
+    else unphased.push(p);
+  });
 
-  if (!kickoff) {
-    groups.push({ label: 'Match moments', icon: '⚽', posts });
-  } else {
-    const ts = p => new Date(p.uploaded_at || 0).getTime();
-    const pre    = posts.filter(p => ts(p) < kickoff);
-    const during = posts.filter(p => ts(p) >= kickoff && ts(p) < kickoff + MATCH_DURATION_MS);
-    const post   = posts.filter(p => ts(p) >= kickoff + MATCH_DURATION_MS);
-    if (pre.length)    groups.push({ label: 'Pre-match',     icon: '🍺', posts: pre });
-    if (during.length) groups.push({ label: 'During match',  icon: '⚽', posts: during });
-    if (post.length)   groups.push({ label: 'Post-match',    icon: '🎉', posts: post });
-    if (!groups.length) groups.push({ label: 'Match moments', icon: '⚽', posts });
-  }
+  const groups = [];
+  if (phaseMap.pre.length)    groups.push({ label: 'Pre-match',    icon: '🍺', posts: phaseMap.pre });
+  if (phaseMap.during.length) groups.push({ label: 'During match', icon: '⚽', posts: phaseMap.during });
+  if (phaseMap.post.length)   groups.push({ label: 'Post-match',   icon: '🎉', posts: phaseMap.post });
+  if (!groups.length)         groups.push({ label: 'All photos', icon: '📸', posts: unphased.length ? unphased : posts });
 
   const milestonesHtml = groups.map(g => `
     <div class="ed-milestone">
@@ -457,7 +451,7 @@ function renderEventDetail() {
        <div class="ed-feed-title">Community moments</div>
        <div class="ed-feed-sub">${photoCount ? `${photoCount} photo${photoCount !== 1 ? 's' : ''} from fans` : 'Photos and videos from fans at this event'}</div>
      </div>` +
-    renderHypeFeed(hypePosts) +
+    renderHypeFeed(hypePosts, edEvent.kickoffIso) +
     renderUploadModal();
 
   _updateFloatCta();
@@ -519,6 +513,8 @@ async function navigateToEventDetail(venue) {
   edEvent.attendeeCount   = 0;
 
   if (venue && venue.id) edEvent.id = venue.id;
+  // Seed kickoffIso immediately from card data so grouping works even before getEventDetail resolves
+  if (venue && venue.kickoff_iso) edEvent.kickoffIso = venue.kickoff_iso;
 
   try {
     const data = await getEventDetail(edEvent.id);
@@ -555,7 +551,9 @@ async function navigateToEventDetail(venue) {
   if (homeScroll) homeScroll.hidden = true;
   if (detailView) { detailView.hidden = false; detailView.scrollTop = 0; }
   if (livebar)    livebar.hidden = true;
+  if (typeof window._setNavContext === 'function') window._setNavContext('detail');
   await loadHypeFeed();
+  console.log('[event-detail] kickoffIso =', edEvent.kickoffIso, '| photos =', hypePosts.length);
   renderEventDetail();
 }
 
@@ -569,6 +567,7 @@ function navigateToHome() {
   });
   if (homeScroll)  homeScroll.hidden  = false;
   if (floatCta)  { floatCta.hidden = true; floatCta.innerHTML = ''; }
+  if (typeof window._setNavContext === 'function') window._setNavContext('home');
   if (typeof window._updateLiveBar === 'function') window._updateLiveBar();
 }
 
@@ -734,6 +733,7 @@ $ed('eventDetailView').addEventListener('change', (e) => {
 
 // Exposed for main.js navigation
 window.navigateToEventDetail = navigateToEventDetail;
+window.navigateToHome = navigateToHome;
 
 window.performEstoyAqui = async () => {
   const livebar = document.querySelector('.live-bar');

@@ -65,7 +65,13 @@ def generate_recap(
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
         )
-        raw = message.content[0].text
+        raw = message.content[0].text.strip()
+        # Strip markdown code fences that some model versions add
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip().split("```")[0].strip()
         data = json.loads(raw)
 
         highlights = [

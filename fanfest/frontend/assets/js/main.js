@@ -2,7 +2,7 @@
    Seleccion, Upcoming, and Recap sections are loaded from the real API. */
 
 // ── State ──────────────────────────────────────────────────────────────────
-const state = { activeTab: 'inicio', activeCategory: 'fifa26' };
+const state = { activeTab: 'inicio', activeCategory: 'fifa26', searchQuery: '' };
 
 // ── Static data ─────────────────────────────────────────────────────────────
 const categories = [
@@ -29,9 +29,16 @@ const navIcons = {
   eventos: '<svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   perfil:  '<svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 };
-const navTabs = [
-  { id: 'crear', label: 'Create' },
-];
+// Nav tab swaps between Create (home screen) and Home (detail screens)
+let navTabs = [{ id: 'crear', label: 'Create' }];
+
+function _setNavContext(ctx) {
+  navTabs = ctx === 'home'
+    ? [{ id: 'crear', label: 'Create' }]
+    : [{ id: 'inicio', label: 'Home' }];
+  renderNav();
+}
+window._setNavContext = _setNavContext;
 
 // ── Date / time helpers ──────────────────────────────────────────────────────
 const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -66,6 +73,16 @@ function _fmtCountdown(iso) {
   return `in ${diffDays} days`;
 }
 
+// ── Live clock ───────────────────────────────────────────────────────────────
+function _updateClock() {
+  const el = document.getElementById('statusTime');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+_updateClock();
+setInterval(_updateClock, 10000);
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 const tags = (list) => `<div class="tags">${list.map(([icon, label]) =>
@@ -99,7 +116,7 @@ function renderSeleccion(events) {
     const avatars = _miniAvatars(e.attendee_count);
     const attendLabel = e.attendee_count ? `${e.attendee_count} going` : 'Be the first';
     return `
-    <div class="card-sel" data-event-id="${e.id}" style="cursor:pointer">
+    <div class="card-sel" data-event-id="${e.id}" data-kickoff-iso="${e.kickoff_iso || ''}" style="cursor:pointer">
       <div class="card-sel__match">
         <div class="card-sel__match-teams">${e.home_flag} ${e.home_team} vs ${e.away_flag} ${e.away_team}</div>
         <div class="card-sel__match-time">${matchLabel}</div>
@@ -154,7 +171,7 @@ function renderUpcoming(events) {
   $('rowUpcoming').innerHTML = events.map((u) => {
     const countdown = _fmtCountdown(u.kickoff_iso) || 'Coming soon';
     return `
-    <div class="card-up" data-event-id="${u.id}" style="cursor:pointer">
+    <div class="card-up" data-event-id="${u.id}" data-kickoff-iso="${u.kickoff_iso || ''}" style="cursor:pointer">
       <div class="card-up__head">
         <div class="team"><div class="team__flag">${u.home_flag}</div><div class="team__name">${u.home_team}</div></div>
         <div class="when">
@@ -204,7 +221,7 @@ function renderMisEventos() {
     const timeStr = _fmtTime(e.kickoff_iso);
     const matchLabel = countdown === 'Today' ? `Today · ${timeStr}` : `${_fmtShortDate(e.kickoff_iso)} · ${timeStr}`;
     return `
-    <div class="card-sel" data-event-id="${e.id}" style="cursor:pointer;margin-bottom:12px">
+    <div class="card-sel" data-event-id="${e.id}" data-kickoff-iso="${e.kickoff_iso || ''}" style="cursor:pointer;margin-bottom:12px">
       <div class="card-sel__match">
         <div class="card-sel__match-teams">${e.home_flag} ${e.home_team} vs ${e.away_flag} ${e.away_team}</div>
         <div class="card-sel__match-time">${matchLabel}</div>
@@ -239,12 +256,25 @@ function apuntarseAlEvento(eventId) {
   _updateLiveBar();
 }
 
+function _isToday(iso) {
+  if (!iso) return false;
+  const today = new Date();
+  const todayStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-');
+  return iso.startsWith(todayStr);
+}
+
 function _updateLiveBar() {
   const livebar = document.querySelector('.live-bar');
   if (!livebar) return;
   const allEvents = [..._seleccionEvents, ..._upcomingEvents];
   const registered = allEvents.find(e =>
-    localStorage.getItem(`apuntado_${e.id}`) && e.status !== 'past'
+    localStorage.getItem(`apuntado_${e.id}`) &&
+    (e.status === 'pre' || e.status === 'live') &&
+    _isToday(e.kickoff_iso)
   );
   if (registered) {
     const matchEl = livebar.querySelector('.live-bar__match');
@@ -257,6 +287,16 @@ function _updateLiveBar() {
     livebar.hidden = true;
     delete livebar.dataset.eventId;
   }
+}
+
+// ── Search filter ────────────────────────────────────────────────────────────
+function _filterEvents(events, query) {
+  if (!query) return events;
+  const q = query.toLowerCase();
+  return events.filter(e =>
+    [e.venue_name, e.home_team, e.away_team, e.venue_address]
+      .join(' ').toLowerCase().includes(q)
+  );
 }
 
 // ── API loaders ───────────────────────────────────────────────────────────────
@@ -298,7 +338,7 @@ async function loadSeleccionCards() {
       subtitle.textContent = `${first.home_team} vs ${first.away_team} · ${label}`;
     }
     _seleccionEvents = selEvents;
-    renderSeleccion(selEvents);
+    renderSeleccion(_filterEvents(selEvents, state.searchQuery));
     _updateLiveBar();
   } catch (_) {
     $('rowSeleccion').innerHTML = '';
@@ -312,7 +352,7 @@ async function loadUpcomingCards() {
     const events = await res.json();
     events.sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));
     _upcomingEvents = events;
-    renderUpcoming(events);
+    renderUpcoming(_filterEvents(events, state.searchQuery));
     _updateLiveBar();
   } catch (_) {
     $('rowUpcoming').innerHTML = '';
@@ -343,8 +383,13 @@ function _switchHomeTab(tab) {
 $('navTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-tab]');
   if (!btn) return;
-  if (btn.dataset.tab === 'crear' && typeof window.navigateToCreateEvent === 'function') {
-    window.navigateToCreateEvent();
+  if (btn.dataset.tab === 'inicio') {
+    if (typeof window.navigateToHome === 'function') window.navigateToHome();
+    else _switchHomeTab('inicio');
+    return;
+  }
+  if (btn.dataset.tab === 'crear') {
+    if (typeof window.navigateToCreateEvent === 'function') window.navigateToCreateEvent();
     return;
   }
   state.activeTab = btn.dataset.tab;
@@ -360,7 +405,7 @@ $('rowSeleccion').addEventListener('click', (e) => {
   }
   const card = e.target.closest('[data-event-id]');
   if (card && typeof window.navigateToEventDetail === 'function') {
-    window.navigateToEventDetail({ id: card.dataset.eventId });
+    window.navigateToEventDetail({ id: card.dataset.eventId, kickoff_iso: card.dataset.kickoffIso });
   }
 });
 
@@ -372,7 +417,7 @@ $('rowUpcoming').addEventListener('click', (e) => {
   }
   const card = e.target.closest('[data-event-id]');
   if (card && typeof window.navigateToEventDetail === 'function') {
-    window.navigateToEventDetail({ id: card.dataset.eventId });
+    window.navigateToEventDetail({ id: card.dataset.eventId, kickoff_iso: card.dataset.kickoffIso });
   }
 });
 
@@ -406,3 +451,12 @@ if (liveCta) {
 }
 
 window._updateLiveBar = _updateLiveBar;
+
+const _searchInput = document.getElementById('searchInput');
+if (_searchInput) {
+  _searchInput.addEventListener('input', (e) => {
+    state.searchQuery = e.target.value.trim();
+    renderSeleccion(_filterEvents(_seleccionEvents, state.searchQuery));
+    renderUpcoming(_filterEvents(_upcomingEvents, state.searchQuery));
+  });
+}
