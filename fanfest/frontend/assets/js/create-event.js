@@ -9,15 +9,19 @@ const $ = (id) => document.getElementById(id);
 function showCreateScreen() {
   const home = document.querySelector('.phone > .scroll');
   const view = $('createEventView');
+  ['eventDetailView','recapView','mapaView','misEventosView','createEventView'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.hidden = true;
+  });
   if (home) home.hidden = true;
   if (view) { view.hidden = false; view.scrollTop = 0; }
 }
 
 function showHomeScreen() {
   const home = document.querySelector('.phone > .scroll');
-  const view = $('createEventView');
+  ['eventDetailView','recapView','mapaView','misEventosView','createEventView'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.hidden = true;
+  });
   if (home) home.hidden = false;
-  if (view) view.hidden = true;
 }
 
 // ── Form rendering ────────────────────────────────────────────────────────────
@@ -25,66 +29,66 @@ function showHomeScreen() {
 function renderForm() {
   $('createEventView').innerHTML = `
     <div class="ce-header">
-      <button id="ceClose" class="ce-back" type="button" aria-label="Volver">
+      <button id="ceClose" class="ce-back" type="button" aria-label="Back">
         <i class="ti ti-chevron-left"></i>
       </button>
-      <span class="ce-title">Crear Fan Fest</span>
+      <span class="ce-title">Create Fan Fest</span>
       <div></div>
     </div>
 
     <form id="ceForm" class="ce-form" novalidate>
-      <div class="ce-section">Partido</div>
+      <div class="ce-section">Match</div>
 
       <div class="ce-field">
-        <label for="ceHomeTeam">Local <span class="ce-req">*</span></label>
+        <label for="ceHomeTeam">Home Team <span class="ce-req">*</span></label>
         <input id="ceHomeTeam" name="home_team" type="text" required
-               placeholder="Ej: Argentina" autocomplete="off" />
+               placeholder="e.g.: Argentina" autocomplete="off" />
       </div>
 
       <div class="ce-field">
-        <label for="ceAwayTeam">Visitante <span class="ce-req">*</span></label>
+        <label for="ceAwayTeam">Away Team <span class="ce-req">*</span></label>
         <input id="ceAwayTeam" name="away_team" type="text" required
-               placeholder="Ej: Brasil" autocomplete="off" />
+               placeholder="e.g.: Brazil" autocomplete="off" />
       </div>
 
       <div class="ce-field">
-        <label for="ceCompetition">Competición</label>
+        <label for="ceCompetition">Competition</label>
         <input id="ceCompetition" name="competition" type="text"
-               placeholder="Ej: Copa América" autocomplete="off" />
+               placeholder="e.g.: Copa América" autocomplete="off" />
       </div>
 
       <div class="ce-field">
-        <label for="ceKickoff">Fecha y hora <span class="ce-req">*</span></label>
+        <label for="ceKickoff">Date & Time <span class="ce-req">*</span></label>
         <input id="ceKickoff" name="kickoff_iso" type="datetime-local" required />
       </div>
 
-      <div class="ce-section">Sede</div>
+      <div class="ce-section">Venue</div>
 
       <div class="ce-field">
-        <label for="ceVenueName">Estadio / Venue <span class="ce-req">*</span></label>
+        <label for="ceVenueName">Stadium / Venue <span class="ce-req">*</span></label>
         <input id="ceVenueName" name="venue_name" type="text" required
-               placeholder="Ej: La Bombonera" autocomplete="off" />
+               placeholder="e.g.: La Bombonera" autocomplete="off" />
       </div>
 
       <div class="ce-field">
-        <label for="ceVenueAddress">Dirección <span class="ce-req">*</span></label>
+        <label for="ceVenueAddress">Address <span class="ce-req">*</span></label>
         <input id="ceVenueAddress" name="venue_address" type="text" required
-               placeholder="Ej: Brandsen 805, CABA" autocomplete="off" />
+               placeholder="e.g.: Brandsen 805, CABA" autocomplete="off" />
       </div>
 
       <div class="ce-field">
-        <label for="ceOrganizer">Organizador <span class="ce-req">*</span></label>
+        <label for="ceOrganizer">Organizer <span class="ce-req">*</span></label>
         <input id="ceOrganizer" name="organizer" type="text" required
-               placeholder="Ej: FanFest BA" autocomplete="off" />
+               placeholder="e.g.: FanFest BA" autocomplete="off" />
       </div>
 
-      <div class="ce-section">Comodidades</div>
+      <div class="ce-section">Amenities</div>
 
       <div class="ce-amenities" id="ceAmenities">
         ${[
-          ['🍺','Cervezas'],['📺','Pantalla'],['🎶','DJ'],['🍔','Comida'],
-          ['🪑','Mesas'],['🚗','Estacionamiento'],['🍷','Vinos'],['☕','Café'],
-          ['🎮','Gaming'],['🧃','Sin alcohol'],
+          ['🍺','Beers'],['📺','Screen'],['🎶','DJ'],['🍔','Food'],
+          ['🪑','Tables'],['🚗','Parking'],['🍷','Wine'],['☕','Coffee'],
+          ['🎮','Gaming'],['🧃','Non-alcoholic'],
         ].map(([emoji, label]) =>
           `<button type="button" class="ce-tag" data-emoji="${emoji}" data-label="${label}">
             <span>${emoji}</span> ${label}
@@ -94,16 +98,16 @@ function renderForm() {
 
       <div id="ceError" class="ce-error" hidden></div>
 
-      <button id="ceSubmit" type="submit" class="ce-submit">Crear Evento</button>
+      <button id="ceSubmit" type="submit" class="ce-submit">Create Event</button>
     </form>
 
     <!-- Success overlay — shown after creation -->
     <div id="ceSuccess" class="ce-success" hidden>
       <div class="ce-success__icon">🎉</div>
-      <div class="ce-success__title">¡Evento creado!</div>
-      <div class="ce-success__sub">El fan fest quedó agendado correctamente.</div>
-      <button id="ceOpenEvent" class="ce-success__btn-primary">Ver evento</button>
-      <button id="ceGoHome" class="ce-success__btn-secondary">Ir al inicio</button>
+      <div class="ce-success__title">Event Created!</div>
+      <div class="ce-success__sub">Your fan fest has been scheduled.</div>
+      <button id="ceOpenEvent" class="ce-success__btn-primary">View Event</button>
+      <button id="ceGoHome" class="ce-success__btn-secondary">Back to Home</button>
     </div>
   `;
 
@@ -132,7 +136,7 @@ async function handleSubmit(e) {
   }
 
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Creando…';
+  submitBtn.textContent = 'Creating…';
   errorEl.hidden = true;
 
   const amenities = [...$('ceAmenities').querySelectorAll('.ce-tag--on')]
@@ -153,11 +157,11 @@ async function handleSubmit(e) {
     const created = await createEvent(data);
     showSuccess(created);
   } catch (err) {
-    const msg = err?.detail || (typeof err === 'string' ? err : 'Error al crear el evento. Intentá de nuevo.');
+    const msg = err?.detail || (typeof err === 'string' ? err : 'Error creating the event. Please try again.');
     errorEl.textContent = msg;
     errorEl.hidden = false;
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Crear Evento';
+    submitBtn.textContent = 'Create Event';
   }
 }
 

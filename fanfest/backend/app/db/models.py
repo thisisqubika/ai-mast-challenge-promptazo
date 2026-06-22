@@ -26,6 +26,8 @@ class EventModel(Base):
     status: Mapped[str] = mapped_column(String, default="future")
     recap_event_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     recap_video_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    home_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    away_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     competition: Mapped[str] = mapped_column(String, default="")
     venue_distance: Mapped[str] = mapped_column(String, default="")
     amenities: Mapped[str] = mapped_column(String, default="[]")  # JSON array of [icon, label] pairs

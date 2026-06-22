@@ -30,30 +30,6 @@ _utc = timezone.utc
 
 EVENTS: list[Event] = [
     Event(
-        id="evt-001",
-        home_team="Argentina",
-        home_flag="\U0001f1e6\U0001f1f7",
-        away_team="Brasil",
-        away_flag="\U0001f1e7\U0001f1f7",
-        venue_name="La Bombonera",
-        venue_address="Brandsen 805, Buenos Aires",
-        organizer="FanFest HQ",
-        kickoff_iso="2030-01-01T18:00:00Z",
-        match_start_time=datetime(2030, 1, 1, 18, 0, tzinfo=_utc),
-        invite_link="http://localhost:8000/api/v1/events/evt-001/invite",
-        calendar_link=(
-            "https://calendar.google.com/calendar/render"
-            "?action=TEMPLATE&text=Argentina+vs+Brasil"
-            "&dates=20300101T180000Z/20300101T200000Z"
-            "&location=Brandsen+805%2C+Buenos+Aires"
-        ),
-        maps_link="https://www.google.com/maps/dir/?api=1&destination=Brandsen+805%2C+Buenos+Aires",
-        status="future",
-        competition="FIFA World Cup 2026 · Semifinal",
-        venue_distance="2.5km · La Boca",
-        amenities=[["🍺", "Cervezas"], ["🎵", "Música"], ["📺", "Pantalla"], ["🍔", "Foodtruck"]],
-    ),
-    Event(
         id="evt-002",
         home_team="Belgrano",
         home_flag="🔵",
@@ -111,8 +87,8 @@ EVENTS: list[Event] = [
         venue_name="La Mona Sports Bar",
         venue_address="Güemes 456, Córdoba",
         organizer="FanFest HQ",
-        kickoff_iso="2026-06-24T21:00:00Z",
-        match_start_time=datetime(2026, 6, 24, 21, 0, tzinfo=_utc),
+        kickoff_iso="2025-12-12T21:00:00Z",
+        match_start_time=datetime(2025, 12, 12, 21, 0, tzinfo=_utc),
         invite_link="http://localhost:8000/api/v1/events/evt-004/invite",
         calendar_link=(
             "https://calendar.google.com/calendar/render"
@@ -126,55 +102,6 @@ EVENTS: list[Event] = [
         competition="FIFA World Cup 2026 · Grupo C · Jornada 2",
         venue_distance="400m · Güemes",
         amenities=[["🍔", "Foodtruck"], ["🐾", "Pet-friendly"], ["📺", "Pantalla"], ["🍺", "Cervezas"], ["🎵", "Música en vivo"]],
-    ),
-    Event(
-        id="evt-005",
-        home_team="Uruguay",
-        home_flag="\U0001f1fa\U0001f1fe",
-        away_team="Colombia",
-        away_flag="\U0001f1e8\U0001f1f4",
-        venue_name="Café del Sur",
-        venue_address="San Martín 890, Rosario",
-        organizer="FanFest HQ",
-        kickoff_iso="2026-06-27T18:00:00Z",
-        match_start_time=datetime(2026, 6, 27, 18, 0, tzinfo=_utc),
-        invite_link="http://localhost:8000/api/v1/events/evt-005/invite",
-        calendar_link=(
-            "https://calendar.google.com/calendar/render"
-            "?action=TEMPLATE&text=Uruguay+vs+Colombia"
-            "&dates=20260627T180000Z/20260627T200000Z"
-            "&location=San+Mart%C3%ADn+890%2C+Rosario"
-        ),
-        maps_link="https://www.google.com/maps/dir/?api=1&destination=San+Mart%C3%ADn+890%2C+Rosario",
-        status="future",
-        competition="FIFA World Cup 2026 · Grupo F · Jornada 3",
-        venue_distance="1.5km · Pichincha",
-        amenities=[["🍺", "Cervezas"], ["📺", "Pantalla"], ["🍔", "Foodtruck"]],
-    ),
-    Event(
-        id="evt-006",
-        home_team="Inglaterra",
-        home_flag="\U0001f3f4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f",
-        away_team="Italia",
-        away_flag="\U0001f1ee\U0001f1f9",
-        venue_name="The English Pub",
-        venue_address="Reconquista 456, Buenos Aires",
-        organizer="FanFest HQ",
-        kickoff_iso="2026-06-28T20:00:00Z",
-        match_start_time=datetime(2026, 6, 28, 20, 0, tzinfo=_utc),
-        invite_link="http://localhost:8000/api/v1/events/evt-006/invite",
-        calendar_link=(
-            "https://calendar.google.com/calendar/render"
-            "?action=TEMPLATE&text=Inglaterra+vs+Italia"
-            "&dates=20260628T200000Z/20260628T220000Z"
-            "&location=Reconquista+456%2C+Buenos+Aires"
-        ),
-        maps_link="https://www.google.com/maps/dir/?api=1&destination=Reconquista+456%2C+Buenos+Aires",
-        status="past",
-        recap_event_id="evt-006",
-        competition="FIFA World Cup 2026 · Grupo D · Jornada 2",
-        venue_distance="900m · Microcentro",
-        amenities=[["🍺", "Cervezas"], ["📺", "Pantalla"], ["🎵", "Música"]],
     ),
     Event(
         id="evt-007",
@@ -294,20 +221,12 @@ FANS: list[Fan] = [
 # ── Registrations ─────────────────────────────────────────────────────────────
 
 REGISTRATIONS: list[Registration] = [
-    Registration("user_001", "evt-001", datetime(2029, 12, 10, 10, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 17, 45, tzinfo=_utc)),
-    Registration("user_002", "evt-001", datetime(2029, 12, 11, 14, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 17, 50, tzinfo=_utc)),
-    Registration("user_003", "evt-001", datetime(2029, 12, 12,  9, 0, tzinfo=_utc), checked_in=False),
-    Registration("user_004", "evt-001", datetime(2029, 12, 13, 11, 0, tzinfo=_utc), checked_in=False),
-    Registration("user_005", "evt-001", datetime(2029, 12, 14, 15, 0, tzinfo=_utc), checked_in=True,  checked_in_at=datetime(2030, 1, 1, 18, 5,  tzinfo=_utc)),
-    Registration("user_006", "evt-001", datetime(2029, 12, 15,  8, 0, tzinfo=_utc), checked_in=False),
-    Registration("user_007", "evt-001", datetime(2029, 12, 16, 12, 0, tzinfo=_utc), checked_in=False),
     Registration("user_001", "evt-002", datetime(2026, 6,  5, 10, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 15, 20, 45, tzinfo=_utc)),
     Registration("user_002", "evt-003", datetime(2026, 6, 11, 14, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 26, 17, 55, tzinfo=_utc)),
     Registration("user_003", "evt-004", datetime(2026, 6, 12,  9, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 24, 20, 50, tzinfo=_utc)),
     Registration("user_004", "evt-002", datetime(2026, 6,  8, 11, 0, tzinfo=_utc),  checked_in=False),
     Registration("user_005", "evt-003", datetime(2026, 6, 14, 15, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 26, 17, 40, tzinfo=_utc)),
     Registration("user_007", "evt-002", datetime(2026, 6,  5, 12, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 15, 20, 55, tzinfo=_utc)),
-    Registration("user_008", "evt-005", datetime(2026, 6, 17,  9, 0, tzinfo=_utc),  checked_in=False),
     Registration("user_009", "evt-002", datetime(2026, 6,  6, 16, 0, tzinfo=_utc),  checked_in=True,  checked_in_at=datetime(2026, 6, 15, 20, 50, tzinfo=_utc)),
 ]
 
@@ -321,12 +240,6 @@ MATCHES: list[Match] = [
         home_team="River Plate",
         away_team="Boca Juniors",
         venue="Estadio Monumental",
-        home_score=0, away_score=0, status="pre", clock_seconds=0,
-    ),
-    Match(
-        event_id="evt-001",
-        home_team="Argentina", away_team="Brasil",
-        venue="La Bombonera",
         home_score=0, away_score=0, status="pre", clock_seconds=0,
     ),
     Match(
@@ -361,25 +274,6 @@ MATCHES: list[Match] = [
         ],
     ),
     Match(
-        event_id="evt-005",
-        home_team="Uruguay", away_team="Colombia",
-        venue="Café del Sur",
-        home_score=0, away_score=0, status="pre", clock_seconds=0,
-    ),
-    Match(
-        event_id="evt-006",
-        home_team="Inglaterra", away_team="Italia",
-        venue="The English Pub",
-        home_score=3, away_score=2, status="ended", clock_seconds=5400,
-        goals=[
-            Goal(player="Kane",      team="Inglaterra", minute=20),
-            Goal(player="Bellingham",team="Inglaterra", minute=35),
-            Goal(player="Immobile",  team="Italia",     minute=50),
-            Goal(player="Saka",      team="Inglaterra", minute=65),
-            Goal(player="Verratti",  team="Italia",     minute=80),
-        ],
-    ),
-    Match(
         event_id="evt-007",
         home_team="Países Bajos", away_team="Bélgica",
         venue="Amsterdam Bar",
@@ -407,35 +301,16 @@ MATCHES: list[Match] = [
 
 # ── Predictions ───────────────────────────────────────────────────────────────
 
-_pred_base = datetime(2029, 12, 31, 20, 0, tzinfo=_utc)
-
 PREDICTIONS: list[Prediction] = [
-    Prediction("user_001", "evt-001", home_score=3, away_score=1, submitted_at=_pred_base),
-    Prediction("user_002", "evt-001", home_score=2, away_score=0, submitted_at=_pred_base),
-    Prediction("user_003", "evt-001", home_score=1, away_score=1, submitted_at=_pred_base),
-    Prediction("user_004", "evt-001", home_score=2, away_score=1, submitted_at=_pred_base),
-    Prediction("user_005", "evt-001", home_score=1, away_score=0, submitted_at=_pred_base),
-    Prediction("user_006", "evt-001", home_score=3, away_score=2, submitted_at=_pred_base),
     Prediction("user_007", "evt-002", home_score=2, away_score=1, submitted_at=datetime(2026, 6, 20, 10, 0, tzinfo=_utc)),
     Prediction("user_008", "evt-003", home_score=1, away_score=0, submitted_at=datetime(2026, 6, 21, 11, 0, tzinfo=_utc)),
     Prediction("user_001", "evt-002", home_score=1, away_score=0, submitted_at=datetime(2026, 6, 20, 12, 0, tzinfo=_utc)),
     Prediction("user_002", "evt-003", home_score=2, away_score=1, submitted_at=datetime(2026, 6, 21, 14, 0, tzinfo=_utc)),
-    Prediction("user_009", "evt-001", home_score=4, away_score=0, submitted_at=_pred_base),
-    Prediction("user_010", "evt-001", home_score=2, away_score=2, submitted_at=_pred_base),
 ]
 
 # ── Photos ────────────────────────────────────────────────────────────────────
 
-_photo_t = datetime(2030, 1, 1, 18, 30, tzinfo=_utc)
-
 PHOTOS: list[Photo] = [
-    Photo("photo-001", "evt-001", "https://picsum.photos/400/300?random=1",  "user_001", "Alice",    uploaded_at=_photo_t),
-    Photo("photo-002", "evt-001", "https://picsum.photos/400/300?random=2",  "user_002", "Bob",      uploaded_at=datetime(2030, 1, 1, 18, 45, tzinfo=_utc)),
-    Photo("photo-003", "evt-001", "https://picsum.photos/400/300?random=3",  "user_005", "Elena",    uploaded_at=datetime(2030, 1, 1, 19,  0, tzinfo=_utc)),
-    Photo("photo-004", "evt-001", "https://picsum.photos/400/300?random=4",  "user_001", "Alice",    uploaded_at=datetime(2030, 1, 1, 19, 10, tzinfo=_utc)),
-    Photo("photo-005", "evt-001", "https://picsum.photos/400/300?random=5",  "user_002", "Bob",      uploaded_at=datetime(2030, 1, 1, 19, 20, tzinfo=_utc)),
-    Photo("photo-006", "evt-001", "https://picsum.photos/400/300?random=6",  "user_005", "Elena",    uploaded_at=datetime(2030, 1, 1, 19, 35, tzinfo=_utc)),
-    Photo("photo-007", "evt-001", "https://picsum.photos/400/300?random=7",  "user_001", "Alice",    uploaded_at=datetime(2030, 1, 1, 19, 50, tzinfo=_utc)),
     Photo("photo-008", "evt-002", "http://localhost:8000/media/evt-002/belgrano1.jpg",                                        "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 15, 21, 30, tzinfo=_utc), uploader_handle="@gaby_celeste",  caption="La previa en el Kempes. Una noche para la historia 🔵", likes_count=41),
     Photo("photo-009", "evt-002", "http://localhost:8000/media/evt-002/balgrano2.jpeg",                                       "user_009", "Iván",     uploaded_at=datetime(2026, 6, 15, 21, 50, tzinfo=_utc), uploader_handle="@ivan_bel",      caption="El banco de Belgrano, atentos al partido 💪", likes_count=18),
     Photo("photo-016", "evt-002", "http://localhost:8000/media/evt-002/belgrano3.jpeg",                                       "user_001", "Alice",    uploaded_at=datetime(2026, 6, 15, 22, 10, tzinfo=_utc), uploader_handle="@alice_fan",     caption="Celebración celeste en el Kempes. ¡Campeones! 🏆🔵", likes_count=93),
@@ -448,8 +323,6 @@ PHOTOS: list[Photo] = [
     Photo("photo-011", "evt-004", "http://localhost:8000/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
     Photo("photo-012", "evt-004", "http://localhost:8000/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
     Photo("photo-013", "evt-004", "http://localhost:8000/media/evt-004/mundial3.jpg", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc), uploader_handle="@fer_nando",    caption="El pub lleno a reventar, increíble noche 🍺🎉", likes_count=8),
-    Photo("photo-014", "evt-006", "https://picsum.photos/400/300?random=14", "user_004", "Diana",    uploaded_at=datetime(2026, 6, 28, 20, 40, tzinfo=_utc), uploader_handle="@diana_mv",     caption="Kane desde el punto del penal 🏴󠁧󠁢󠁥󠁮󠁧󠁿"),
-    Photo("photo-015", "evt-006", "https://picsum.photos/400/300?random=15", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 28, 21, 30, tzinfo=_utc), uploader_handle="@fer_nando",    caption="Three Lions! 🦁🦁🦁", likes_count=61),
 ]
 
 # ── Seed comments (for demo richness) ─────────────────────────────────────────
@@ -524,28 +397,6 @@ RECAPS: list[Recap] = [
         home_score=2,
         away_score=1,
         photo_count=3,
-        correct_predictors=[],
-        fallback=True,
-    ),
-    Recap(
-        event_id="evt-006",
-        narrative=(
-            "The English Pub fue testigo de un thriller europeo. Inglaterra remontó "
-            "el duelo ante Italia con tres goles en un partido que no decepcionó a nadie. "
-            "La genialidad de Saka en el minuto 65 resultó definitiva."
-        ),
-        slides=[
-            RecapSlide(label="Resultado final",       description="Inglaterra 3 - 2 Italia"),
-            RecapSlide(label="Gol de Kane",           description="Kane abre el marcador de penal en el minuto 20"),
-            RecapSlide(label="Gol de Bellingham",     description="Bellingham amplía con un golazo de volea en el minuto 35"),
-            RecapSlide(label="Reacción italiana",     description="Immobile y Verratti descuentan en los minutos 50 y 80"),
-            RecapSlide(label="Saka define",           description="Saka sella la victoria inglesa en el minuto 65"),
-        ],
-        home_team="Inglaterra",
-        away_team="Italia",
-        home_score=3,
-        away_score=2,
-        photo_count=2,
         correct_predictors=[],
         fallback=True,
     ),

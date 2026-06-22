@@ -1,6 +1,6 @@
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 
@@ -90,6 +90,30 @@ def _flag_for(team_name: str) -> str:
     return _TEAM_FLAGS.get(team_name.lower().strip(), "⚽")
 
 
+_MATCH_DURATION = timedelta(hours=2, minutes=30)
+
+
+def _effective_status(e: EventModel) -> str:
+    """Derive the real status from kickoff_iso if the DB still says 'future'."""
+    if e.status != "future":
+        return e.status
+    try:
+        kickoff_str = (e.kickoff_iso or "").rstrip("Z")
+        if not kickoff_str:
+            return e.status
+        kickoff_dt = datetime.fromisoformat(kickoff_str)
+        if kickoff_dt.tzinfo is None:
+            kickoff_dt = kickoff_dt.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return e.status
+    now = datetime.now(timezone.utc)
+    if now < kickoff_dt:
+        return "future"
+    if now < kickoff_dt + _MATCH_DURATION:
+        return "live"
+    return "past"
+
+
 def _event_to_dict(e: EventModel) -> dict:
     return {
         "id": e.id,
@@ -108,18 +132,21 @@ def _event_to_dict(e: EventModel) -> dict:
         "invite_link": e.invite_link,
         "calendar_link": e.calendar_link,
         "maps_link": e.maps_link,
-        "status": e.status,
+        "status": _effective_status(e),
         "recap_event_id": e.recap_event_id,
         "recap_video_url": e.recap_video_url,
+        "home_score": e.home_score,
+        "away_score": e.away_score,
     }
 
 
 def list_events(status: str | None = None) -> list[dict]:
     with get_session() as db:
-        query = db.query(EventModel)
-        if status:
-            query = query.filter(EventModel.status == status)
-        return [_event_to_dict(e) for e in query.all()]
+        events = db.query(EventModel).all()
+    result = [_event_to_dict(e) for e in events]
+    if status:
+        result = [e for e in result if e["status"] == status]
+    return result
 
 
 def get_event(event_id: str) -> dict:
@@ -224,6 +251,16 @@ def checkin_user(event_id: str, user_id: str, name: str) -> dict:
     return {"user_id": user_id, "event_id": event_id, "checked_in": True}
 
 
+def persist_score(event_id: str, home_score: int, away_score: int) -> None:
+    """Persist match score to DB so it survives server restarts."""
+    with get_session() as db:
+        event = db.query(EventModel).filter_by(id=event_id).first()
+        if event:
+            event.home_score = home_score
+            event.away_score = away_score
+            db.commit()
+
+
 # ── Test helpers ──────────────────────────────────────────────────────────────
 
 def has_prediction(user_id: str, event_id: str) -> bool:
@@ -251,6 +288,20 @@ def count_predictions_for_user(user_id: str) -> int:
         return db.query(PredictionModel).filter_by(user_id=user_id).count()
 
 
+def get_prediction_pct(event_id: str, home_score: int, away_score: int) -> int | None:
+    """Return the % of predictions that matched the final score, or None if no predictions."""
+    with get_session() as db:
+        total = db.query(PredictionModel).filter_by(event_id=event_id).count()
+        if total == 0:
+            return None
+        correct = (
+            db.query(PredictionModel)
+            .filter_by(event_id=event_id, home_score=home_score, away_score=away_score)
+            .count()
+        )
+        return round(correct * 100 / total)
+
+
 def set_match_start_time(event_id: str, dt: datetime) -> None:
     with get_session() as db:
         event = db.query(EventModel).filter_by(id=event_id).first()
@@ -275,6 +326,9 @@ def create_event(data: EventCreate) -> dict:
     home_flag = data.home_flag or _flag_for(data.home_team)
     away_flag = data.away_flag or _flag_for(data.away_team)
 
+    # Ensure stored kickoff_iso always carries UTC designator so clients parse it correctly.
+    kickoff_iso_stored = iso_norm + "Z" if iso_norm else data.kickoff_iso
+
     with get_session() as db:
         event = EventModel(
             id=event_id,
@@ -285,7 +339,7 @@ def create_event(data: EventCreate) -> dict:
             venue_name=data.venue_name,
             venue_address=data.venue_address,
             organizer=data.organizer,
-            kickoff_iso=data.kickoff_iso,
+            kickoff_iso=kickoff_iso_stored,
             match_start_time=match_start,
             invite_link=data.invite_link,
             calendar_link=data.calendar_link,

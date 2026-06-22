@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,7 +33,7 @@
 
       <!-- GREETING -->
       <div class="greeting">
-        <span class="greeting__hi">Hola, Matías 👋</span>
+        <span class="greeting__hi">Hey, Matías 👋</span>
         <div class="avatar">MA</div>
       </div>
 
@@ -47,7 +47,7 @@
         </button>
         <button class="pill pill--search" type="button">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#64748b" stroke-width="2"></circle><path d="m20 20-3-3" stroke="#64748b" stroke-width="2" stroke-linecap="round"></path></svg>
-          <span class="pill__muted">Buscar</span>
+          <span class="pill__muted">Search</span>
         </button>
       </div>
 
@@ -60,33 +60,23 @@
       <!-- SECTION 1 -->
       <div class="section">
         <div class="section__head">
-          <div class="section__title">Apoyá a la Selección 🇦🇷</div>
-          <button class="see-all" type="button">Ver todos →</button>
+          <div class="section__title">Support the National Team 🇦🇷</div>
+          <button class="see-all" type="button">See all →</button>
         </div>
-        <div class="section__sub" id="seleccionSubtitle">Argentina vs México · Hoy 21:00</div>
+        <div class="section__sub" id="seleccionSubtitle">Argentina vs Mexico · Today 21:00</div>
       </div>
       <div class="row">
         <div class="row__scroll"><div class="row__track" id="rowSeleccion"></div></div>
         <div class="row__fade"></div>
       </div>
 
-      <!-- SECTION 2 -->
-      <div class="section__head section__head--spaced">
-        <div class="section__title section__title--label">El mundo juega hoy 🌍</div>
-        <button class="see-all" type="button">Ver todos →</button>
-      </div>
-      <div class="row">
-        <div class="row__scroll"><div class="row__track" id="rowWorld"></div></div>
-        <div class="row__fade"></div>
-      </div>
-
       <!-- SECTION 3 -->
       <div class="section">
         <div class="section__head">
-          <div class="section__title section__title--label">Reviví fan fests pasados ✨</div>
-          <button class="see-all" type="button">Ver todos →</button>
+          <div class="section__title section__title--label">Relive Past Fan Fests ✨</div>
+          <button class="see-all" type="button">See all →</button>
         </div>
-        <div class="section__sub section__sub--dim">Con crónica generada por IA</div>
+        <div class="section__sub section__sub--dim">With AI-generated recap</div>
       </div>
       <div class="row">
         <div class="row__scroll"><div class="row__track" id="rowRecap"></div></div>
@@ -95,14 +85,31 @@
 
       <!-- SECTION 4 -->
       <div class="section__head section__head--spaced">
-        <div class="section__title section__title--label">Próximos fan fests 📅</div>
-        <button class="see-all" type="button">Ver todos →</button>
+        <div class="section__title section__title--label">Upcoming Fan Fests 📅</div>
+        <button class="see-all" type="button">See all →</button>
       </div>
       <div class="row">
         <div class="row__scroll"><div class="row__track" id="rowUpcoming"></div></div>
         <div class="row__fade"></div>
       </div>
 
+    </div>
+
+    <!-- MAPA SCREEN -->
+    <div id="mapaView" class="scroll" hidden>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px 20px;text-align:center">
+        <div style="font-size:56px">🗺️</div>
+        <div style="font-size:22px;font-weight:800;color:var(--ink)">Coming Soon</div>
+        <div style="font-size:14px;color:var(--muted);line-height:1.5">The fan fest map near you<br>is on its way 🚀</div>
+      </div>
+    </div>
+
+    <!-- MIS EVENTOS SCREEN -->
+    <div id="misEventosView" class="scroll" hidden>
+      <div class="greeting">
+        <span class="greeting__hi">My Events</span>
+      </div>
+      <div id="misEventosTrack"></div>
     </div>
 
     <!-- EVENT DETAIL (PREVIA) SCREEN -->
@@ -118,10 +125,10 @@
     <div class="bottomnav">
       <div class="live-bar" hidden>
         <div class="live-bar__info">
-          <div class="live-bar__label">Partido en vivo</div>
-          <div class="live-bar__match">Argentina vs México</div>
+          <div class="live-bar__label">Live Match</div>
+          <div class="live-bar__match">Argentina vs Mexico</div>
         </div>
-        <button class="live-bar__cta" type="button">📍 Estoy aquí</button>
+        <button class="live-bar__cta" type="button">📍 I'm here</button>
       </div>
       <div class="navtabs" id="navTabs"></div>
     </div>

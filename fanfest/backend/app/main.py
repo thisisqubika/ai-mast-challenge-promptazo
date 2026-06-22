@@ -18,6 +18,8 @@ def _run_migrations() -> None:
     with database._engine.connect() as conn:
         for stmt in [
             "ALTER TABLE events ADD COLUMN recap_video_url TEXT",
+            "ALTER TABLE events ADD COLUMN home_score INTEGER",
+            "ALTER TABLE events ADD COLUMN away_score INTEGER",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -41,7 +43,7 @@ app = FastAPI(title="FanFest API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -15,18 +15,6 @@ const categories = [
   { id: 'otros',    label: 'Otros',     icon: 'ti ti-sparkles' },
 ];
 
-const worldCards = [
-  { isLive: false, home: 'Brasil', homeFlag: '🇧🇷', away: 'França', awayFlag: '🇫🇷',
-    kickoff: '18:00', statusText: 'en 45m', venue: 'Club House Alberdi', distance: '2.1km',
-    amenities: [['🍺', 'Cervezas'], ['📺', 'Pantalla']] },
-  { isLive: true, home: 'España', homeFlag: '🇪🇸', away: 'Alemania', awayFlag: '🇩🇪',
-    score: '1 – 0', statusText: "LIVE 34'", venue: 'Bar Munich', distance: '1.8km',
-    amenities: [['🍺', 'Cervezas'], ['🎶', 'DJ']] },
-  { isLive: false, home: 'Portugal', homeFlag: '🇵🇹', away: 'Marruecos', awayFlag: '🇲🇦',
-    kickoff: '22:00', statusText: 'en 2h 30m', venue: 'Roof Lounge', distance: '3km',
-    amenities: [['🍷', 'Vinos'], ['📺', 'Pantalla']] },
-];
-
 // Recap cards — loaded from API; static array is a render-before-fetch placeholder
 let recapCards = [];
 
@@ -42,37 +30,40 @@ const navIcons = {
   perfil:  '<svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 };
 const navTabs = [
-  { id: 'inicio', label: 'Inicio' },
-  { id: 'mapa', label: 'Mapa' },
-  { id: 'crear', label: 'Crear' },
-  { id: 'eventos', label: 'Mis eventos' },
-  { id: 'perfil', label: 'Perfil' },
+  { id: 'crear', label: 'Create' },
 ];
 
 // ── Date / time helpers ──────────────────────────────────────────────────────
-const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Ensure the ISO string is treated as UTC when no timezone designator is present.
+// "2026-06-22T14:00" → "2026-06-22T14:00Z"; strings already ending in Z or ±HH:MM pass through.
+function _normIso(iso) {
+  if (!iso) return iso;
+  return /Z$|[+-]\d{2}:\d{2}$/.test(iso) ? iso : iso + 'Z';
+}
 
 function _fmtDate(iso) {
-  const d = new Date(iso);
+  const d = new Date(_normIso(iso));
   return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 function _fmtShortDate(iso) {
-  const d = new Date(iso);
+  const d = new Date(_normIso(iso));
   return `${d.getUTCDate()} ${_MONTHS[d.getUTCMonth()]}`;
 }
 
 function _fmtTime(iso) {
-  const d = new Date(iso);
+  const d = new Date(_normIso(iso));
   return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 }
 
 function _fmtCountdown(iso) {
-  const diffDays = Math.floor((new Date(iso) - Date.now()) / 86400000);
+  const diffDays = Math.floor((new Date(_normIso(iso)) - Date.now()) / 86400000);
   if (diffDays < 0) return null;
-  if (diffDays === 0) return 'Hoy';
-  if (diffDays === 1) return 'Mañana';
-  return `en ${diffDays} días`;
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  return `in ${diffDays} days`;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -98,15 +89,15 @@ function renderCategories() {
 
 function renderSeleccion(events) {
   if (!events.length) {
-    $('rowSeleccion').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">Sin partidos disponibles</div>';
+    $('rowSeleccion').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">No matches available</div>';
     return;
   }
   $('rowSeleccion').innerHTML = events.map((e) => {
     const countdown = _fmtCountdown(e.kickoff_iso);
     const timeStr = _fmtTime(e.kickoff_iso);
-    const matchLabel = countdown === 'Hoy' ? `Hoy · ${timeStr}` : `${_fmtShortDate(e.kickoff_iso)} · ${timeStr}`;
+    const matchLabel = countdown === 'Today' ? `Today · ${timeStr}` : `${_fmtShortDate(e.kickoff_iso)} · ${timeStr}`;
     const avatars = _miniAvatars(e.attendee_count);
-    const attendLabel = e.attendee_count ? `${e.attendee_count} van a ir` : 'Sé el primero';
+    const attendLabel = e.attendee_count ? `${e.attendee_count} going` : 'Be the first';
     return `
     <div class="card-sel" data-event-id="${e.id}" style="cursor:pointer">
       <div class="card-sel__match">
@@ -122,37 +113,13 @@ function renderSeleccion(events) {
           <span class="attend__count">${attendLabel}</span>
         </div>
         <button class="btn-apuntar${!!localStorage.getItem('apuntado_'+e.id) ? ' is-apuntado' : ''}"
-                type="button">${!!localStorage.getItem('apuntado_'+e.id) ? '✓ Apuntado' : 'Me apunto'}</button>
+                type="button">${!!localStorage.getItem('apuntado_'+e.id) ? '✓ Joined' : 'Join'}</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function renderWorld() {
-  $('rowWorld').innerHTML = worldCards.map((w) => {
-    const center = w.isLive
-      ? `<div class="score-col__score">${w.score}</div>
-         <div class="live-flag">
-           <div class="live-dot"><div class="live-dot__ring"></div><div class="live-dot__core"></div></div>
-           <span class="live-flag__text">${w.statusText}</span>
-         </div>`
-      : `<div class="score-col__kickoff">${w.kickoff}</div>
-         <div class="score-col__status">${w.statusText}</div>`;
-    return `
-    <div class="card-world${w.isLive ? ' is-live' : ''}">
-      <div class="card-world__head">
-        <div class="team"><div class="team__flag">${w.homeFlag}</div><div class="team__name">${w.home}</div></div>
-        <div class="score-col">${center}</div>
-        <div class="team"><div class="team__flag">${w.awayFlag}</div><div class="team__name">${w.away}</div></div>
-      </div>
-      <div class="card-world__body">
-        <div class="card-world__venue">${w.venue} <span>· ${w.distance}</span></div>
-        ${tags(w.amenities)}
-        <button class="btn-link" type="button">Ver fan fests →</button>
-      </div>
-    </div>`;
-  }).join('');
-}
+
 
 function renderRecap() {
   const pitch = `<svg width="120" height="50" viewBox="0 0 120 50" fill="none" class="card-recap__pitch"><path d="M0 50 Q15 30 30 40 Q45 22 60 34 Q75 16 90 32 Q105 24 120 36 L120 50Z" fill="#f1f5f9"/></svg>`;
@@ -173,19 +140,19 @@ function renderRecap() {
              data-recap-status="${r.status}">${r.result}</div>
         <div class="card-recap__stage">${r.stage}</div>
         <div class="divider"></div>
-        <button class="card-recap__cronica" type="button" data-recap-event-id="${r.id}">✨ Ver crónica</button>
-        <div class="card-recap__photos">📸 ${r.photos} fotos</div>
+        <button class="card-recap__cronica" type="button" data-recap-event-id="${r.id}">✨ See recap</button>
+        <div class="card-recap__photos">📸 ${r.photos} photos</div>
       </div>
     </div>`).join('');
 }
 
 function renderUpcoming(events) {
   if (!events.length) {
-    $('rowUpcoming').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">Sin próximos eventos</div>';
+    $('rowUpcoming').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">No upcoming events</div>';
     return;
   }
   $('rowUpcoming').innerHTML = events.map((u) => {
-    const countdown = _fmtCountdown(u.kickoff_iso) || 'Próximamente';
+    const countdown = _fmtCountdown(u.kickoff_iso) || 'Coming soon';
     return `
     <div class="card-up" data-event-id="${u.id}" style="cursor:pointer">
       <div class="card-up__head">
@@ -217,18 +184,53 @@ function renderNav() {
     </button>`).join('');
 }
 
+function renderMisEventos() {
+  const registered = [..._seleccionEvents, ..._upcomingEvents].filter(
+    (e) => localStorage.getItem(`apuntado_${e.id}`)
+  );
+  const track = $('misEventosTrack');
+  if (!track) return;
+  if (!registered.length) {
+    track.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 0;text-align:center">
+        <div style="font-size:48px">🎉</div>
+        <div style="font-size:15px;font-weight:700;color:var(--ink)">You haven't joined any fan fests yet</div>
+        <div style="font-size:13px;color:var(--muted)">Explore events and tap "Join"</div>
+      </div>`;
+    return;
+  }
+  track.innerHTML = registered.map((e) => {
+    const countdown = _fmtCountdown(e.kickoff_iso);
+    const timeStr = _fmtTime(e.kickoff_iso);
+    const matchLabel = countdown === 'Today' ? `Today · ${timeStr}` : `${_fmtShortDate(e.kickoff_iso)} · ${timeStr}`;
+    return `
+    <div class="card-sel" data-event-id="${e.id}" style="cursor:pointer;margin-bottom:12px">
+      <div class="card-sel__match">
+        <div class="card-sel__match-teams">${e.home_flag} ${e.home_team} vs ${e.away_flag} ${e.away_team}</div>
+        <div class="card-sel__match-time">${matchLabel}</div>
+      </div>
+      <div class="card-sel__name">${e.venue_name}</div>
+      <div class="card-sel__loc"><span>📍</span><span>${e.venue_distance || e.venue_address || ''}</span></div>
+      ${tags(e.amenities)}
+      <div class="card-sel__foot">
+        <div class="attend"><span class="attend__count">✓ Joined</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── Registration helpers ──────────────────────────────────────────────────────
 function apuntarseAlEvento(eventId) {
   if (localStorage.getItem(`apuntado_${eventId}`)) return;
   localStorage.setItem(`apuntado_${eventId}`, '1');
   document.querySelectorAll(`[data-event-id="${eventId}"] .btn-apuntar`).forEach(btn => {
-    btn.textContent = '✓ Apuntado';
+    btn.textContent = '✓ Joined';
     btn.classList.add('is-apuntado');
   });
   // Increment attendance counter in the DOM and in cached event arrays
   document.querySelectorAll(`[data-event-id="${eventId}"] .attend__count`).forEach(el => {
     const current = parseInt(el.textContent) || 0;
-    el.textContent = `${current + 1} van a ir`;
+    el.textContent = `${current + 1} going`;
   });
   [_seleccionEvents, _upcomingEvents].forEach(arr => {
     const ev = arr.find(e => e.id === eventId);
@@ -248,7 +250,7 @@ function _updateLiveBar() {
     const matchEl = livebar.querySelector('.live-bar__match');
     const labelEl = livebar.querySelector('.live-bar__label');
     if (matchEl) matchEl.textContent = `${registered.home_team} vs ${registered.away_team}`;
-    if (labelEl) labelEl.textContent = registered.status === 'live' ? 'Partido en vivo' : 'Previa';
+    if (labelEl) labelEl.textContent = registered.status === 'live' ? 'Live Match' : 'Pre-match';
     livebar.dataset.eventId = registered.id;
     livebar.hidden = false;
   } else {
@@ -263,6 +265,7 @@ async function loadRecapCards() {
     const res = await fetch('http://localhost:8000/api/v1/events?status=past');
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
+    events.sort((a, b) => new Date(b.kickoff_iso) - new Date(a.kickoff_iso));
     recapCards = events.map((e) => ({
       id: e.id,
       status: e.status,
@@ -291,7 +294,7 @@ async function loadSeleccionCards() {
       const first = selEvents[0];
       const countdown = _fmtCountdown(first.kickoff_iso);
       const timeStr = _fmtTime(first.kickoff_iso);
-      const label = countdown === 'Hoy' ? `Hoy ${timeStr}` : `${_fmtShortDate(first.kickoff_iso)} · ${timeStr}`;
+      const label = countdown === 'Today' ? `Today ${timeStr}` : `${_fmtShortDate(first.kickoff_iso)} · ${timeStr}`;
       subtitle.textContent = `${first.home_team} vs ${first.away_team} · ${label}`;
     }
     _seleccionEvents = selEvents;
@@ -324,6 +327,19 @@ $('catTabs').addEventListener('click', (e) => {
   renderCategories();
 });
 
+function _switchHomeTab(tab) {
+  const homeViews = ['homeView', 'mapaView', 'misEventosView'];
+  homeViews.forEach((id) => { const el = $(id); if (el) el.hidden = true; });
+  if (tab === 'mapa') {
+    $('mapaView').hidden = false;
+  } else if (tab === 'eventos') {
+    renderMisEventos();
+    $('misEventosView').hidden = false;
+  } else {
+    $('homeView').hidden = false;
+  }
+}
+
 $('navTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-tab]');
   if (!btn) return;
@@ -333,6 +349,7 @@ $('navTabs').addEventListener('click', (e) => {
   }
   state.activeTab = btn.dataset.tab;
   renderNav();
+  _switchHomeTab(btn.dataset.tab);
 });
 
 $('rowSeleccion').addEventListener('click', (e) => {
@@ -360,7 +377,6 @@ $('rowUpcoming').addEventListener('click', (e) => {
 });
 
 renderCategories();
-renderWorld();
 renderNav();
 
 // Async sections
@@ -370,8 +386,8 @@ loadUpcomingCards();
 
 $('rowRecap').addEventListener('click', (e) => {
   const resultEl = e.target.closest('[data-recap-detail-id]');
-  if (resultEl && typeof window.navigateToEventDetail === 'function') {
-    window.navigateToEventDetail({ id: resultEl.dataset.recapDetailId, status: resultEl.dataset.recapStatus });
+  if (resultEl && typeof window.navigateToRecap === 'function') {
+    window.navigateToRecap(resultEl.dataset.recapDetailId);
     return;
   }
   const btn = e.target.closest('[data-recap-event-id]');
@@ -388,3 +404,5 @@ if (liveCta) {
     }
   });
 }
+
+window._updateLiveBar = _updateLiveBar;
