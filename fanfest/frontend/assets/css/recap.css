@@ -364,6 +364,29 @@
   margin-bottom: 14px;
 }
 
+/* VIDEO PLAYER */
+.recap-video-section {
+  margin-bottom: 16px;
+}
+
+.recap-video-section__label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #7c3aed;
+  margin-bottom: 8px;
+}
+
+.recap-video-player {
+  width: 100%;
+  border-radius: 14px;
+  background: #000;
+  display: block;
+  max-height: 480px;
+  object-fit: contain;
+}
+
 /* ERROR STATE */
 .recap-error {
   font-size: 12px;

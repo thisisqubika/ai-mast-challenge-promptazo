@@ -1,7 +1,7 @@
 /* Event Detail (Previa) — FEST-05 / FEST-08
    Hype Wall wired to real /media API. Upload modal with file + caption. */
 
-import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, submitPrediction } from './api.js';
+import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, submitPrediction, generateVideoRecap } from './api.js';
 
 // ── Event state (populated from API on navigate) ───────────────────────────────
 const edEvent = {
@@ -16,6 +16,7 @@ const edEvent = {
   venueDistance: '',
   attending: '',
   amenities: [],
+  recapVideoUrl: null,
   match: { home: '', homeFlag: '', away: '', awayFlag: '', competition: '', countdownLabel: '' },
 };
 
@@ -35,6 +36,7 @@ function _applyEventData(data) {
   edEvent.venueDistance = data.venue_distance || '';
   edEvent.attending     = data.attendee_count ? `${data.attendee_count} van a ir` : '';
   edEvent.amenities     = data.amenities || [];
+  edEvent.recapVideoUrl = data.recap_video_url || null;
   edEvent.match = {
     home:           data.home_team || '',
     homeFlag:       data.home_flag || '',
@@ -293,10 +295,15 @@ function renderHypePost(post) {
 
 function renderRecapBtn() {
   if (!edEvent.isPast) return '';
+  const hasVideo = !!edEvent.recapVideoUrl;
   return `
     <div class="ed-recap-cta">
       <button class="ed-recap-cta__btn" id="edRecapBtn" type="button">
         ✨ Ver crónica del partido
+      </button>
+      <button class="ed-recap-cta__btn ed-recap-cta__btn--video${hasVideo ? ' is-generated' : ''}"
+              id="edGenerateVideoBtn" type="button"${hasVideo ? ' disabled' : ''}>
+        🎬 ${hasVideo ? 'Video generado' : 'Generar recap video'}
       </button>
     </div>`;
 }
@@ -510,6 +517,28 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
   if (e.target.closest('#edRecapBtn')) {
     if (typeof window.navigateToRecap === 'function') {
       window.navigateToRecap(edEvent.id);
+    }
+    return;
+  }
+
+  if (e.target.closest('#edGenerateVideoBtn')) {
+    const btn = document.getElementById('edGenerateVideoBtn');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Generando video...';
+    try {
+      const result = await generateVideoRecap(edEvent.id);
+      edEvent.recapVideoUrl = result.video_url;
+      btn.textContent = '🎬 Video generado';
+      btn.classList.add('is-generated');
+      if (typeof window.navigateToRecap === 'function') {
+        window.navigateToRecap(edEvent.id);
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '🎬 Generar recap video';
+      const detail = err && err.detail ? err.detail : 'Error al generar. Intenta de nuevo.';
+      alert(detail);
     }
     return;
   }

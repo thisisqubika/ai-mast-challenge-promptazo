@@ -11,11 +11,27 @@ from app.db import database
 from app.db import models as _models  # noqa: F401 — registers ORM classes with Base
 
 
+def _run_migrations() -> None:
+    """Add new columns to existing tables that predate them."""
+    from sqlalchemy import text
+
+    with database._engine.connect() as conn:
+        for stmt in [
+            "ALTER TABLE events ADD COLUMN recap_video_url TEXT",
+        ]:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if database._engine is None:
         database.init_db(settings.database_url)
         _models.Base.metadata.create_all(database._engine)
+        _run_migrations()
         from app.db.seed import run_seed
         run_seed()
     yield

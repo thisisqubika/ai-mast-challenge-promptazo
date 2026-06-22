@@ -22,12 +22,15 @@ from app.schemas.events import (
     PredictionResponse,
     RecapRequest,
     RecapResponse,
+    VideoRecapResponse,
 )
 from app.services import events_service
 from app.services import match_state as match_state_service
 from app.services import photos_service
 from app.services import recap_service
+from app.services.video_recap.errors import RecapError
 from app.services import registry
+from app.services import video_recap_service
 
 
 def _abbr(name: str) -> str:
@@ -87,6 +90,7 @@ def list_events(status: str | None = Query(default=None)) -> list[EventSummary]:
                 home_score=home_score,
                 away_score=away_score,
                 photo_count=photo_count,
+                recap_video_url=e.get("recap_video_url"),
             )
         )
     return result
@@ -159,6 +163,7 @@ def get_event_detail(event_id: str) -> EventDetail:
         invite_link=event["invite_link"],
         calendar_link=event["calendar_link"],
         maps_link=event["maps_link"],
+        recap_video_url=event.get("recap_video_url"),
     )
 
 
@@ -352,3 +357,32 @@ async def create_recap(event_id: str, body: RecapRequest) -> RecapResponse:
         )
     photos = photos_service.list_photos(event_id)
     return recap_service.generate_recap(event_id, state, photos, body.tone, body.slide_count)
+
+
+# ---------------------------------------------------------------------------
+# Video recap (AI-generated MP4)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{event_id}/recap/video", response_model=VideoRecapResponse)
+async def get_video_recap(event_id: str) -> VideoRecapResponse:
+    """Return the previously generated recap video URL. 404 if not generated yet."""
+    result = video_recap_service.get_video_recap(event_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="No video recap found for this event")
+    return result
+
+
+@router.post("/{event_id}/recap/video", response_model=VideoRecapResponse, status_code=201)
+async def generate_video_recap(event_id: str) -> VideoRecapResponse:
+    """Generate the recap video for a finished event. Can only be called once per event."""
+    state = match_state_service.get_state(event_id)
+    if state.status != "ended":
+        raise HTTPException(
+            status_code=409,
+            detail="Video recap is only available after the match ends",
+        )
+    try:
+        return video_recap_service.generate_video_recap(event_id)
+    except (ValueError, RecapError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

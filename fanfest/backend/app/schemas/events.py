@@ -35,6 +35,7 @@ class EventDetail(BaseModel):
     invite_link: str
     calendar_link: str
     maps_link: str
+    recap_video_url: str | None = None
 
 
 class PredictionRequest(BaseModel):
@@ -173,6 +174,11 @@ class RecapResponse(BaseModel):
     photo_count: int
 
 
+class VideoRecapResponse(BaseModel):
+    event_id: str
+    video_url: str
+
+
 # ---------------------------------------------------------------------------
 # Events list
 # ---------------------------------------------------------------------------
@@ -215,3 +221,4 @@ class EventSummary(BaseModel):
     home_score: int | None = None
     away_score: int | None = None
     photo_count: int = 0
+    recap_video_url: str | None = None

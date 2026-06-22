@@ -6,10 +6,16 @@ from app.data.seed import EVENTS, PHOTOS, REGISTRATIONS
 from app.db.database import get_session
 from app.db.models import EventModel, PhotoModel, RegistrationModel
 
+# Pre-generated recap videos shipped with the repo (event_id → relative URL).
+_PRE_GENERATED_VIDEOS: dict[str, str] = {
+    "evt-002": "/media/recap/evt-002/recap-video.mp4",
+}
+
 
 def run_seed() -> None:
     with get_session() as db:
         if db.query(EventModel).count() > 0:
+            _backfill_video_recaps(db)
             return
 
         for e in EVENTS:
@@ -59,3 +65,12 @@ def run_seed() -> None:
                     uploaded_at=p.uploaded_at,
                 )
             )
+
+        _backfill_video_recaps(db)
+
+
+def _backfill_video_recaps(db) -> None:
+    for event_id, video_url in _PRE_GENERATED_VIDEOS.items():
+        event = db.get(EventModel, event_id)
+        if event and not event.recap_video_url:
+            event.recap_video_url = video_url

@@ -10,3 +10,7 @@ anthropic>=0.25.0
 pytest>=8.0.0
 httpx>=0.27.0
 ruff>=0.4.0
+moviepy>=2.0
+Pillow>=10
+numpy>=1.26
+imageio-ffmpeg>=0.4
