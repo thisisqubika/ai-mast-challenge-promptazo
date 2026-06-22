@@ -23,9 +23,9 @@ const edEvent = {
 function _computeCountdown(kickoffIso) {
   const diff = Math.floor((new Date(kickoffIso) - Date.now()) / 1000);
   if (diff <= 0) return null;
-  if (diff < 3600) return `Comienza en ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `Comienza en ${Math.floor(diff / 3600)} h`;
-  return `Comienza en ${Math.floor(diff / 86400)} días`;
+  if (diff < 3600) return `Starts in ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `Starts in ${Math.floor(diff / 3600)} h`;
+  return `Starts in ${Math.floor(diff / 86400)} days`;
 }
 
 function _applyEventData(data) {
@@ -34,7 +34,7 @@ function _applyEventData(data) {
   edCheckedIn = !!(data.attendees && data.attendees.some(a => a.user_id === edCurrentUser.id));
   edEvent.venueName     = data.venue_name || '';
   edEvent.venueDistance = data.venue_distance || '';
-  edEvent.attending     = data.attendee_count ? `${data.attendee_count} van a ir` : '';
+  edEvent.attending     = data.attendee_count ? `${data.attendee_count} going` : '';
   edEvent.amenities     = data.amenities || [];
   edEvent.recapVideoUrl = data.recap_video_url || null;
   edEvent.match = {
@@ -82,7 +82,7 @@ const edChip = (icon, label) =>
 function renderBackRow(event) {
   return `
     <div class="ed-back">
-      <button class="ed-back__btn" id="edBackBtn" type="button" aria-label="Volver">
+      <button class="ed-back__btn" id="edBackBtn" type="button" aria-label="Back">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2"
                 stroke-linecap="round" stroke-linejoin="round"/>
@@ -101,9 +101,9 @@ function renderMatchHeader(match) {
       <div class="ed-pill-dot"></div>LIVE
     </div>`;
   } else if (ms === 'ended' || edEvent.isPast) {
-    pillHtml = `<div class="ed-match__previa-pill ed-match__previa-pill--ended">Finalizado</div>`;
+    pillHtml = `<div class="ed-match__previa-pill ed-match__previa-pill--ended">Ended</div>`;
   } else {
-    pillHtml = `<div class="ed-match__previa-pill">PREVIA</div>`;
+    pillHtml = `<div class="ed-match__previa-pill">PRE-MATCH</div>`;
   }
 
   const showScore = ms === 'live' || ms === 'ended';
@@ -152,8 +152,8 @@ function renderMatchHeader(match) {
 function renderEventInfo(event) {
   const chips = event.amenities.map(([i, l]) => edChip(i, l)).join('');
   const attendLabel = edEvent.isPast
-    ? `${edEvent.attendeeCount} personas asistieron`
-    : edEvent.attendeeCount ? `${edEvent.attendeeCount} van a ir` : '';
+    ? `${edEvent.attendeeCount} attended`
+    : edEvent.attendeeCount ? `${edEvent.attendeeCount} going` : '';
   const attendHtml = attendLabel
     ? `<div class="ed-info__attending">👥 ${attendLabel}</div>`
     : '';
@@ -173,7 +173,7 @@ function renderActionButtons() {
     <div class="ed-actions">
       <button class="ed-btn ed-btn--predict${predictOpen ? ' is-open' : ''}"
               id="edPredictBtn" type="button">
-        ${predictOpen ? '✕ Cerrar' : '🎯 Predecir'}
+        ${predictOpen ? '✕ Close' : '🎯 Predict'}
       </button>
     </div>`;
 }
@@ -184,14 +184,14 @@ function renderPredictPanel() {
       <div class="ed-predict-confirmed">
         <span class="ed-predict-confirmed__icon">✅</span>
         <span class="ed-predict-confirmed__text">
-          Predicción · ${edEvent.match.home} ${edState.homeScore} – ${edState.awayScore} ${edEvent.match.away}
+          Prediction · ${edEvent.match.home} ${edState.homeScore} – ${edState.awayScore} ${edEvent.match.away}
         </span>
       </div>`;
   }
   if (!edState.showPredict) return '';
   return `
     <div class="ed-predict-panel" id="edPredictPanel">
-      <div class="ed-predict__title">Tu predicción</div>
+      <div class="ed-predict__title">Your prediction</div>
       <div class="ed-predict__steppers">
         <div class="ed-predict__team">
           <div class="ed-predict__team-label">ARG</div>
@@ -212,7 +212,7 @@ function renderPredictPanel() {
         </div>
       </div>
       <button class="ed-predict__confirm" id="edConfirmBtn" type="button">
-        Confirmar predicción →
+        Confirm prediction →
       </button>
     </div>`;
 }
@@ -231,10 +231,10 @@ function _initials(name) {
 
 function _timeAgo(isoStr) {
   const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
-  if (diff < 60)   return 'hace un momento';
-  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
-  return `hace ${Math.floor(diff / 86400)} días`;
+  if (diff < 60)   return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} h ago`;
+  return `${Math.floor(diff / 86400)} days ago`;
 }
 
 function renderHypePost(post) {
@@ -299,11 +299,11 @@ function renderRecapBtn() {
   return `
     <div class="ed-recap-cta">
       <button class="ed-recap-cta__btn" id="edRecapBtn" type="button">
-        ✨ Ver crónica del partido
+        ✨ View match recap
       </button>
       <button class="ed-recap-cta__btn ed-recap-cta__btn--video${hasVideo ? ' is-generated' : ''}"
               id="edGenerateVideoBtn" type="button"${hasVideo ? ' disabled' : ''}>
-        🎬 ${hasVideo ? 'Video generado' : 'Generar recap video'}
+        🎬 ${hasVideo ? 'Video generated' : 'Generate recap video'}
       </button>
     </div>`;
 }
@@ -313,18 +313,18 @@ function renderUploadModal() {
     <div class="ed-upload-modal" id="edUploadModal" hidden>
       <div class="ed-upload-modal__backdrop" id="edUploadBackdrop"></div>
       <div class="ed-upload-modal__sheet">
-        <div class="ed-upload-modal__title">Subir foto / video</div>
+        <div class="ed-upload-modal__title">Upload photo / video</div>
         <label class="ed-upload-modal__file-label" for="edMediaInput">
-          <span id="edMediaLabel">📎 Elegir archivo</span>
+          <span id="edMediaLabel">📎 Choose file</span>
           <input type="file" id="edMediaInput" accept="image/jpeg,image/png,image/gif,video/mp4,video/quicktime" style="display:none">
         </label>
         <textarea id="edCaptionInput" class="ed-upload-modal__caption"
-          placeholder="Escribe una descripción... (máx. 280 caracteres)" maxlength="280" rows="3"></textarea>
+          placeholder="Write a caption... (max. 280 characters)" maxlength="280" rows="3"></textarea>
         <button class="ed-upload-modal__submit" id="edUploadSubmit" type="button">
-          Publicar 🚀
+          Post 🚀
         </button>
         <button class="ed-upload-modal__cancel" id="edUploadCancel" type="button">
-          Cancelar
+          Cancel
         </button>
         <div class="ed-upload-modal__error" id="edUploadError" hidden></div>
       </div>
@@ -338,7 +338,7 @@ function renderEventDetail() {
     ? hypePosts.map(renderHypePost).join('')
     : `<div class="ed-hype-empty">
          <div style="font-size:22px;margin-bottom:6px">📸</div>
-         <div style="font-size:11px;color:var(--muted)">Sé el primero en subir una foto o video</div>
+         <div style="font-size:11px;color:var(--muted)">Be the first to upload a photo or video</div>
        </div>`;
 
   container.innerHTML =
@@ -358,8 +358,8 @@ function renderEventDetail() {
       ? `<div class="ed-empty-state">
            <div class="ed-empty-state__icon">⚽</div>
            <div class="ed-empty-state__text">
-             Los eventos del partido aparecerán aquí<br>
-             Inicio · Goles · Entretiempo · Fin
+             Match events will appear here<br>
+             Kickoff · Goals · Half-time · Final
            </div>
          </div>`
       : '') +
@@ -374,7 +374,7 @@ function _updateFloatCta() {
   if (!el) return;
   if (!edEvent.isPast && edCheckedIn) {
     el.innerHTML = `<button class="ed-float-cta__btn" id="edUploadCta" type="button">
-      📸 Subir foto / video
+      📸 Upload photo / video
     </button>`;
     el.hidden = false;
   } else {
@@ -451,19 +451,28 @@ async function navigateToEventDetail(venue) {
 
   const homeScroll = document.querySelector('.phone > .scroll');
   const detailView = $ed('eventDetailView');
-  if (homeScroll)  homeScroll.hidden  = true;
+  const livebar    = document.querySelector('.live-bar');
+  // Hide every sibling view to prevent flex-1 splits
+  ['eventDetailView','recapView','mapaView','misEventosView','createEventView'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.hidden = true;
+  });
+  if (homeScroll) homeScroll.hidden = true;
   if (detailView) { detailView.hidden = false; detailView.scrollTop = 0; }
+  if (livebar)    livebar.hidden = true;
   await loadHypeFeed();
   renderEventDetail();
 }
 
 function navigateToHome() {
   const homeScroll = document.querySelector('.phone > .scroll');
-  const detailView = $ed('eventDetailView');
   const floatCta   = document.getElementById('edFloatCta');
+  // Hide every non-home view to prevent flex-1 splits
+  ['eventDetailView','recapView','mapaView','misEventosView','createEventView'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.hidden = true;
+  });
   if (homeScroll)  homeScroll.hidden  = false;
-  if (detailView)  detailView.hidden  = true;
   if (floatCta)  { floatCta.hidden = true; floatCta.innerHTML = ''; }
+  if (typeof window._updateLiveBar === 'function') window._updateLiveBar();
 }
 
 // ── Upload modal state ────────────────────────────────────────────────────────
@@ -479,7 +488,7 @@ function _closeUploadModal() {
   if (modal) modal.hidden = true;
   _uploadFile = null;
   const label = $ed('edMediaLabel');
-  if (label) label.textContent = '📎 Elegir archivo';
+  if (label) label.textContent = '📎 Choose file';
   const caption = $ed('edCaptionInput');
   if (caption) caption.value = '';
   const err = $ed('edUploadError');
@@ -502,7 +511,7 @@ async function _submitUpload() {
   } catch (err) {
     const msg = err && err.detail
       ? (Array.isArray(err.detail) ? err.detail[0].msg : err.detail)
-      : 'Error al subir. Intenta de nuevo.';
+      : 'Upload failed. Please try again.';
     if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
   }
 }
@@ -525,19 +534,19 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
     const btn = document.getElementById('edGenerateVideoBtn');
     if (!btn || btn.disabled) return;
     btn.disabled = true;
-    btn.textContent = '⏳ Generando video...';
+    btn.textContent = '⏳ Generating video...';
     try {
       const result = await generateVideoRecap(edEvent.id);
       edEvent.recapVideoUrl = result.video_url;
-      btn.textContent = '🎬 Video generado';
+      btn.textContent = '🎬 Video generated';
       btn.classList.add('is-generated');
       if (typeof window.navigateToRecap === 'function') {
         window.navigateToRecap(edEvent.id);
       }
     } catch (err) {
       btn.disabled = false;
-      btn.textContent = '🎬 Generar recap video';
-      const detail = err && err.detail ? err.detail : 'Error al generar. Intenta de nuevo.';
+      btn.textContent = '🎬 Generate recap video';
+      const detail = err && err.detail ? err.detail : 'Generation failed. Please try again.';
       alert(detail);
     }
     return;

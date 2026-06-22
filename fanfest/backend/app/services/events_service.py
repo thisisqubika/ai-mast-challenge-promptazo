@@ -275,6 +275,9 @@ def create_event(data: EventCreate) -> dict:
     home_flag = data.home_flag or _flag_for(data.home_team)
     away_flag = data.away_flag or _flag_for(data.away_team)
 
+    # Ensure stored kickoff_iso always carries UTC designator so clients parse it correctly.
+    kickoff_iso_stored = iso_norm + "Z" if iso_norm else data.kickoff_iso
+
     with get_session() as db:
         event = EventModel(
             id=event_id,
@@ -285,7 +288,7 @@ def create_event(data: EventCreate) -> dict:
             venue_name=data.venue_name,
             venue_address=data.venue_address,
             organizer=data.organizer,
-            kickoff_iso=data.kickoff_iso,
+            kickoff_iso=kickoff_iso_stored,
             match_start_time=match_start,
             invite_link=data.invite_link,
             calendar_link=data.calendar_link,

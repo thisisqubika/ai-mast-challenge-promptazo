@@ -6,7 +6,7 @@ function getUserIdentity() {
   let name = localStorage.getItem(USER_NAME_KEY);
   let id = localStorage.getItem(USER_ID_KEY);
   if (!name) {
-    name = prompt('Tu nombre para FanFest:') || 'Hincha';
+    name = prompt('Your name for FanFest:') || 'Fan';
     id = 'user_' + Date.now();
     localStorage.setItem(USER_NAME_KEY, name);
     localStorage.setItem(USER_ID_KEY, id);
@@ -41,7 +41,7 @@ async function postCheckin(eventId, userId, name) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Error al hacer check-in');
+    throw new Error(err.detail || 'Check-in error');
   }
   return res.json();
 }
@@ -49,8 +49,8 @@ async function postCheckin(eventId, userId, name) {
 function formatKickoff(isoString) {
   try {
     const d = new Date(isoString);
-    return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
-      + ' · ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+      + ' · ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   } catch (_) { return isoString; }
 }
 
@@ -58,8 +58,8 @@ function renderEvent(event, predState) {
   const attendeeCount = event.attendees ? event.attendees.length : 0;
   return `
     <div class="ev-header">
-      <button class="ev-back" id="evBack" type="button" aria-label="Volver">←</button>
-      <span class="ev-title">Detalle del evento</span>
+      <button class="ev-back" id="evBack" type="button" aria-label="Back">←</button>
+      <span class="ev-title">Event Details</span>
     </div>
     <div class="ev-body">
       <div class="ev-match">
@@ -78,9 +78,9 @@ function renderEvent(event, predState) {
       </div>
 
       <div class="ev-info-row">📍 <span>${event.venue_address}</span></div>
-      <div class="ev-info-row">👤 <span>Organiza ${event.organizer}</span></div>
+      <div class="ev-info-row">👤 <span>Organized by ${event.organizer}</span></div>
 
-      <div class="ev-section-title">Tu pronóstico</div>
+      <div class="ev-section-title">Your prediction</div>
       <div class="ev-prediction">
         <div class="ev-pred-row">
           <div class="ev-pred-team">
@@ -101,27 +101,27 @@ function renderEvent(event, predState) {
             </div>
           </div>
         </div>
-        <button class="ev-pred-submit" id="predSubmit" type="button">Guardar pronóstico</button>
+        <button class="ev-pred-submit" id="predSubmit" type="button">Save prediction</button>
         <div class="ev-pred-msg" id="predMsg"></div>
       </div>
 
-      <div class="ev-section-title">Asistentes</div>
-      <div class="ev-attendees">👥 <span>${attendeeCount} confirmado${attendeeCount !== 1 ? 's' : ''}</span></div>
+      <div class="ev-section-title">Attendees</div>
+      <div class="ev-attendees">👥 <span>${attendeeCount} confirmed</span></div>
 
       <div class="ev-section-title">Links</div>
       <div class="ev-actions">
         <a class="ev-action-btn" href="${event.calendar_link}" target="_blank" rel="noopener">
-          <span class="ev-action-icon">📅</span><span>Calendario</span>
+          <span class="ev-action-icon">📅</span><span>Calendar</span>
         </a>
         <a class="ev-action-btn" href="${event.maps_link}" target="_blank" rel="noopener">
           <span class="ev-action-icon">🗺️</span><span>Maps</span>
         </a>
         <button class="ev-action-btn" id="shareBtn" type="button">
-          <span class="ev-action-icon">🔗</span><span>Compartir</span>
+          <span class="ev-action-icon">🔗</span><span>Share</span>
         </button>
       </div>
 
-      <button class="ev-checkin-btn" id="checkinBtn" type="button">📍 Ya estoy acá</button>
+      <button class="ev-checkin-btn" id="checkinBtn" type="button">📍 I'm here</button>
     </div>`;
 }
 
@@ -134,14 +134,14 @@ async function showEvent(eventId) {
   const view = document.getElementById('eventView');
   if (!view) return;
 
-  view.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#64748b">Cargando...</div>';
+  view.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#64748b">Loading...</div>';
   view.classList.add('is-open');
 
   let event;
   try {
     event = await fetchEvent(eventId);
   } catch (_) {
-    view.innerHTML = '<div class="ev-error">No se pudo cargar el evento.</div>';
+    view.innerHTML = '<div class="ev-error">Could not load the event.</div>';
     return;
   }
 
@@ -173,10 +173,10 @@ async function showEvent(eventId) {
     const btn = document.getElementById('predSubmit');
     const msg = document.getElementById('predMsg');
     btn.disabled = true;
-    msg.textContent = 'Guardando...';
+    msg.textContent = 'Saving...';
     try {
       await postPrediction(eventId, id, name, predState.home, predState.away);
-      msg.textContent = '✓ Pronóstico guardado';
+      msg.textContent = '✓ Prediction saved';
       msg.style.color = '#10b981';
     } catch (err) {
       msg.textContent = err.message;
@@ -194,7 +194,7 @@ async function showEvent(eventId) {
       await navigator.clipboard.writeText(url).catch(() => {});
       const btn = document.getElementById('shareBtn');
       const span = btn.querySelector('span:last-child');
-      if (span) { span.textContent = '¡Copiado!'; setTimeout(() => { span.textContent = 'Compartir'; }, 2000); }
+      if (span) { span.textContent = 'Copied!'; setTimeout(() => { span.textContent = 'Share'; }, 2000); }
     }
   });
 
@@ -202,10 +202,10 @@ async function showEvent(eventId) {
     const { name, id } = getUserIdentity();
     const btn = document.getElementById('checkinBtn');
     btn.disabled = true;
-    btn.textContent = 'Registrando...';
+    btn.textContent = 'Checking in...';
     try {
       await postCheckin(eventId, id, name);
-      btn.textContent = '✓ ¡Estás dentro!';
+      btn.textContent = "✓ You're in!";
       btn.classList.add('is-done');
       localStorage.setItem('live_uploader_name', name);
       localStorage.setItem('live_uploader_id', id);
