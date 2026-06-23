@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = `${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1`;
 const USER_NAME_KEY = 'fanfest_user_name';
 const USER_ID_KEY = 'fanfest_user_id';
 

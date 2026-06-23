@@ -109,6 +109,10 @@ def upload_media(
         )
     if settings.media_storage_backend == "drive":
         return _upload_to_drive(event_id, file_bytes, filename, uploader_id, uploader_name)
+    if settings.media_storage_backend == "s3":
+        return _upload_s3(
+            event_id, file_bytes, content_type, uploader_id, uploader_name, handle, caption
+        )
     return _upload_mock_media(
         event_id, content_type, filename, uploader_id, uploader_name, handle, caption
     )
@@ -227,6 +231,53 @@ def _upload_local(
     media_type = media_storage.media_type_for(content_type)
     _, url = media_storage.save_file(event_id, content_type, file_bytes)
     photo_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    photo = Photo(
+        id=photo_id,
+        url=url,
+        uploader_id=uploader_id,
+        uploader_name=uploader_name,
+        uploader_handle=uploader_handle,
+        uploaded_at=now,
+        media_type=media_type,
+        caption=caption,
+    )
+    _photos.setdefault(event_id, []).append(photo)
+    # Persist to DB so photos survive server restarts
+    try:
+        from app.db.database import get_session
+        from app.db.models import PhotoModel
+        with get_session() as db:
+            db.add(PhotoModel(
+                id=photo_id,
+                event_id=event_id,
+                url=url,
+                uploader_id=uploader_id,
+                uploader_name=uploader_name,
+                uploaded_at=now,
+            ))
+            db.commit()
+    except Exception:
+        pass
+    return photo
+
+
+def _upload_s3(
+    event_id: str,
+    file_bytes: bytes,
+    content_type: str,
+    uploader_id: str,
+    uploader_name: str,
+    uploader_handle: str,
+    caption: str | None,
+) -> Photo:
+    from app.services import media_storage, s3_storage
+
+    media_type = media_storage.media_type_for(content_type)
+    ext = media_storage.ALLOWED_MIME_TYPES[content_type]
+    photo_id = str(uuid.uuid4())
+    key = f"media/{event_id}/{photo_id}.{ext}"
+    url = s3_storage.upload_bytes(key, content_type, file_bytes)
     now = datetime.now(timezone.utc)
     photo = Photo(
         id=photo_id,

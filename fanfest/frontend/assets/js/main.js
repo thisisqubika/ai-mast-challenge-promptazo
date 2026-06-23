@@ -302,7 +302,7 @@ function _filterEvents(events, query) {
 // ── API loaders ───────────────────────────────────────────────────────────────
 async function loadRecapCards() {
   try {
-    const res = await fetch('http://localhost:8000/api/v1/events?status=past');
+    const res = await fetch(`${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1/events?status=past`);
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
     events.sort((a, b) => new Date(b.kickoff_iso) - new Date(a.kickoff_iso));
@@ -323,7 +323,7 @@ async function loadRecapCards() {
 
 async function loadSeleccionCards() {
   try {
-    const res = await fetch('http://localhost:8000/api/v1/events');
+    const res = await fetch(`${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1/events`);
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
     const selEvents = events
@@ -347,7 +347,7 @@ async function loadSeleccionCards() {
 
 async function loadUpcomingCards() {
   try {
-    const res = await fetch('http://localhost:8000/api/v1/events?status=future');
+    const res = await fetch(`${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1/events?status=future`);
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
     events.sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));

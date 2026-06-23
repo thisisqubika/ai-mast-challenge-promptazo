@@ -23,7 +23,7 @@ const edEvent = {
 };
 
 // ── Media URL helper (backend on :8000, frontend on :8080) ───────────────────
-const MEDIA_BASE = 'http://localhost:8000';
+const MEDIA_BASE = window.FANFEST_API_BASE || 'http://localhost:8000';
 function _mediaUrl(url) {
   if (!url) return '';
   return url.startsWith('/') ? MEDIA_BASE + url : url;
@@ -100,7 +100,7 @@ let edCheckedIn = false;
 
 async function _checkIn(eventId) {
   try {
-    await fetch(`http://localhost:8000/api/v1/events/${eventId}/checkin`, {
+    await fetch(`${MEDIA_BASE}/api/v1/events/${eventId}/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: edCurrentUser.id, name: edCurrentUser.name }),

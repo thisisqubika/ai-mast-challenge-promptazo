@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = window.FANFEST_API_BASE || "http://localhost:8000";
 const API_BASE = `${BASE_URL}/api/v1`;
 
 // ---------------------------------------------------------------------------
