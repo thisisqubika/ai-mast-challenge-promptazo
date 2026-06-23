@@ -19,8 +19,13 @@ REGISTRY="${REPO%%/*}"
 # 2. Build for App Runner (linux/amd64) and push.
 aws ecr get-login-password --region "$REGION" --profile "$PROFILE" \
   | docker login --username AWS --password-stdin "$REGISTRY"
-docker build --platform linux/amd64 -t "$REPO:$TAG" ../backend
+# Tag both the unique tag (forces an App Runner rollout) and :latest, so the
+# var.image_tag="latest" default always resolves to the newest build. Without
+# the :latest tag, a plain `terraform apply` would revert the service to a
+# stale :latest image.
+docker build --platform linux/amd64 -t "$REPO:$TAG" -t "$REPO:latest" ../backend
 docker push "$REPO:$TAG"
+docker push "$REPO:latest"
 
 # 3. Apply everything else (S3, CloudFront, IAM, App Runner).
 terraform apply -input=false -auto-approve -var "image_tag=$TAG"
