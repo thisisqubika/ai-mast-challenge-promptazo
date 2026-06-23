@@ -6,6 +6,7 @@ from datetime import timezone
 from pathlib import Path
 from urllib.parse import unquote
 
+from app.core.config import settings
 from app.db.database import get_session
 from app.db.models import EventModel
 from app.schemas.events import VideoRecapResponse
@@ -48,6 +49,29 @@ def _ensure_utc(dt) -> object:
     return dt
 
 
+def _resolve_local_image(p) -> str | None:
+    """Local filesystem path for a photo, fetching from S3 if needed.
+
+    The moviepy renderer reads images off disk, so in s3 mode each source
+    photo is downloaded to a local temp dir before rendering.
+    """
+    local_path = _url_to_local_path(p.url)
+    if local_path is not None:
+        return local_path
+    if settings.media_storage_backend == "s3":
+        from app.services import s3_storage
+
+        key = s3_storage.key_from_url(p.url)
+        if key:
+            dest = MEDIA_ROOT / "_recap_src" / key
+            try:
+                s3_storage.download_to(key, dest)
+                return str(dest)
+            except Exception:
+                return None
+    return None
+
+
 def _build_event_input(event: EventModel, state, photos: list) -> EventInput:
     home = event.home_team
     away = event.away_team
@@ -64,7 +88,7 @@ def _build_event_input(event: EventModel, state, photos: list) -> EventInput:
     event_images = []
 
     for p in photos:
-        local_path = _url_to_local_path(p.url)
+        local_path = _resolve_local_image(p)
 
         media_items.append(
             MediaItem(
@@ -181,7 +205,14 @@ def generate_video_recap(event_id: str) -> VideoRecapResponse:
 
         run_from_input(event_input, config)
 
-        video_url = f"/media/recap/{event_id}/recap-video.mp4"
+        local_video = out_dir / "recap-video.mp4"
+        if settings.media_storage_backend == "s3":
+            from app.services import s3_storage
+
+            key = f"media/recap/{event_id}/recap-video.mp4"
+            video_url = s3_storage.upload_file(key, "video/mp4", local_video)
+        else:
+            video_url = f"/media/recap/{event_id}/recap-video.mp4"
         event.recap_video_url = video_url
 
     return VideoRecapResponse(event_id=event_id, video_url=video_url)

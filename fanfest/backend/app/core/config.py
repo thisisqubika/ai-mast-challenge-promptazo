@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-4-6"
     database_url: str = "sqlite:///./fanfest.db"
     media_storage_backend: str = "mock"  # "mock" | "local" | "drive" | "s3"
+    # S3 backend (used when media_storage_backend == "s3")
+    aws_region: str = "us-east-1"
+    s3_bucket: str = ""
+    # Public base URL media is served from (CloudFront domain), e.g.
+    # "https://d111111abcdef8.cloudfront.net". Used to build absolute media URLs.
+    media_base_url: str = ""
     api_football_key: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

@@ -14,3 +14,4 @@ moviepy>=2.0
 Pillow>=10
 numpy>=1.26
 imageio-ffmpeg>=0.4
+boto3>=1.34
