@@ -11,6 +11,7 @@ Import from here in tests instead of hand-rolling inline dicts.
 """
 from datetime import datetime, timezone
 
+from app.core.config import settings
 from app.models.entities import (
     Comment,
     Event,
@@ -25,6 +26,10 @@ from app.models.entities import (
 )
 
 _utc = timezone.utc
+
+# Base for built-in media: CloudFront on deployed instances (MEDIA_BASE_URL set),
+# the local backend's StaticFiles mount otherwise. Files live under /media/<event>/.
+_MEDIA_BASE = (settings.media_base_url or "http://localhost:8000").rstrip("/")
 
 # ── Events ────────────────────────────────────────────────────────────────────
 
@@ -320,9 +325,9 @@ PHOTOS: list[Photo] = [
     Photo("photo-020", "evt-002", "http://localhost:8000/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.47.42.jpeg",   "user_006", "Fernando", uploaded_at=datetime(2026, 6, 15, 23, 20, tzinfo=_utc), uploader_handle="@fer_nando",     caption="Uvita celebra el gol del título 🙌🔵", likes_count=127),
     Photo("photo-021", "evt-002", "http://localhost:8000/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.58.47.jpeg",   "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 15, 23, 50, tzinfo=_utc), uploader_handle="@gaby_celeste",  caption="Locura en la tribuna. ¡Primer Apertura de Belgrano! 🎉", likes_count=211),
     Photo("photo-010", "evt-003", "https://picsum.photos/400/300?random=10", "user_002", "Bob",      uploaded_at=datetime(2026, 6, 26, 18, 40, tzinfo=_utc)),
-    Photo("photo-011", "evt-004", "http://localhost:8000/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
-    Photo("photo-012", "evt-004", "http://localhost:8000/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
-    Photo("photo-013", "evt-004", "http://localhost:8000/media/evt-004/mundial3.jpg", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc), uploader_handle="@fer_nando",    caption="El pub lleno a reventar, increíble noche 🍺🎉", likes_count=8),
+    Photo("photo-011", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
+    Photo("photo-012", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
+    Photo("photo-013", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial3.jpg", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc), uploader_handle="@fer_nando",    caption="El pub lleno a reventar, increíble noche 🍺🎉", likes_count=8),
 ]
 
 # ── Seed comments (for demo richness) ─────────────────────────────────────────
