@@ -1,37 +1,45 @@
-# Fan Fest — Project Write-up
+# Tribuna — Project Writeup
+Qubika AI Mastery Challenge · World Cup Edition 2026 · Track: Fan Experience
 
-*Qubika AI Mastery Challenge, World Cup Edition 2026 · Track: Fan Experience*
 
-## What problem we tried to solve
+## What Problem We Tried to Solve
 
-Watching football with other fans is one of the best parts of the sport, but the logistics around it are scattered and frustrating. Fans across Latin America improvise every week: a WhatsApp group here, a Facebook event there, a bar everyone defaults to out of habit. There is no single place to find a watch party near you, decide it's worth going to, coordinate getting there, and keep the memory of it afterward. Every existing tool solves one slice and stops at the final whistle.
+Watching events with other fans is one of the best parts of the experience, especially when the World Cup begins — but the infrastructure around it is completely scattered. Every week across Latin America, fans improvise: a WhatsApp group to coordinate, a Facebook event nobody updates, a bar everyone defaults to out of habit. There is no single place to find these gatherings, decide they're worth going to, get there with ease, connect with other fans in the moment, and keep the memory of the experience afterward.
 
-## What we built
+Existing platforms solve one slice of this. Eventbrite handles registration. Fever does visual discovery. Facebook Events covers photo sharing. But none of them were built for the specific rhythm of a football match — the buildup, the live intensity, the emotional release at the final whistle. And every single one of them stops when the match ends.
 
-Fan Fest is a community-driven web platform that follows a fan through the entire arc of a match-day gathering:
+Tribuna was our answer to that gap.
 
-- **Discover** fan festivals near you or in a chosen city, with visual, vibe-first event cards.
-- **Join** in one tap (RSVP), with the attendee list visible as social proof.
-- **Coordinate** — save the date to Google Calendar and open turn-by-turn navigation to the venue via Google Maps.
-- **Share** — during the match, upload photos to a live "Hype Wall" gallery backed by Google Drive.
-- **Relive** — after the final whistle the app flips to a post-event mode and generates a personalized **AI Recap**: the final score, an epic AI-written chronicle of the gathering, and a carousel of the best photos.
+## What We Built
 
-The AI Recap is the hero moment. It is what no competitor offers: closing the loop from discovery all the way to a shared memory.
+With a week of production time, we made a deliberate decision: rather than build a shallow end-to-end product, we would go deep on the parts of the journey that no one has built well before — the experience during the match, and what happens after it.
 
-## How we used AI to build it
+The journey we shipped looks like this:
 
-- **Claude Code CLI** drove development end-to-end from the terminal: scaffolding the FastAPI backend and the frontend, generating API routes, and iterating on bugs through natural-language prompts.
-- **QAF (Qubika Agentic Framework)**, our mandatory technical foundation, ran `initialize-project` to analyze the repo and auto-generate project configuration, and `implement-ticket` to delegate feature work to Claude Code agents following spec-driven tickets.
-- **Claude API in the product** generates the recap narrative from event context (location, date, attendance, score, photos).
-- **What surprised us:** the recap quality with minimal prompt engineering. A short prompt describing the event context produced narrative text that felt genuinely personal on the first try, where we had budgeted for several rounds of iteration.
+A fan arrives at a Fan Fest and checks in with a single "I’m here" tap. That action unlocks the live match screen — a real-time view of the event showing the current score, a countdown, and a live photo wall where every attendee can upload photos that appear instantly in a shared gallery. The energy of the room becomes visible inside the app.
 
-## What we'd do next with another week
+When the final whistle blows, Tribuna detects it automatically. No button press, no manual action. The interface transitions into Recap Mode — a post-match experience that weaves together the fan photos uploaded during the event, the key moments of the match, and an AI-generated narrative summary. The recap identifies emotional beats — "Pre-match," "Event starts," "First goal", etc. — and presents them as a highlight reel that feels personal and shareable. Fans can react, leave comments, and share the recap directly to social media.
 
-- Real-time match data (live score, goal cards with the scorer) feeding the in-event screen.
-- Smart discovery: AI matching fans to nearby fests by team allegiance and vibe, not just proximity.
-- Push notifications for kickoff, goals, and "your recap is ready."
-- Private invite-by-link fests for small watch parties, with no account required to RSVP.
+The result is a closed loop: you lived it together, and now you have something to remember it by.
 
----
 
-*Draft — refine with final build state, screenshots, and demo link before the submission deadline.*
+## How We Used AI to Build It
+
+Claude (Anthropic) is at the center of the product's hero moment. After a match ends, a call to the Claude API generates the recap narrative from structured event context — venue, date, teams, final score, goal timeline, photo count. The output is shaped as a JSON object with two keys: highlights (an array of labeled moment objects) and narrative (a short paragraph in Spanish, in a selectable tone: exciting, inspiring, humorous, or nostalgic).
+
+On the development side, Claude Code CLI was used end-to-end from the terminal — scaffolding the FastAPI backend, generating API routes, writing frontend components, and iterating on bugs through natural-language prompts. QAF (Qubika Agentic Framework), our internal multi-agent framework built on LangGraph and Claude, ran the initialize-project workflow to analyze the repository and auto-generate project configuration, and powered the implement-ticket skill to delegate feature development tasks to Claude Code agents following spec-driven tickets.
+
+## What We'd Do Next With Another Week
+
+Everything we built lives in the middle and end of the fan journey. The natural next chapter is the beginning: helping fans find their people before the match even starts. The "before the experience" arc we'd build next:
+
+- Smart event discovery. A location-aware explore feed where fans can browse upcoming Fan Fests near them — visual-first cards showing the event, the team, the venue vibe, and who's already going. 
+
+- Event details and registration. A rich event page covering everything a fan needs to commit: description, location, amenities (food trucks, seating, pet-friendly areas, sponsors), cost, and a one-tap RSVP. From that confirmation screen, fans can share the event directly to WhatsApp or Instagram Stories.
+
+- Connected invitations. Direct invite-by-link for private Fan Fests (small watch parties at home or a friend's bar), with no account required to RSVP.
+
+- Push notifications for the moments that matter: kickoff, goals, and "your recap is ready" when the AI finishes generating after the final whistle.
+
+The vision is a complete fan journey in a single product — from the first scroll through nearby events, to the last share of the recap. We got the hardest part right. The rest is a matter of time.
+

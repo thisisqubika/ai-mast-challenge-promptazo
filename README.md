@@ -52,7 +52,7 @@ Claude (Anthropic) generates the post-event AI recap via `POST /api/v1/events/{i
 ```bash
 cd fanfest/backend
 pip install -r requirements.txt
-cp .env.example .env        # fill in ANTHROPIC_API_KEY and Google credentials
+cp .env.example .env        # fill in your API keys (see Environment variables below)
 uvicorn app.main:app --reload
 # API available at http://localhost:8000
 ```
@@ -68,9 +68,8 @@ python -m http.server 8080
 Locally, media defaults to the on-disk backend (`MEDIA_STORAGE_BACKEND=local`), so no AWS credentials are needed to run the app.
 
 **Environment variables** (see `fanfest/backend/.env.example`):
-- `ANTHROPIC_API_KEY` — for the AI recap feature
-- `API_FOOTBALL_KEY` — optional, enables real-time score updates
-- Google OAuth credentials — for Calendar, Maps, and Drive integrations
+- `ANTHROPIC_API_KEY` — AI recap feature. Get it at [console.anthropic.com](https://console.anthropic.com) → API Keys.
+- `API_FOOTBALL_KEY` — optional, enables real-time score updates. Get it at [dashboard.api-football.com](https://dashboard.api-football.com) (free tier, 100 req/day).
 
 ## Deployment
 
