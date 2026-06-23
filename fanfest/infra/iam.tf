@@ -47,3 +47,30 @@ resource "aws_iam_role_policy" "apprunner_media" {
   role   = aws_iam_role.apprunner_instance.id
   policy = data.aws_iam_policy_document.media_rw.json
 }
+
+# Read backend secrets from SSM. App Runner resolves runtime_environment_secrets
+# using the instance role; SecureString params also need kms:Decrypt on the
+# AWS-managed aws/ssm key.
+data "aws_kms_alias" "ssm" {
+  name = "alias/aws/ssm"
+}
+
+data "aws_iam_policy_document" "secrets_read" {
+  statement {
+    actions = ["ssm:GetParameters"]
+    resources = [
+      aws_ssm_parameter.api_football_key.arn,
+      aws_ssm_parameter.anthropic_api_key.arn,
+    ]
+  }
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "apprunner_secrets" {
+  name   = "${local.name}-secrets-read"
+  role   = aws_iam_role.apprunner_instance.id
+  policy = data.aws_iam_policy_document.secrets_read.json
+}
