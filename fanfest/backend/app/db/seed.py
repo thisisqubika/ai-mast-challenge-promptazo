@@ -38,6 +38,8 @@ def run_seed() -> None:
                     competition=e.competition,
                     venue_distance=e.venue_distance,
                     amenities=json.dumps(e.amenities),
+                    home_score=e.home_score,
+                    away_score=e.away_score,
                 )
             )
 
