@@ -130,8 +130,11 @@ async def sync_from_api(event_id: str) -> MatchState:
     if event_id not in _fixture_links:
         raise HTTPException(status_code=404, detail="No fixture linked to this event")
 
+    # 0.0 sentinel = never synced (or long ago): always allow. Guarding on
+    # `last` avoids wrongly throttling the first sync on a freshly booted host
+    # where time.monotonic() is still below SYNC_THROTTLE_SECONDS.
     last = _last_sync.get(event_id, 0.0)
-    if time.monotonic() - last < SYNC_THROTTLE_SECONDS:
+    if last and time.monotonic() - last < SYNC_THROTTLE_SECONDS:
         return get_state(event_id)
 
     from app.services import football_api
