@@ -32,6 +32,9 @@ class Event:
     competition: str = ""
     venue_distance: str = ""
     amenities: list[list[str]] = field(default_factory=list)
+    # Final score for past events; None when unplayed (falls back to match state)
+    home_score: int | None = None
+    away_score: int | None = None
 
 
 @dataclass

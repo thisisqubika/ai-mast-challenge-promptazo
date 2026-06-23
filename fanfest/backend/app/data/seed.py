@@ -60,6 +60,32 @@ EVENTS: list[Event] = [
         amenities=[["🍺", "Cervezas"], ["📺", "Pantalla gigante"], ["🔵", "Barra Belgrano"], ["🎵", "Música"]],
     ),
     Event(
+        id="evt-200",
+        home_team="Argentina",
+        home_flag="🇦🇷",
+        away_team="Austria",
+        away_flag="🇦🇹",
+        venue_name="FanFest Cowork",
+        venue_address="Fader 234, Córdoba",
+        organizer="FanFest HQ",
+        kickoff_iso="2026-06-22T17:00:00Z",
+        match_start_time=datetime(2026, 6, 22, 17, 0, tzinfo=_utc),
+        invite_link="http://localhost:8000/api/v1/events/evt-200/invite",
+        calendar_link=(
+            "https://calendar.google.com/calendar/render"
+            "?action=TEMPLATE&text=Argentina+vs+Austria"
+            "&dates=20260622T170000Z/20260622T190000Z"
+            "&location=Fader+234%2C+C%C3%B3rdoba"
+        ),
+        maps_link="https://www.google.com/maps/dir/?api=1&destination=Fader+234%2C+C%C3%B3rdoba",
+        status="past",
+        competition="",
+        venue_distance="",
+        amenities=[["🍔", "Comida"], ["📺", "TV"]],
+        home_score=2,
+        away_score=0,
+    ),
+    Event(
         id="evt-003",
         home_team="Francia",
         home_flag="\U0001f1eb\U0001f1f7",
@@ -328,6 +354,14 @@ PHOTOS: list[Photo] = [
     Photo("photo-011", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
     Photo("photo-012", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
     Photo("photo-013", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial3.jpg", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc), uploader_handle="@fer_nando",    caption="El pub lleno a reventar, increíble noche 🍺🎉", likes_count=8),
+    Photo("photo-200-001", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-1.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 14,  0, tzinfo=_utc)),
+    Photo("photo-200-002", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-2.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 15,  0, tzinfo=_utc)),
+    Photo("photo-200-003", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-3.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 16, 30, tzinfo=_utc)),
+    Photo("photo-200-004", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-4.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 17, 30, tzinfo=_utc)),
+    Photo("photo-200-005", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-5.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 18, 15, tzinfo=_utc)),
+    Photo("photo-200-006", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-6.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 19, 10, tzinfo=_utc)),
+    Photo("photo-200-007", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-7.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 19, 40, tzinfo=_utc)),
+    Photo("photo-200-008", "evt-200", f"{_MEDIA_BASE}/media/evt-200/image-8.jpg", "fanfest_seed", "FanFest", uploaded_at=datetime(2026, 6, 22, 20,  0, tzinfo=_utc)),
 ]
 
 # ── Seed comments (for demo richness) ─────────────────────────────────────────
