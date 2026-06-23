@@ -16,3 +16,11 @@ output "media_base_url" {
 output "media_bucket" {
   value = aws_s3_bucket.media.bucket
 }
+
+output "secret_param_names" {
+  description = "Push real values with: aws ssm put-parameter --name <name> --type SecureString --value <value> --overwrite"
+  value = {
+    api_football_key  = aws_ssm_parameter.api_football_key.name
+    anthropic_api_key = aws_ssm_parameter.anthropic_api_key.name
+  }
+}

@@ -30,6 +30,10 @@ resource "aws_apprunner_service" "backend" {
           AWS_REGION            = var.region
           CORS_ORIGINS          = var.frontend_origin
         }
+        runtime_environment_secrets = {
+          API_FOOTBALL_KEY  = aws_ssm_parameter.api_football_key.arn
+          ANTHROPIC_API_KEY = aws_ssm_parameter.anthropic_api_key.arn
+        }
       }
     }
   }
