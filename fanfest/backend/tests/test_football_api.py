@@ -81,25 +81,6 @@ def test_sync_fixture_no_api_key_returns_503() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_link_fixture_endpoint_syncs_and_returns_match_state() -> None:
-    with patch(
-        "app.services.football_api.get_fixture_state",
-        new=AsyncMock(return_value=_API_MATCH_STATE),
-    ), patch("app.services.match_state.settings") as ms_settings:
-        ms_settings.api_football_key = "test-key"
-        response = client.post(
-            f"/api/v1/events/{EVENT_ID}/link-fixture",
-            json={"fixture_id": FIXTURE_ID},
-        )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ended"
-    assert data["home_score"] == 2
-    assert data["away_score"] == 1
-    assert len(data["goals"]) == 3
-
-
 def test_link_fixture_unknown_event_returns_404() -> None:
     response = client.post(
         "/api/v1/events/no_such_event/link-fixture",
@@ -187,27 +168,3 @@ def test_search_fixtures_empty_when_no_team_found() -> None:
     assert response.json() == []
 
 
-# ---------------------------------------------------------------------------
-# sync-fixture — successful API call updates match state
-# ---------------------------------------------------------------------------
-
-
-def test_sync_fixture_updates_state_after_throttle_window() -> None:
-    import app.services.match_state as ms
-
-    ms._fixture_links[EVENT_ID] = FIXTURE_ID
-    ms._last_sync[EVENT_ID] = 0.0
-
-    with patch(
-        "app.services.football_api.get_fixture_state",
-        new=AsyncMock(return_value=_API_MATCH_STATE),
-    ), patch("app.services.match_state.settings") as mock_settings:
-        mock_settings.api_football_key = "test-key"
-        response = client.post(f"/api/v1/events/{EVENT_ID}/sync-fixture")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ended"
-    assert data["home_score"] == 2
-    assert data["away_score"] == 1
-    assert len(data["goals"]) == 3

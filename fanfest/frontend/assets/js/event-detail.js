@@ -73,7 +73,8 @@ function _computeCountdown(kickoffIso) {
 function _applyEventData(data) {
   edEvent.isPast        = data.status === 'past';
   edEvent.attendeeCount = data.attendee_count || 0;
-  edCheckedIn = !!(data.attendees && data.attendees.some(a => a.user_id === edCurrentUser.id));
+  edCheckedIn = !!(data.attendees && data.attendees.some(a => a.user_id === edCurrentUser.id))
+    || !!localStorage.getItem(`apuntado_${data.id}`);
   edEvent.venueName     = data.venue_name || '';
   edEvent.venueAddress  = data.venue_address || '';
   edEvent.venueDistance = data.venue_distance || '';
@@ -551,6 +552,8 @@ async function navigateToEventDetail(venue) {
   if (homeScroll) homeScroll.hidden = true;
   if (detailView) { detailView.hidden = false; detailView.scrollTop = 0; }
   if (livebar)    livebar.hidden = true;
+  const bottomNav = document.querySelector('.bottomnav');
+  if (bottomNav) bottomNav.hidden = true;
   if (typeof window._setNavContext === 'function') window._setNavContext('detail');
   await loadHypeFeed();
   console.log('[event-detail] kickoffIso =', edEvent.kickoffIso, '| photos =', hypePosts.length);
@@ -567,6 +570,8 @@ function navigateToHome() {
   });
   if (homeScroll)  homeScroll.hidden  = false;
   if (floatCta)  { floatCta.hidden = true; floatCta.innerHTML = ''; }
+  const bottomNav = document.querySelector('.bottomnav');
+  if (bottomNav) bottomNav.hidden = false;
   if (typeof window._setNavContext === 'function') window._setNavContext('home');
   if (typeof window._updateLiveBar === 'function') window._updateLiveBar();
 }
