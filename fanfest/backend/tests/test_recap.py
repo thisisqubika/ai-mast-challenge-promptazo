@@ -33,6 +33,7 @@ def test_create_recap_returns_narrative(client: TestClient) -> None:
     with patch("app.services.recap_service.anthropic.Anthropic") as mock_cls, \
          patch("app.services.recap_service.settings") as mock_settings:
         mock_settings.anthropic_api_key = "test-key"
+        mock_settings.gemini_api_key = ""
         mock_settings.anthropic_model = "claude-sonnet-4-6"
         mock_cls.return_value.messages.create.return_value = mock_response
         response = client.post(RECAP_URL, json=DEFAULT_BODY)
@@ -51,6 +52,7 @@ def test_create_recap_fallback_on_ai_failure(client: TestClient) -> None:
     with patch("app.services.recap_service.anthropic.Anthropic") as mock_cls, \
          patch("app.services.recap_service.settings") as mock_settings:
         mock_settings.anthropic_api_key = "test-key"
+        mock_settings.gemini_api_key = ""
         mock_settings.anthropic_model = "claude-sonnet-4-6"
         mock_cls.return_value.messages.create.side_effect = RuntimeError("API failure")
         response = client.post(RECAP_URL, json=DEFAULT_BODY)
@@ -68,6 +70,7 @@ def test_create_recap_empty_key_returns_fallback(client: TestClient) -> None:
     with patch("app.services.recap_service.anthropic.Anthropic") as mock_cls, \
          patch("app.services.recap_service.settings") as mock_settings:
         mock_settings.anthropic_api_key = ""
+        mock_settings.gemini_api_key = ""
         response = client.post(RECAP_URL, json=DEFAULT_BODY)
 
     mock_cls.assert_not_called()
@@ -104,6 +107,7 @@ def test_create_recap_slide_count_caps_highlights(client: TestClient) -> None:
     with patch("app.services.recap_service.anthropic.Anthropic") as mock_cls, \
          patch("app.services.recap_service.settings") as mock_settings:
         mock_settings.anthropic_api_key = "test-key"
+        mock_settings.gemini_api_key = ""
         mock_settings.anthropic_model = "claude-sonnet-4-6"
         mock_cls.return_value.messages.create.return_value = mock_response
         response = client.post(RECAP_URL, json={"tone": "humorístico", "slide_count": 2})

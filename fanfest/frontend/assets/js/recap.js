@@ -2,7 +2,7 @@
    Post-match detail → AI loader → Instagram-style slide viewer
    Entry point: window.navigateToRecap(eventId) */
 
-import { fetchRecap, fetchMatchState, getEventDetail, fetchMedia } from './api.js';
+import { fetchRecap, fetchMatchState, getEventDetail, fetchMedia } from './api.js?v=16';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -79,11 +79,11 @@ function _renderPhotoGroup(photos) {
       ${m.uploader_handle ? `<span style="position:absolute;bottom:8px;left:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.65)">${m.uploader_handle}</span>` : ''}
     </div>`).join('');
   return `
-    <div style="position:relative;margin:0 -20px">
+    <div style="position:relative">
       <div style="overflow-x:auto;padding:0 20px 4px">
         <div style="display:flex;gap:8px;width:max-content">${cards}</div>
       </div>
-      <div style="position:absolute;right:0;top:0;bottom:4px;width:48px;background:linear-gradient(to right,rgba(7,9,13,0),rgba(7,9,13,.92));pointer-events:none"></div>
+      <div style="position:absolute;right:0;top:0;bottom:4px;width:48px;background:linear-gradient(to right,rgba(15,23,42,0),rgba(15,23,42,.92));pointer-events:none"></div>
     </div>`;
 }
 
@@ -131,6 +131,7 @@ let _rcTotal     = 5;        // how many slides are active (1 | 3 | 5)
 let _activeIdx   = [];       // which DOM indices are active, e.g. [0,1,2] for 3-slide mode
 let _phraseTimer        = null;
 let _prevView           = null;
+let _directCustomize    = false;  // recap opened from the event page's AI Recap button
 let _floatCtaWasHidden  = true;
 
 // ─── DOM helpers ──────────────────────────────────────────────────────────────
@@ -254,7 +255,8 @@ function _rcSyncChrome() {
   const activePos = _activeIdx.indexOf(_rcCurrent); // 0-based position in active list
   const display   = activePos + 1;
 
-  for (let i = 0; i < 7; i++) {
+  const slideCount = document.querySelectorAll('#recapView .rc-slide').length;
+  for (let i = 0; i < slideCount; i++) {
     const row = $r(`rc-prog-${i}`);
     if (!row) continue;
 
@@ -317,9 +319,9 @@ function renderPostMatch(event) {
     <div class="rc-postmatch">
 
       <!-- Header -->
-      <div style="flex:none;height:44px;background:#07090D;display:flex;align-items:center;padding:0 16px;position:relative;z-index:10">
+      <div style="flex:none;height:44px;background:var(--screen);display:flex;align-items:center;padding:0 16px;position:relative;z-index:10">
         <button id="rcBackBtn" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(255,255,255,.06);border-radius:10px;border:none;cursor:pointer">
-          <i class="ti ti-arrow-left" style="font-size:18px;color:#F1F5F9"></i>
+          <i class="ti ti-chevron-left" style="font-size:18px;color:#F1F5F9"></i>
         </button>
         <div style="position:absolute;left:0;right:0;display:flex;justify-content:center;pointer-events:none">
           <span style="font-size:14px;font-weight:700;color:#F1F5F9">${venue}</span>
@@ -330,7 +332,7 @@ function renderPostMatch(event) {
       <div class="rc-scroll-body">
 
         <!-- Hero card -->
-        <div style="background:#172435;padding:22px 20px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+        <div style="background:var(--card);padding:22px 20px 0;border-bottom:1px solid rgba(255,255,255,.05)">
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:20px">
             <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 14px">
               <span style="font-size:11px;font-weight:800;color:#94A3B8;letter-spacing:.8px">EVENT FINISHED</span>
@@ -340,14 +342,14 @@ function renderPostMatch(event) {
           <!-- Score -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px">
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
-              <div style="width:50px;height:50px;border-radius:50%;background:#07090D;border:1.5px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:27px">${homeFlag}</div>
+              <div style="width:50px;height:50px;border-radius:50%;background:var(--screen);border:1.5px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:27px">${homeFlag}</div>
               <span style="font-size:14px;font-weight:700;color:#F1F5F9">${homeTeam}</span>
             </div>
             <div style="flex:none;display:flex;align-items:center;gap:8px">
               <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:6px 14px;font-size:28px;font-weight:900;color:#F1F5F9;line-height:1">${homeScore} – ${awayScore}</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
-              <div style="width:50px;height:50px;border-radius:50%;background:#07090D;border:1.5px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:27px">${awayFlag}</div>
+              <div style="width:50px;height:50px;border-radius:50%;background:var(--screen);border:1.5px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:27px">${awayFlag}</div>
               <span style="font-size:14px;font-weight:700;color:#F1F5F9">${awayTeam}</span>
             </div>
           </div>
@@ -356,7 +358,7 @@ function renderPostMatch(event) {
         </div>
 
         <!-- Venue strip -->
-        <div style="margin:12px 20px 0;background:#172435;border-radius:12px;padding:12px 14px">
+        <div style="margin:12px 20px 0;background:var(--card);border-radius:12px;padding:12px 14px">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="width:36px;height:36px;border-radius:10px;background:rgba(117,170,219,.1);display:flex;align-items:center;justify-content:center;flex:none">
               <i class="ti ti-building-store" style="font-size:18px;color:#75AADB"></i>
@@ -382,10 +384,10 @@ function renderPostMatch(event) {
       </div><!-- /rc-scroll-body -->
 
       <!-- Sticky CTA -->
-      <div style="position:absolute;bottom:0;left:0;right:0;z-index:20;background:rgba(7,9,13,.95);padding:12px 20px 20px">
+      <div style="position:absolute;bottom:0;left:0;right:0;z-index:20;background:var(--screen);padding:12px 20px 20px">
         <button id="rcGenerateBtn" style="width:100%;height:52px;background:#10B981;border:none;border-radius:14px;font-family:inherit;font-size:15px;font-weight:900;color:#022C22;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="ti ti-sparkles" style="font-size:17px"></i>
-          <span>Generate recap</span>
+          <span>AI Recap</span>
         </button>
       </div>
 
@@ -400,9 +402,10 @@ function renderPostMatch(event) {
 
           <!-- Slide count -->
           <div style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Slides</div>
-          <div style="display:flex;background:#07090D;border-radius:12px;padding:4px;margin-bottom:16px" id="rcCntRow">
+          <div style="display:flex;background:var(--screen);border-radius:12px;padding:4px;margin-bottom:16px" id="rcCntRow">
+            <button class="rc-cnt-btn${_homeGoals().length ? ' rc-cnt-btn--active' : ''}" data-count="auto" title="One slide per goal + stats + closing">Auto</button>
             <button class="rc-cnt-btn" data-count="3">3</button>
-            <button class="rc-cnt-btn rc-cnt-btn--active" data-count="5">5</button>
+            <button class="rc-cnt-btn${_homeGoals().length ? '' : ' rc-cnt-btn--active'}" data-count="5">5</button>
             <button class="rc-cnt-btn" data-count="7">7</button>
           </div>
 
@@ -440,7 +443,11 @@ function renderPostMatch(event) {
   });
 
   $r('rcDrawer').addEventListener('click', e => {
-    if (e.target === $r('rcDrawer')) $r('rcDrawer').classList.remove('rc-drawer--open');
+    if (e.target === $r('rcDrawer')) {
+      $r('rcDrawer').classList.remove('rc-drawer--open');
+      // Opened straight from the event page: closing returns there, not to this screen
+      if (_directCustomize) window._rcGoBack();
+    }
   });
 
   $r('rcCntRow').addEventListener('click', e => {
@@ -448,7 +455,7 @@ function renderPostMatch(event) {
     if (!btn) return;
     $r('rcCntRow').querySelectorAll('.rc-cnt-btn').forEach(b => b.classList.remove('rc-cnt-btn--active'));
     btn.classList.add('rc-cnt-btn--active');
-    _slideCount = parseInt(btn.dataset.count, 10);
+    _slideCount = btn.dataset.count === 'auto' ? 'auto' : parseInt(btn.dataset.count, 10);
   });
 
   $r('rcToneRow').addEventListener('click', e => {
@@ -457,6 +464,8 @@ function renderPostMatch(event) {
     $r('rcToneRow').querySelectorAll('.rc-tone-btn').forEach(b => b.classList.remove('rc-tone-btn--active'));
     btn.classList.add('rc-tone-btn--active');
     _tone = btn.dataset.tone;
+    // Remembered so the recap video uses the same tone
+    try { localStorage.setItem('fanfest_recap_tone', TONE_MAP[_tone] || 'emocionante'); } catch (_) {}
   });
 
   $r('rcGenerateNowBtn').addEventListener('click', () => {
@@ -563,9 +572,13 @@ function _actions(idx) {
   return `
     <div class="rc-slide-actions">
       <div class="rc-action-row">
-        <button class="rc-btn-dl">
+        <button class="rc-btn-dl" title="Download all slides as images (.zip)">
           <i class="ti ti-download" style="font-size:18px;color:#F1F5F9"></i>
-          <span style="font-size:14px;font-weight:700;color:#F1F5F9">Download</span>
+          <span style="font-size:14px;font-weight:700;color:#F1F5F9">Images</span>
+        </button>
+        <button class="rc-btn-dl rc-btn-gif" title="Download all slides as an animated GIF">
+          <i class="ti ti-gif" style="font-size:18px;color:#F1F5F9"></i>
+          <span style="font-size:14px;font-weight:700;color:#F1F5F9">GIF</span>
         </button>
         <button class="rc-btn-share">
           <i class="ti ti-share" style="font-size:18px;color:#07090D"></i>
@@ -576,7 +589,23 @@ function _actions(idx) {
     </div>`;
 }
 
-function _buildAllSlides(recap, event) {
+// Escape text coming from the AI / users before putting it in HTML
+function _esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Home goals in the same order the backend numbers them (goal_number is 1-based)
+function _homeGoals() {
+  return (_matchState?.goals || []).filter(g => g.team === _matchState?.home_team);
+}
+
+// Background for a slide: the photo the AI picked for that moment, else a general one
+function _slidePhoto(hl, idx, fallback) {
+  const match = hl && hl.photo_id ? _mediaList.find(m => m.id === hl.photo_id) : null;
+  return match ? match.url : _bgUrl(idx, fallback);
+}
+
+function _buildAllSlides(recap, event, opts = {}) {
   const homeFlag = event.home_flag || '⚽';
   const awayFlag = event.away_flag || '⚽';
   const homeTeam = event.home_team || 'Home';
@@ -602,22 +631,34 @@ function _buildAllSlides(recap, event) {
       : 'A NIGHT<br>TO REMEMBER';
 
   const collage = _collageUrls();
-  const h = i => highlights[i] || {};  // safe highlight accessor
+  // Safe highlight accessor (AI text escaped) + the goal it talks about
+  const h = i => {
+    const raw = highlights[i] || {};
+    return { ...raw, label: _esc(raw.label), description: _esc(raw.description) };
+  };
+  const goalOf = i => {
+    const n = (highlights[i] || {}).goal_number;
+    return n ? _homeGoals()[n - 1] || null : null;
+  };
+  const usedAI   = !recap.fallback;
+  const aiBadge  = usedAI ? '✨ Generado con IA' : (event.competition ? _esc(event.competition) : 'Recap');
+  const comp     = _esc(event.competition || '');
+  const reactions = _mediaList.reduce((n, m) => n + (m.likes_count || 0) + ((m.comments || []).length), 0);
 
   // ── Slide 0: Opening ──────────────────────────────────────────────────────
   const s0 = `
     <div class="rc-slide" id="rc-slide-0">
-      <div class="rc-slide-bg" style="background-image:url('${_bgUrl(0, SLIDE_BGS[0])}')">
+      <div class="rc-slide-bg" style="background-image:url('${_slidePhoto(highlights[0], 0, SLIDE_BGS[0])}')">
         <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.3) 45%,rgba(0,0,0,.45) 100%)"></div>
       </div>
       ${_chrome(0)}
       <div class="rc-s1-content">
-        <div style="font-size:10px;font-weight:800;color:#75AADB;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">TRIBUNA.AI</div>
-        <div style="font-size:30px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.08;margin-bottom:10px">${_openingLine}</div>
+        <div style="font-size:10px;font-weight:800;color:#75AADB;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">${aiBadge}</div>
+        <div style="font-size:30px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.08;margin-bottom:10px;text-transform:uppercase">${recap.headline ? _esc(recap.headline) : _openingLine}</div>
         <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:14px">${homeTeam} ${homeScore} – ${awayScore} ${awayTeam}${venue ? ' · ' + venue : ''}</div>
         ${h(0).description ? `<div style="font-size:13px;color:rgba(255,255,255,.75);font-style:italic;line-height:1.5;margin-bottom:14px">"${h(0).description}"</div>` : ''}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <div style="background:rgba(255,255,255,.14);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff">🔥 AI Recap</div>
+          ${comp ? `<div style="background:rgba(255,255,255,.14);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff">${comp}</div>` : ''}
           <div style="background:rgba(255,255,255,.14);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff">${homeFlag} ${awayFlag}</div>
         </div>
       </div>
@@ -631,18 +672,21 @@ function _buildAllSlides(recap, event) {
   const homeGoalsScored = (_matchState?.goals || []).filter(
     g => g.team === _matchState?.home_team
   ).length;
-  const s1IsGoal  = homeGoalsScored > 0;
-  const s1BigText = s1IsGoal ? '¡¡GOOOL!!' : (h(1).label || '');
-  const s1BigSize = s1IsGoal ? '52' : '28';
+  const s1Goal    = goalOf(1);
+  const s1IsGoal  = homeGoalsScored > 0 && !!s1Goal;
+  // Big text: the goal's timeline label (e.g. "Bowling"); plain goals keep the classic shout
+  const s1BigText = s1Goal ? _esc(s1Goal.label || '¡¡GOOOL!!') : (h(1).label || '');
+  const s1BigSize = s1Goal && !s1Goal.label ? '52' : '34';
+  const s1Kicker  = s1Goal ? `⚽ Gol ${(highlights[1] || {}).goal_number} · ${_esc(s1Goal.player)}` : '';
   const s1 = `
     <div class="rc-slide" id="rc-slide-1">
-      <div class="rc-slide-bg" style="background-image:url('${_bgUrl(1, SLIDE_BGS[1])}')">
+      <div class="rc-slide-bg" style="background-image:url('${_slidePhoto(highlights[1], 1, SLIDE_BGS[1])}')">
         <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,2,26,.95) 0%,rgba(0,5,40,.55) 45%,rgba(0,3,30,.65) 100%)"></div>
       </div>
       <div style="position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;background:radial-gradient(circle,rgba(117,170,219,.22) 0%,transparent 70%);z-index:2;pointer-events:none"></div>
       ${_chrome(1)}
       <div class="rc-s2-content">
-        ${h(1).label ? `<div style="font-size:11px;font-weight:800;color:#75AADB;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">${h(1).label}</div>` : ''}
+        ${(s1Kicker || h(1).label) ? `<div style="font-size:11px;font-weight:800;color:#75AADB;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">${s1Kicker || h(1).label}</div>` : ''}
         ${s1BigText ? `<div style="font-size:${s1BigSize}px;font-weight:900;color:#fff;letter-spacing:-2px;line-height:.9;margin-bottom:14px;text-shadow:0 0 40px rgba(117,170,219,.55);text-transform:uppercase">${s1BigText}</div>` : ''}
         <div style="width:48px;height:1px;background:rgba(255,255,255,.2);margin:0 auto 16px"></div>
         ${h(1).description ? `<div style="font-size:13px;color:rgba(255,255,255,.7);font-style:italic;line-height:1.55;padding:0 8px">"${h(1).description}"</div>` : ''}
@@ -661,16 +705,16 @@ function _buildAllSlides(recap, event) {
       ${_chrome(2)}
       <div class="rc-s3-card">
         <div class="rc-s3-card-inner">
-          <div style="font-size:10px;font-weight:800;color:#75AADB;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">✨ Recap generated by Tribuna AI</div>
+          <div style="font-size:10px;font-weight:800;color:#75AADB;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">${aiBadge}</div>
           <div style="height:.5px;background:rgba(255,255,255,.08);margin-bottom:12px"></div>
-          <div style="font-size:18px;font-weight:900;color:#F1F5F9;margin-bottom:14px">The night in numbers</div>
+          <div style="font-size:18px;font-weight:900;color:#F1F5F9;margin-bottom:14px">${recap.stats_title ? _esc(recap.stats_title) : 'En números'}</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
-            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${homeScore} ⚽ ${awayScore}</div><div style="font-size:11px;color:#475569;margin-top:2px">Final score</div></div>
-            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${highlights.length} ⚡</div><div style="font-size:11px;color:#475569;margin-top:2px">Highlights</div></div>
-            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${_mediaList.length} 📸</div><div style="font-size:11px;color:#475569;margin-top:2px">Fan photos</div></div>
-            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${fanVibesValue}</div><div style="font-size:11px;color:#475569;margin-top:2px">${fanVibesLabel}</div></div>
+            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${homeScore} ⚽ ${awayScore}</div><div style="font-size:11px;color:#94A3B8;margin-top:2px">Resultado final</div></div>
+            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${_homeGoals().length || recap.home_score || 0} 🥅</div><div style="font-size:11px;color:#94A3B8;margin-top:2px">Goles</div></div>
+            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${_mediaList.length} 📸</div><div style="font-size:11px;color:#94A3B8;margin-top:2px">Fotos</div></div>
+            <div><div style="font-size:24px;font-weight:900;color:#F1F5F9">${predPct !== null ? fanVibesValue : `${reactions} ❤️`}</div><div style="font-size:11px;color:#94A3B8;margin-top:2px">${predPct !== null ? 'Acertaron el resultado' : 'Reacciones'}</div></div>
           </div>
-          ${h(2).description ? `<div style="font-size:11px;color:#75AADB;font-style:italic;line-height:1.4">"${h(2).description}"</div>` : ''}
+          ${(opts.statsQuote ?? h(2).description) ? `<div style="font-size:11px;color:#75AADB;font-style:italic;line-height:1.4">"${opts.statsQuote ?? h(2).description}"</div>` : ''}
         </div>
       </div>
       ${_taps(2)}
@@ -679,16 +723,16 @@ function _buildAllSlides(recap, event) {
 
   // ── Slide 3: Narrative quote ───────────────────────────────────────────────
   // Prefer the AI highlight description; fall back to the narrative paragraph (trimmed).
-  const s3desc = h(3).description || (narrative ? (narrative.length > 130 ? narrative.slice(0, 127) + '…' : narrative) : '');
+  const s3desc = h(3).description || _esc(narrative ? (narrative.length > 130 ? narrative.slice(0, 127) + '…' : narrative) : '');
   const s3 = `
     <div class="rc-slide" id="rc-slide-3">
-      <div class="rc-slide-bg" style="background-image:url('${_bgUrl(3, SLIDE_BGS[2])}')">
+      <div class="rc-slide-bg" style="background-image:url('${_slidePhoto(highlights[3], 3, SLIDE_BGS[2])}')">
         <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.45) 50%,rgba(0,0,0,.6) 100%)"></div>
       </div>
       ${_chrome(3)}
       <div class="rc-s4-content">
-        ${h(3).label ? `<div style="font-size:10px;font-weight:800;color:#75AADB;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">${h(3).label}</div>` : ''}
-        <div style="font-size:26px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:12px">The moment<br>captured by AI</div>
+        ${goalOf(3) ? `<div style="font-size:10px;font-weight:800;color:#75AADB;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">⚽ Gol ${(highlights[3] || {}).goal_number} · ${_esc(goalOf(3).player)}</div>` : ''}
+        <div style="font-size:26px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:12px;text-transform:uppercase">${h(3).label || 'Un momento para recordar'}</div>
         ${s3desc ? `<div style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.55;margin-bottom:20px">"${s3desc}"</div>` : ''}
       </div>
       ${_taps(3)}
@@ -698,15 +742,15 @@ function _buildAllSlides(recap, event) {
   // ── Slide 4: Outro / Share ────────────────────────────────────────────────
   const s4 = `
     <div class="rc-slide" id="rc-slide-4">
-      <div class="rc-slide-bg" style="background-image:url('${_bgUrl(4, SLIDE_BGS[3])}')">
+      <div class="rc-slide-bg" style="background-image:url('${_slidePhoto(highlights[4], 4, SLIDE_BGS[3])}')">
         <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.5) 50%,rgba(0,0,0,.7) 100%)"></div>
       </div>
       ${_chrome(4)}
       <div class="rc-s5-content">
-        <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.05;margin-bottom:16px">Share<br>this moment</div>
-        ${(h(4).description || venue) ? `<div style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:32px">${h(4).description || (venue ? 'Tu noche en ' + venue + ' ya es parte de la historia de Tribuna' : '')}</div>` : ''}
+        <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1.05;margin-bottom:16px;text-transform:uppercase">${recap.closing_title ? _esc(recap.closing_title) : 'Compartí<br>este recap'}</div>
+        ${(recap.closing_text || h(4).description || venue) ? `<div style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:32px">${recap.closing_text ? _esc(recap.closing_text) : (h(4).description || _esc(venue))}</div>` : ''}
         <div style="background:rgba(117,170,219,.12);border:1px solid rgba(117,170,219,.25);border-radius:14px;padding:14px 20px;display:inline-block">
-          <div style="font-size:12px;font-weight:700;color:#75AADB;letter-spacing:.06em">🏆 TRIBUNA · ${homeTeam.toUpperCase()}</div>
+          <div style="font-size:12px;font-weight:700;color:#75AADB;letter-spacing:.06em">🏆 ${_esc((event.competition || homeTeam).toUpperCase())}</div>
         </div>
       </div>
       ${_taps(4)}
@@ -716,7 +760,7 @@ function _buildAllSlides(recap, event) {
   // ── Slide 5: Extra highlight ──────────────────────────────────────────────
   const s5 = `
     <div class="rc-slide" id="rc-slide-5">
-      <div class="rc-slide-bg" style="background-image:url('${_bgUrl(5, SLIDE_BGS[0])}')">
+      <div class="rc-slide-bg" style="background-image:url('${_slidePhoto(highlights[5], 5, SLIDE_BGS[0])}')">
         <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,2,26,.95) 0%,rgba(0,5,40,.55) 45%,rgba(0,3,30,.65) 100%)"></div>
       </div>
       ${_chrome(5)}
@@ -731,7 +775,7 @@ function _buildAllSlides(recap, event) {
   // ── Slide 6: Extra highlight ──────────────────────────────────────────────
   const s6 = `
     <div class="rc-slide" id="rc-slide-6">
-      <div class="rc-slide-bg" style="background-image:url('${_bgUrl(6, SLIDE_BGS[2])}')">
+      <div class="rc-slide-bg" style="background-image:url('${_slidePhoto(highlights[6], 6, SLIDE_BGS[2])}')">
         <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.45) 50%,rgba(0,0,0,.6) 100%)"></div>
       </div>
       ${_chrome(6)}
@@ -746,16 +790,229 @@ function _buildAllSlides(recap, event) {
   return [s0, s1, s2, s3, s4, s5, s6];
 }
 
+// ─── Download / share ─────────────────────────────────────────────────────────
+// Renders a slide to PNG with html2canvas. Images are inlined as data URLs first
+// so the canvas isn't "tainted" by cross-origin photos (API host / Unsplash).
+
+async function _toDataUrl(url) {
+  try {
+    const res = await fetch(url, { mode: 'cors', cache: 'reload' });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise(resolve => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
+    });
+  } catch (_) { return null; }
+}
+
+async function _slideToBlob(idx) {
+  const canvas = await _slideToCanvas(idx, 2);
+  return await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+async function _slideToCanvas(idx, scale) {
+  const el = $r(`rc-slide-${idx}`);
+  if (!el || typeof window.html2canvas !== 'function') throw new Error('html2canvas unavailable');
+
+  const urls = new Set();
+  el.querySelectorAll('[style*="background-image"]').forEach(n => {
+    const m = n.style.backgroundImage.match(/url\(["']?(.*?)["']?\)/);
+    if (m) urls.add(m[1]);
+  });
+  el.querySelectorAll('img').forEach(img => urls.add(img.src));
+  const inlined = new Map();
+  await Promise.all([...urls].map(async u => inlined.set(u, await _toDataUrl(u))));
+
+  const canvas = await window.html2canvas(el, {
+    backgroundColor: '#0f172a',
+    scale,
+    useCORS: true,
+    logging: false,
+    onclone: doc => {
+      const c = doc.getElementById(`rc-slide-${idx}`);
+      c.className = 'rc-slide rc-slide--current';
+      c.style.transform = 'none';
+      c.querySelectorAll('.rc-slide-actions, .rc-tap-prev, .rc-tap-next, .rc-slide-back, .rc-slide-home, .rc-progress-row')
+        .forEach(n => n.remove());
+      c.querySelectorAll('[style*="background-image"]').forEach(n => {
+        const m = n.style.backgroundImage.match(/url\(["']?(.*?)["']?\)/);
+        if (!m) return;
+        const data = inlined.get(m[1]);
+        n.style.backgroundImage = data ? `url('${data}')` : 'none';
+      });
+      c.querySelectorAll('img').forEach(img => {
+        const data = inlined.get(img.src);
+        if (data) img.src = data; else img.remove();
+      });
+    },
+  });
+  return canvas;
+}
+
+// GIF: all slides in one animated, looping image (gifenc, loaded on demand)
+const GIF_FRAME_MS = 2500;
+async function _downloadGif(btn) {
+  await _withBusy(btn, 'Creating…', async () => {
+    const { GIFEncoder, quantize, applyPalette } =
+      await import('https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js');
+    const gif = GIFEncoder();
+    for (const idx of _activeIdx) {
+      const canvas = await _slideToCanvas(idx, 1);
+      const { data, width, height } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      const palette = quantize(data, 256);
+      gif.writeFrame(applyPalette(data, palette), width, height, { palette, delay: GIF_FRAME_MS });
+    }
+    gif.finish();
+    _saveBlob(new Blob([gif.bytes()], { type: 'image/gif' }), `${_fileBase()}.gif`);
+  });
+}
+
+function _saveBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function _fileBase() {
+  const e = _eventData || {};
+  return `recap-${e.home_team || 'event'}-vs-${e.away_team || ''}`
+    .toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+async function _withBusy(btn, label, fn) {
+  const span = btn.querySelector('span');
+  const prev = span ? span.textContent : '';
+  btn.disabled = true;
+  if (span) span.textContent = label;
+  try { await fn(); }
+  catch (err) {
+    console.error('[recap] export failed', err);
+    if (span) span.textContent = 'Error — retry';
+    setTimeout(() => { if (span) span.textContent = prev; }, 2000);
+    btn.disabled = false;
+    return;
+  }
+  if (span) span.textContent = prev;
+  btn.disabled = false;
+}
+
+// Download: every active slide as PNG, bundled in one ZIP
+async function _downloadAllSlides(btn) {
+  await _withBusy(btn, 'Preparing…', async () => {
+    const base = _fileBase();
+    if (typeof window.JSZip !== 'function') {
+      // No ZIP library: fall back to the current slide only
+      _saveBlob(await _slideToBlob(_activeIdx[_rcCurrent] ?? 0), `${base}.png`);
+      return;
+    }
+    const zip = new window.JSZip();
+    for (let i = 0; i < _activeIdx.length; i++) {
+      zip.file(`${base}-${String(i + 1).padStart(2, '0')}.png`, await _slideToBlob(_activeIdx[i]));
+    }
+    _saveBlob(await zip.generateAsync({ type: 'blob' }), `${base}.zip`);
+  });
+}
+
+// Share: the current slide via the native share sheet, else download it
+async function _shareCurrentSlide(btn) {
+  await _withBusy(btn, 'Preparing…', async () => {
+    const blob = await _slideToBlob(_activeIdx[_rcCurrent] ?? 0);
+    const file = new File([blob], `${_fileBase()}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Recap' }); return; }
+      catch (err) { if (err && err.name === 'AbortError') return; }
+    }
+    _saveBlob(blob, file.name);
+  });
+}
+
+// Photo for a goal slide: the AI's pick, else any photo of that goal, else a
+// generic background (never a photo from a different goal)
+function _goalPhoto(hl, goal, idx) {
+  const byId = hl && hl.photo_id ? _mediaList.find(m => m.id === hl.photo_id) : null;
+  const ofGoal = _mediaList.find(m => m.goal_id != null && m.goal_id === goal.id);
+  return (byId || ofGoal)?.url || SLIDE_BGS[idx % SLIDE_BGS.length];
+}
+
+// AUTO: one slide per goal, the stats slide in the middle, the closing slide last
+function _buildAutoSlides(recap, event) {
+  const goals = _homeGoals();
+  const highlights = recap.highlights || [];
+  const narrative = recap.narrative || '';
+  const statsQuote = _esc(narrative.length > 160 ? narrative.slice(0, 157) + '…' : narrative);
+  const std = _buildAllSlides(recap, event, { statsQuote });
+  // Re-number a standard slide's ids so it can sit anywhere in the sequence
+  const reindex = (html, from, to) =>
+    html.replace(new RegExp(`(rc-(?:slide|prog|label|counter)-)${from}(?!\\d)`, 'g'), `$1${to}`);
+
+  const goalSlide = (goal, i, idx) => {
+    const hl = highlights.find(x => x.goal_number === i + 1) || highlights[i] || {};
+    const title = _esc(goal.label || hl.label || '¡GOL!');
+    const sub = goal.label && hl.label && hl.label.toLowerCase() !== goal.label.toLowerCase() ? _esc(hl.label) : '';
+    return `
+    <div class="rc-slide" id="rc-slide-${idx}">
+      <div class="rc-slide-bg" style="background-image:url('${_goalPhoto(hl, goal, idx)}')">
+        <div class="rc-slide-bg-overlay" style="background:linear-gradient(to top,rgba(0,2,26,.95) 0%,rgba(0,5,40,.5) 45%,rgba(0,3,30,.6) 100%)"></div>
+      </div>
+      ${_chrome(idx)}
+      <div class="rc-s2-content">
+        <div style="font-size:11px;font-weight:800;color:#75AADB;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">⚽ Gol ${i + 1} · ${_esc(goal.player)}</div>
+        <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:.95;margin-bottom:12px;text-shadow:0 0 40px rgba(117,170,219,.55);text-transform:uppercase">${title}</div>
+        ${sub ? `<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">${sub}</div>` : ''}
+        <div style="width:48px;height:1px;background:rgba(255,255,255,.2);margin:0 auto 16px"></div>
+        ${hl.description ? `<div style="font-size:13px;color:rgba(255,255,255,.75);font-style:italic;line-height:1.55;padding:0 8px">"${_esc(hl.description)}"</div>` : ''}
+      </div>
+      ${_taps(idx)}
+      ${_actions(idx)}
+    </div>`;
+  };
+
+  const statsAt = Math.ceil(goals.length / 2);
+  const slides = [];
+  goals.forEach((g, i) => {
+    if (i === statsAt) slides.push(reindex(std[2], 2, slides.length));
+    slides.push(goalSlide(g, i, slides.length));
+  });
+  if (statsAt >= goals.length) slides.push(reindex(std[2], 2, slides.length));
+  slides.push(reindex(std[4], 4, slides.length));
+  return slides;
+}
+
 function renderSlides(recap, event, slideCount) {
+  if (slideCount === 'auto') {
+    const slides = _buildAutoSlides(recap, event);
+    _activeIdx = slides.map((_, i) => i);
+    _rcTotal   = slides.length;
+    _rcCurrent = 0;
+    _mountSlides(slides);
+    return;
+  }
   // Which of the 7 DOM elements are active:
   // 3 → [0,1,2], 5 → [0,1,2,3,4], 7 → [0,1,2,3,4,5,6]
   _activeIdx  = Array.from({ length: slideCount }, (_, i) => i);
   _rcTotal    = slideCount;
   _rcCurrent  = 0;
 
-  const allSlides = _buildAllSlides(recap, event);
+  _mountSlides(_buildAllSlides(recap, event));
+}
 
+function _mountSlides(allSlides) {
   $r('recapView').innerHTML = allSlides.join('');
+  $r('recapView').onclick = e => {
+    const gif = e.target.closest('.rc-btn-gif');
+    if (gif) { _downloadGif(gif); return; }
+    const dl = e.target.closest('.rc-btn-dl');
+    if (dl) { _downloadAllSlides(dl); return; }
+    const sh = e.target.closest('.rc-btn-share');
+    if (sh) _shareCurrentSlide(sh);
+  };
 
   // Make first active slide visible
   const firstEl = $r(`rc-slide-${_activeIdx[0]}`);
@@ -773,9 +1030,14 @@ async function _generate() {
   renderLoader(event);
 
   // Minimum loader display time + API call in parallel
+  // Slides only: one Gemini call (two parallel calls overload the free tier).
+  // The backend returns fallback=true when the AI didn't answer.
+  const tone = TONE_MAP[_tone] || 'emocionante';
   const minWait = new Promise(r => setTimeout(r, 2500));
+  const auto = _slideCount === 'auto' && _homeGoals().length > 0;
+  const count = auto ? Math.min(_homeGoals().length, 20) : (_slideCount === 'auto' ? 5 : _slideCount);
   const [recapResult] = await Promise.allSettled([
-    fetchRecap(_eventId, TONE_MAP[_tone] || 'emocionante', _slideCount),
+    fetchRecap(_eventId, tone, count),
   ]);
   await minWait;
 
@@ -791,12 +1053,41 @@ async function _generate() {
     return;
   }
 
-  renderSlides(recapResult.value, event, _slideCount);
+  if (recapResult.value.fallback) {
+    renderAiUnavailable(recapResult.value, event);
+  } else {
+    renderSlides(recapResult.value, event, auto ? 'auto' : count);
+  }
+}
+
+// ─── AI didn't answer: let the user retry or continue offline ────────────────
+
+function renderAiUnavailable(recap, event) {
+  $r('recapView').innerHTML = `
+    <div class="rc-error">
+      <button class="rc-error__back" onclick="window._rcGoBack()">← Back</button>
+      <div style="font-size:36px">🤖</div>
+      <p style="font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;margin:0">
+        The AI is busy right now
+      </p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 8px">
+        Gemini didn't answer. You can retry, or see the recap with default texts.
+      </p>
+      <button id="rcRetryAiBtn" style="width:100%;max-width:280px;height:48px;background:var(--accent);border:none;border-radius:14px;font-family:inherit;font-size:15px;font-weight:900;color:var(--accent-ink);cursor:pointer">
+        ✨ Retry with AI
+      </button>
+      <button id="rcOfflineBtn" style="width:100%;max-width:280px;height:44px;background:rgba(255,255,255,.05);border:1px solid var(--hair);border-radius:14px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer">
+        See offline version
+      </button>
+    </div>`;
+  $r('rcRetryAiBtn').addEventListener('click', () => _generate());
+  $r('rcOfflineBtn').addEventListener('click', () =>
+    renderSlides(recap, event, _slideCount === 'auto' && _homeGoals().length ? 'auto' : (_slideCount === 'auto' ? 5 : _slideCount)));
 }
 
 // ─── Main entry ───────────────────────────────────────────────────────────────
 
-async function navigateToRecap(eventId) {
+async function navigateToRecap(eventId, opts = {}) {
   _eventId    = eventId;
   _slideCount = 5;
   _tone       = 'Exciting';
@@ -813,7 +1104,11 @@ async function navigateToRecap(eventId) {
       fetchMatchState(eventId),
       fetchMedia(eventId).catch(() => ({ media: [] })),
     ]);
-    _mediaList  = (mediaRes?.media || []).filter(m => m.media_type === 'photo' || !m.media_type);
+    // Media URLs from the backend can be relative ("/media/..."): point them at the API host
+    const apiBase = window.FANFEST_API_BASE || 'http://localhost:8000';
+    _mediaList  = (mediaRes?.media || [])
+      .filter(m => m.media_type === 'photo' || !m.media_type)
+      .map(m => ({ ...m, url: m.url && m.url.startsWith('/') ? apiBase + m.url : m.url }));
     _matchState = state;
   } catch (_) {
     view.innerHTML = `
@@ -838,7 +1133,11 @@ async function navigateToRecap(eventId) {
     return;
   }
 
+  _slideCount = _homeGoals().length ? 'auto' : 5;
   renderPostMatch(event);
+  // From the event page "AI Recap" button: skip straight to tone/slides selection
+  _directCustomize = !!opts.customize;
+  if (opts.customize) $r('rcDrawer').classList.add('rc-drawer--open');
 }
 
 window.navigateToRecap = navigateToRecap;

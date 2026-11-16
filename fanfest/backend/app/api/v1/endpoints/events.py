@@ -16,6 +16,7 @@ from app.schemas.events import (
     LikeResponse,
     LinkFixtureRequest,
     MatchState,
+    GoalLabelUpdate,
     MatchStateUpdate,
     MediaList,
     Photo,
@@ -24,6 +25,7 @@ from app.schemas.events import (
     PredictionResponse,
     RecapRequest,
     RecapResponse,
+    VideoRecapRequest,
     VideoRecapResponse,
 )
 from app.services import events_service
@@ -239,6 +241,11 @@ async def sync_fixture_endpoint(event_id: str) -> MatchState:
 
 @router.get("/{event_id}/match-state", response_model=MatchState)
 async def get_match_state(event_id: str) -> MatchState:
+    if match_state_service.has_fixture_link(event_id) and settings.api_football_key:
+        try:
+            return await match_state_service.sync_from_api(event_id)
+        except HTTPException:
+            pass
     return match_state_service.get_state(event_id)
 
 
@@ -251,13 +258,21 @@ async def update_match_state(event_id: str, body: MatchStateUpdate) -> MatchStat
                 detail="goal action requires player, team, minute",
             )
         return match_state_service.score_goal(
-            event_id, body.player, body.team, body.minute
+            event_id, body.player, body.team, body.minute, body.label
         )
+    if body.action == "start":
+        return match_state_service.start_match(event_id)
     if body.action == "end":
         return match_state_service.end_match(event_id)
     if body.action == "reset":
         return match_state_service.reset(event_id)
     raise HTTPException(status_code=422, detail="Unknown action")
+
+
+@router.patch("/{event_id}/goals/{goal_id}", response_model=MatchState)
+def update_goal_label(event_id: str, goal_id: int, body: GoalLabelUpdate) -> MatchState:
+    """Set the optional label a goal shows on the photo timeline (e.g. "Bowling")."""
+    return match_state_service.set_goal_label(event_id, goal_id, body.label)
 
 
 @router.post("/{event_id}/photos", response_model=Photo, status_code=201)
@@ -301,6 +316,7 @@ async def create_media(
     uploader_name: str = Form(...),
     uploader_handle: str = Form(default=""),
     caption: str | None = Form(default=None),
+    goal_id: int | None = Form(default=None),
 ) -> Photo:
     if not registry.is_checked_in(uploader_id):
         raise HTTPException(status_code=403, detail="User is not checked in")
@@ -326,6 +342,7 @@ async def create_media(
         uploader_name=uploader_name,
         uploader_handle=uploader_handle,
         caption=caption,
+        goal_id=goal_id,
     )
 
 
@@ -418,7 +435,7 @@ async def get_recap(event_id: str) -> RecapResponse:
 
 
 @router.post("/{event_id}/recap", response_model=RecapResponse)
-async def create_recap(event_id: str, body: RecapRequest) -> RecapResponse:
+def create_recap(event_id: str, body: RecapRequest) -> RecapResponse:
     state = match_state_service.get_state(event_id)
     if state.status != "ended":
         raise HTTPException(
@@ -448,8 +465,15 @@ async def get_video_recap(event_id: str) -> VideoRecapResponse:
 
 
 @router.post("/{event_id}/recap/video", response_model=VideoRecapResponse, status_code=201)
-async def generate_video_recap(event_id: str) -> VideoRecapResponse:
-    """Generate the recap video for a finished event. Can only be called once per event."""
+def generate_video_recap(
+    event_id: str, body: VideoRecapRequest | None = None
+) -> VideoRecapResponse:
+    """(Re)generate the recap video for a finished event with the chosen tone.
+
+    Uses Gemini when GEMINI_API_KEY is set (else Claude), and falls back to the
+    offline storyboard when no key is configured or the AI call fails.
+    Sync on purpose: FastAPI runs it in a threadpool so rendering doesn't block.
+    """
     state = match_state_service.get_state(event_id)
     if state.status != "ended":
         raise HTTPException(
@@ -457,6 +481,7 @@ async def generate_video_recap(event_id: str) -> VideoRecapResponse:
             detail="Video recap is only available after the match ends",
         )
     try:
-        return video_recap_service.generate_video_recap(event_id)
+        tone = body.tone if body else "emocionante"
+        return video_recap_service.generate_video_recap(event_id, tone)
     except (ValueError, RecapError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

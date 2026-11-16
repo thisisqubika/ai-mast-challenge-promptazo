@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     google_drive_folder_id: str = ""
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-6"
+    # Gemini (Google AI Studio). When a key is set, the text recap uses Gemini instead of Claude.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-flash-lite-latest"  # fast, generous free tier
     database_url: str = "sqlite:///./fanfest.db"
     media_storage_backend: str = "mock"  # "mock" | "local" | "drive" | "s3"
     # S3 backend (used when media_storage_backend == "s3")

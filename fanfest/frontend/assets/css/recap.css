@@ -31,7 +31,7 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: #07090D;
+  background: var(--screen);
 }
 
 .rc-scroll-body {
@@ -52,7 +52,7 @@
 .rc-drawer--open { display: flex; }
 
 .rc-drawer-sheet {
-  background: #172435;
+  background: var(--card);
   border-radius: 20px 20px 0 0;
   padding: 12px 20px 32px;
   width: 100%;
@@ -86,7 +86,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #07090D;
+  background: var(--screen);
   border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 20px;
   padding: 10px 16px;
@@ -108,7 +108,7 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: #07090D;
+  background: var(--screen);
 }
 
 .rc-loader-body {
@@ -217,10 +217,10 @@
   z-index: 20; background: rgba(7,9,13,.95);
   padding: 14px 20px 24px; backdrop-filter: blur(12px);
 }
-.rc-action-row { display: flex; gap: 12px; margin-bottom: 8px; }
+.rc-action-row { display: flex; gap: 8px; margin-bottom: 8px; }
 
 .rc-btn-dl {
-  flex: 1; height: 48px; background: #172435;
+  flex: 1; height: 48px; background: var(--card);
   border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   cursor: pointer; font-family: inherit; transition: background 150ms;
@@ -275,7 +275,7 @@
 
 /* ── Error state (inline fallback) ── */
 .rc-error {
-  position: absolute; inset: 0; background: #07090D;
+  position: absolute; inset: 0; background: var(--screen);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 14px; padding: 32px 24px; text-align: center;

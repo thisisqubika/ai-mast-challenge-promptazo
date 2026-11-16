@@ -121,12 +121,12 @@
 .section:first-of-type { margin-top: 20px; }
 .section__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
 .section__head--spaced { margin-bottom: 12px; }
-.section__title { font-size: 14px; font-weight: 800; color: var(--ink); }
+.section__title { font-size: 16px; font-weight: 800; color: var(--ink); }
 .section__title--label {
   font-size: 12px; font-weight: 700; color: var(--muted);
   letter-spacing: .8px; text-transform: uppercase;
 }
-.section__sub { font-size: 11px; font-weight: 500; color: var(--muted); }
+.section__sub { font-size: 12px; font-weight: 500; color: var(--muted); }
 .section__sub--dim { font-size: 10px; color: var(--dim); }
 .see-all {
   background: none; border: none; font-family: inherit; cursor: pointer; padding: 0;
@@ -161,7 +161,8 @@
 }
 
 /* SECTION 1 — Selección cards */
-.card-sel { flex: none; width: 240px; border-radius: 16px; padding: 14px; background: var(--card); }
+/* All home cards share one size: 240px wide, 16px radius, same border */
+.card-sel { flex: none; width: 240px; border-radius: 16px; padding: 14px; background: var(--card); border: 1px solid var(--hair-soft); }
 .card-sel__match {
   background: var(--screen); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; text-align: center;
 }
@@ -185,7 +186,7 @@
 
 /* SECTION 2 — World cards */
 .card-world {
-  flex: none; width: 220px; border-radius: 16px; overflow: hidden;
+  flex: none; width: 240px; border-radius: 16px; overflow: hidden;
   background: var(--card); border: 1px solid var(--hair-soft);
 }
 .card-world.is-live { border-color: rgba(16,185,129,.35); }
@@ -216,7 +217,7 @@
 
 /* SECTION 3 — Recap cards */
 .card-recap {
-  flex: none; width: 180px; border-radius: 14px; overflow: hidden;
+  flex: none; width: 240px; border-radius: 16px; overflow: hidden;
   background: var(--card); border: 1px solid var(--hair-soft);
 }
 .card-recap__hero {

@@ -1,6 +1,6 @@
 /* FEST-10: Create New Event screen */
 
-import { createEvent } from './api.js';
+import { createEvent } from './api.js?v=16';
 
 const $ = (id) => document.getElementById(id);
 
@@ -14,9 +14,13 @@ function showCreateScreen() {
   });
   if (home) home.hidden = true;
   if (view) { view.hidden = false; view.scrollTop = 0; }
+  const bottomNav = document.querySelector('.bottomnav');
+  if (bottomNav) bottomNav.hidden = true;
 }
 
 function showHomeScreen() {
+  // Reuse the shared home navigation (restores bottom nav, live bar, refreshes sections)
+  if (typeof window.navigateToHome === 'function') { window.navigateToHome(); return; }
   const home = document.querySelector('.phone > .scroll');
   ['eventDetailView','recapView','mapaView','misEventosView','createEventView'].forEach(id => {
     const el = document.getElementById(id); if (el) el.hidden = true;

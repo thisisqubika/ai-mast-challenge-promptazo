@@ -62,7 +62,7 @@ function _fmtShortDate(iso) {
 
 function _fmtTime(iso) {
   const d = new Date(_normIso(iso));
-  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function _fmtCountdown(iso) {
@@ -139,6 +139,10 @@ function renderSeleccion(events) {
 
 
 function renderRecap() {
+  if (!recapCards.length) {
+    $('rowRecap').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px">Join a fan fest to see your recap here</div>';
+    return;
+  }
   const pitch = `<svg width="120" height="50" viewBox="0 0 120 50" fill="none" class="card-recap__pitch"><path d="M0 50 Q15 30 30 40 Q45 22 60 34 Q75 16 90 32 Q105 24 120 36 L120 50Z" fill="#f1f5f9"/></svg>`;
   $('rowRecap').innerHTML = recapCards.map((r) => `
     <div class="card-recap">
@@ -157,7 +161,7 @@ function renderRecap() {
              data-recap-status="${r.status}">${r.result}</div>
         <div class="card-recap__stage">${r.stage}</div>
         <div class="divider"></div>
-        <button class="card-recap__cronica" type="button" data-recap-event-id="${r.id}">✨ See recap</button>
+        <button class="card-recap__cronica" type="button" data-recap-event-id="${r.id}">✨ See event</button>
         <div class="card-recap__photos">📸 ${r.photos} photos</div>
       </div>
     </div>`).join('');
@@ -169,7 +173,7 @@ function renderUpcoming(events) {
     return;
   }
   $('rowUpcoming').innerHTML = events.map((u) => {
-    const countdown = _fmtCountdown(u.kickoff_iso) || 'Coming soon';
+    const countdown = u.status === 'live' ? 'Live now' : (_fmtCountdown(u.kickoff_iso) || 'Coming soon');
     return `
     <div class="card-up" data-event-id="${u.id}" data-kickoff-iso="${u.kickoff_iso || ''}" style="cursor:pointer">
       <div class="card-up__head">
@@ -305,8 +309,9 @@ async function loadRecapCards() {
     const res = await fetch(`${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1/events?status=past`);
     if (!res.ok) throw new Error('api error');
     const events = await res.json();
-    events.sort((a, b) => new Date(b.kickoff_iso) - new Date(a.kickoff_iso));
-    recapCards = events.map((e) => ({
+    const joinedEvents = events.filter((e) => localStorage.getItem(`apuntado_${e.id}`));
+    joinedEvents.sort((a, b) => new Date(b.kickoff_iso) - new Date(a.kickoff_iso));
+    recapCards = joinedEvents.map((e) => ({
       id: e.id,
       status: e.status,
       homeFlag: e.home_flag,
@@ -329,16 +334,29 @@ async function loadSeleccionCards() {
     const selEvents = events
       .filter((e) => (e.home_team === 'Argentina' || e.away_team === 'Argentina') && e.status !== 'past')
       .sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));
+    const selIds = new Set(selEvents.map((e) => e.id));
+    const joinedOther = events.filter((e) =>
+      e.status !== 'past' &&
+      localStorage.getItem(`apuntado_${e.id}`) &&
+      !selIds.has(e.id)
+    );
+    const allSelEvents = [...selEvents, ...joinedOther]
+      .sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));
+    // Subtitle describes the first card actually shown in the row
     const subtitle = $('seleccionSubtitle');
-    if (subtitle && selEvents.length) {
-      const first = selEvents[0];
-      const countdown = _fmtCountdown(first.kickoff_iso);
-      const timeStr = _fmtTime(first.kickoff_iso);
-      const label = countdown === 'Today' ? `Today ${timeStr}` : `${_fmtShortDate(first.kickoff_iso)} · ${timeStr}`;
-      subtitle.textContent = `${first.home_team} vs ${first.away_team} · ${label}`;
+    if (subtitle) {
+      const first = allSelEvents[0];
+      if (first) {
+        const countdown = _fmtCountdown(first.kickoff_iso);
+        const timeStr = _fmtTime(first.kickoff_iso);
+        const label = countdown === 'Today' ? `Today ${timeStr}` : `${_fmtShortDate(first.kickoff_iso)} · ${timeStr}`;
+        subtitle.textContent = `${first.home_team} vs ${first.away_team} · ${label}`;
+      } else {
+        subtitle.textContent = 'No upcoming matches';
+      }
     }
-    _seleccionEvents = selEvents;
-    renderSeleccion(_filterEvents(selEvents, state.searchQuery));
+    _seleccionEvents = allSelEvents;
+    renderSeleccion(_filterEvents(allSelEvents, state.searchQuery));
     _updateLiveBar();
   } catch (_) {
     $('rowSeleccion').innerHTML = '';
@@ -347,9 +365,9 @@ async function loadSeleccionCards() {
 
 async function loadUpcomingCards() {
   try {
-    const res = await fetch(`${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1/events?status=future`);
+    const res = await fetch(`${window.FANFEST_API_BASE || 'http://localhost:8000'}/api/v1/events`);
     if (!res.ok) throw new Error('api error');
-    const events = await res.json();
+    const events = (await res.json()).filter((e) => e.status !== 'past');
     events.sort((a, b) => new Date(a.kickoff_iso) - new Date(b.kickoff_iso));
     _upcomingEvents = events;
     renderUpcoming(_filterEvents(events, state.searchQuery));
@@ -424,21 +442,23 @@ $('rowUpcoming').addEventListener('click', (e) => {
 renderCategories();
 renderNav();
 
+// Seed demo user's past event joins so "Relive Past Fan Fests" shows them
+['apuntado_evt-002', 'apuntado_7ad8e291-1542-46c9-8877-2d4fdfd64ef2', 'apuntado_8ecc6687-a3d2-423e-b57e-90e9d82e57f3'].forEach(k => {
+  if (!localStorage.getItem(k)) localStorage.setItem(k, '1');
+});
+
 // Async sections
 loadRecapCards();
 loadSeleccionCards();
 loadUpcomingCards();
 
+// Past cards open the same event page as live events; the AI Recap is reached from there
 $('rowRecap').addEventListener('click', (e) => {
-  const resultEl = e.target.closest('[data-recap-detail-id]');
-  if (resultEl && typeof window.navigateToRecap === 'function') {
-    window.navigateToRecap(resultEl.dataset.recapDetailId);
-    return;
-  }
-  const btn = e.target.closest('[data-recap-event-id]');
-  if (btn && typeof window.navigateToRecap === 'function') {
-    window.navigateToRecap(btn.dataset.recapEventId);
-  }
+  const target = e.target.closest('[data-recap-event-id], [data-recap-detail-id], .card-recap');
+  if (!target || typeof window.navigateToEventDetail !== 'function') return;
+  const id = target.dataset.recapEventId || target.dataset.recapDetailId
+    || target.querySelector('[data-recap-event-id]')?.dataset.recapEventId;
+  if (id) window.navigateToEventDetail({ id });
 });
 
 const liveCta = document.querySelector('.live-bar__cta');

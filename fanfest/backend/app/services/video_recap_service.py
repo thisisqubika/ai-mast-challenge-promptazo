@@ -72,6 +72,15 @@ def _resolve_local_image(p) -> str | None:
     return None
 
 
+def _describe(p, goal_moment: dict, venue: str) -> str:
+    """Scene description: the goal/moment label (e.g. "Bowling") + the uploader's caption."""
+    caption = getattr(p, "caption", None)
+    moment = goal_moment.get(getattr(p, "goal_id", None))
+    if moment and caption:
+        return f"{moment}: {caption}"
+    return caption or moment or f"Fan photo from {venue}"
+
+
 def _build_event_input(event: EventModel, state, photos: list) -> EventInput:
     home = event.home_team
     away = event.away_team
@@ -86,6 +95,7 @@ def _build_event_input(event: EventModel, state, photos: list) -> EventInput:
 
     media_items = []
     event_images = []
+    goal_moment = {g.id: (g.label or g.player) for g in state.goals if getattr(g, "id", None)}
 
     for p in photos:
         local_path = _resolve_local_image(p)
@@ -116,7 +126,7 @@ def _build_event_input(event: EventModel, state, photos: list) -> EventInput:
                 image_ref=local_path,
                 date_time=_ensure_utc(p.uploaded_at),
                 event_name=f"{home} vs {away}",
-                event_description=getattr(p, "caption", None) or f"Fan photo from {event.venue_name}",
+                event_description=_describe(p, goal_moment, event.venue_name),
                 place_location=event.venue_name,
                 comments=[
                     c.text if hasattr(c, "text") else str(c)
@@ -176,14 +186,12 @@ def get_video_recap(event_id: str) -> VideoRecapResponse | None:
         return VideoRecapResponse(event_id=event_id, video_url=event.recap_video_url)
 
 
-def generate_video_recap(event_id: str) -> VideoRecapResponse:
+def generate_video_recap(event_id: str, tone: str = "emocionante") -> VideoRecapResponse:
     with get_session() as session:
         event = session.get(EventModel, event_id)
         if event is None:
             raise ValueError(f"Event {event_id} not found")
-        if event.recap_video_url:
-            return VideoRecapResponse(event_id=event_id, video_url=event.recap_video_url)
-
+        # Always (re)generate: the user picks a tone each time from the single "AI Recap" flow
         state = match_state_service.get_state(event_id)
         photos = photos_service.list_photos(event_id)
 
@@ -201,9 +209,12 @@ def generate_video_recap(event_id: str) -> VideoRecapResponse:
             base_dir=Path("."),
             language="es",
             provider="auto",
+            model=settings.anthropic_model,
+            tone=tone,
         )
 
-        run_from_input(event_input, config)
+        result = run_from_input(event_input, config)
+        meta = result.storyboard_obj.meta
 
         local_video = out_dir / "recap-video.mp4"
         if settings.media_storage_backend == "s3":
@@ -215,4 +226,10 @@ def generate_video_recap(event_id: str) -> VideoRecapResponse:
             video_url = f"/media/recap/{event_id}/recap-video.mp4"
         event.recap_video_url = video_url
 
-    return VideoRecapResponse(event_id=event_id, video_url=video_url)
+    return VideoRecapResponse(
+        event_id=event_id,
+        video_url=video_url,
+        generated_by=meta.generated_by,
+        model=meta.model if meta.generated_by != "offline" else None,
+        tone=tone,
+    )

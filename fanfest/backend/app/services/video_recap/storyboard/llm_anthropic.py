@@ -25,7 +25,9 @@ class AnthropicStoryboardGenerator(StoryboardGenerator):
                 "The 'anthropic' package is required for provider=anthropic."
             ) from exc
 
-        client = anthropic.Anthropic()
+        from .base import anthropic_api_key
+
+        client = anthropic.Anthropic(api_key=anthropic_api_key() or None)
         try:
             response = client.messages.parse(
                 model=config.model,

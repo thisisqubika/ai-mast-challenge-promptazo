@@ -31,6 +31,7 @@ class EventModel(Base):
     competition: Mapped[str] = mapped_column(String, default="")
     venue_distance: Mapped[str] = mapped_column(String, default="")
     amenities: Mapped[str] = mapped_column(String, default="[]")  # JSON array of [icon, label] pairs
+    fixture_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     registrations: Mapped[list["RegistrationModel"]] = relationship(back_populates="event")
     predictions: Mapped[list["PredictionModel"]] = relationship(back_populates="event")
@@ -74,5 +75,37 @@ class PhotoModel(Base):
     uploader_id: Mapped[str] = mapped_column(String, default="")
     uploader_name: Mapped[str] = mapped_column(String, nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    caption: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Goal (moment) this photo belongs to on the timeline; None = general During/After
+    goal_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     event: Mapped["EventModel"] = relationship(back_populates="photos")
+
+
+class PhotoCommentModel(Base):
+    """Comments people leave on a Hype Wall photo (no FK: seed photos live only in memory)."""
+
+    __tablename__ = "photo_comments"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    event_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    photo_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String, default="")
+    user_name: Mapped[str] = mapped_column(String, default="")
+    user_handle: Mapped[str] = mapped_column(String, default="")
+    text: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GoalModel(Base):
+    """A goal of a match. Persisted so goals (and their timeline labels) survive restarts."""
+
+    __tablename__ = "goals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    player: Mapped[str] = mapped_column(String, nullable=False)
+    team: Mapped[str] = mapped_column(String, nullable=False)
+    minute: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Optional name shown only on the photo timeline (e.g. "Bowling")
+    label: Mapped[Optional[str]] = mapped_column(String, nullable=True)

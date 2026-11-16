@@ -1,7 +1,7 @@
 /* Event Detail (Previa) — FEST-05 / FEST-08
    Hype Wall wired to real /media API. Upload modal with file + caption. */
 
-import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, syncFixture, submitPrediction, generateVideoRecap } from './api.js';
+import { fetchMedia, uploadMedia, likeMedia, getEventDetail, fetchMatchState, syncFixture, submitPrediction, generateVideoRecap, advanceMatchState } from './api.js?v=16';
 
 // ── Event state (populated from API on navigate) ───────────────────────────────
 const edEvent = {
@@ -94,7 +94,7 @@ function _applyEventData(data) {
 
 // ── Hype Wall state ───────────────────────────────────────────────────────────
 let hypePosts = [];
-const edCurrentUser = { id: 'user_003', name: 'Carlos', handle: '@carlos_fan' };
+const edCurrentUser = { id: 'user_003', name: 'Paula', handle: '@paula' };
 
 // ── Check-in state ────────────────────────────────────────────────────────────
 let edCheckedIn = false;
@@ -107,6 +107,8 @@ async function _checkIn(eventId) {
       body: JSON.stringify({ user_id: edCurrentUser.id, name: edCurrentUser.name }),
     });
     edCheckedIn = true;
+    // Checking in counts as joining, so the event shows in "Relive Past Fan Fests" later
+    localStorage.setItem(`apuntado_${eventId}`, '1');
   } catch (_) {}
 }
 
@@ -354,8 +356,18 @@ function _milestoneLabel(posts) {
   return 'Post-match';
 }
 
+function _goalTitle(g) {
+  return g.label || g.player;
+}
+
 function renderHypeFeed(posts, kickoffIso) {
-  if (!posts.length) {
+  // Goals of this event that can hold photos (persisted goals have an id)
+  const goals = (edEvent.matchGoals || [])
+    .filter(g => g.id != null)
+    .sort((a, b) => a.minute - b.minute);
+  const goalIds = new Set(goals.map(g => g.id));
+
+  if (!posts.length && !goals.some(g => g.label)) {
     return `
       <div class="ed-timeline">
         <div class="ed-milestone">
@@ -368,31 +380,45 @@ function renderHypeFeed(posts, kickoffIso) {
       </div>`;
   }
 
-  // Group by backend-computed phase field ('pre' | 'during' | 'post').
+  // Photos tagged with a goal go to that goal's section; the rest use the
+  // default time-based sections (backend phase: 'pre' | 'during' | 'post').
+  const byGoal = new Map(goals.map(g => [g.id, []]));
   const phaseMap = { pre: [], during: [], post: [] };
-  const unphased = [];
   posts.forEach(p => {
-    if (p.phase && phaseMap[p.phase]) phaseMap[p.phase].push(p);
-    else unphased.push(p);
+    if (p.goal_id != null && goalIds.has(p.goal_id)) byGoal.get(p.goal_id).push(p);
+    else if (p.phase && phaseMap[p.phase]) phaseMap[p.phase].push(p);
+    else phaseMap.during.push(p);
   });
 
   const groups = [];
   if (phaseMap.pre.length)    groups.push({ label: 'Pre-match',    icon: '🍺', posts: phaseMap.pre });
   if (phaseMap.during.length) groups.push({ label: 'During match', icon: '⚽', posts: phaseMap.during });
-  if (phaseMap.post.length)   groups.push({ label: 'Post-match',   icon: '🎉', posts: phaseMap.post });
-  if (!groups.length)         groups.push({ label: 'All photos', icon: '📸', posts: unphased.length ? unphased : posts });
+  goals.forEach((g, i) => {
+    const gPosts = byGoal.get(g.id);
+    // Show a goal's section when it has photos or a timeline label
+    if (!gPosts.length && !g.label) return;
+    groups.push({
+      label: _goalTitle(g),
+      meta: `Goal ${i + 1} · ${g.minute}' ${g.player}`,
+      icon: '⚽',
+      posts: gPosts,
+    });
+  });
+  if (phaseMap.post.length)   groups.push({ label: 'After match',  icon: '🎉', posts: phaseMap.post });
 
   const milestonesHtml = groups.map(g => `
     <div class="ed-milestone">
       <div class="ed-milestone-icon">${g.icon}</div>
       <div class="ed-milestone-content">
         <div class="ed-milestone-label">${g.label}</div>
+        ${g.meta ? `<div class="ed-milestone-meta">${g.meta}</div>` : ''}
+        ${g.posts.length ? `
         <div class="ed-photo-scroll-wrap">
           <div class="ed-photo-scroll">
             <div class="ed-photo-row">${g.posts.map(_photoCard).join('')}</div>
           </div>
           <div class="ed-photo-fade"></div>
-        </div>
+        </div>` : `<div class="ed-milestone-empty">No photos yet</div>`}
       </div>
     </div>`).join('');
 
@@ -404,15 +430,31 @@ function renderHypeFeed(posts, kickoffIso) {
 }
 
 function renderRecapBtn() {
-  if (!edEvent.isPast) return '';
-  const hasVideo = !!edEvent.recapVideoUrl;
-  return `
+  if (!edEvent.isPast) {
+    // Organizer action: close the event so the AI recap becomes available
+    if (edEvent.matchStatus !== 'live') return '';
+    return `
     <div class="ed-video-cta">
-      <button class="ed-video-cta__btn${hasVideo ? ' is-generated' : ''}"
-              id="edGenerateVideoBtn" type="button"${hasVideo ? ' disabled' : ''}>
-        🎬 ${hasVideo ? 'Video generated' : 'Generate recap video'}
+      <button class="ed-video-cta__btn" id="edFinishEventBtn" type="button">
+        🏁 Finish event
       </button>
     </div>`;
+  }
+  // Finished events: "AI Recap" is the primary bottom CTA (see _updateFloatCta)
+  return '';
+}
+
+function _goalSelectHtml() {
+  const goals = (edEvent.matchGoals || []).filter(g => g.id != null).sort((a, b) => a.minute - b.minute);
+  if (!goals.length) return '';
+  const options = goals.map((g, i) =>
+    `<option value="${g.id}">⚽ Goal ${i + 1} · ${g.minute}' ${g.player}${g.label ? ` — ${g.label}` : ''}</option>`
+  ).join('');
+  return `
+        <select id="edGoalSelect" class="ed-upload-modal__caption ed-upload-modal__select" aria-label="Goal">
+          <option value="">No goal — general moment</option>
+          ${options}
+        </select>`;
 }
 
 function renderUploadModal() {
@@ -425,6 +467,7 @@ function renderUploadModal() {
           <span id="edMediaLabel">📎 Choose file</span>
           <input type="file" id="edMediaInput" accept="image/jpeg,image/png,image/gif,video/mp4,video/quicktime" style="display:none">
         </label>
+        ${_goalSelectHtml()}
         <textarea id="edCaptionInput" class="ed-upload-modal__caption"
           placeholder="Write a caption... (max. 280 characters)" maxlength="280" rows="3"></textarea>
         <button class="ed-upload-modal__submit" id="edUploadSubmit" type="button">
@@ -467,6 +510,12 @@ function _updateFloatCta() {
       📸 Upload photo / video
     </button>`;
     el.hidden = false;
+  } else if (edEvent.isPast) {
+    // Same primary CTA as the recap screen
+    el.innerHTML = `<button class="ed-float-cta__btn" id="edRecapCta" type="button">
+      <i class="ti ti-sparkles" style="font-size:17px"></i> AI Recap
+    </button>`;
+    el.hidden = false;
   } else {
     el.hidden = true;
     el.innerHTML = '';
@@ -475,6 +524,9 @@ function _updateFloatCta() {
 
 document.getElementById('edFloatCta').addEventListener('click', (e) => {
   if (e.target.closest('#edUploadCta')) _openUploadModal();
+  if (e.target.closest('#edRecapCta') && typeof window.navigateToRecap === 'function') {
+    window.navigateToRecap(edEvent.id, { customize: true });
+  }
 });
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -574,6 +626,10 @@ function navigateToHome() {
   if (bottomNav) bottomNav.hidden = false;
   if (typeof window._setNavContext === 'function') window._setNavContext('home');
   if (typeof window._updateLiveBar === 'function') window._updateLiveBar();
+  // Refresh home sections so an event finished here moves to "Relive Past Fan Fests"
+  ['loadRecapCards', 'loadSeleccionCards', 'loadUpcomingCards'].forEach((fn) => {
+    if (typeof window[fn] === 'function') window[fn]();
+  });
 }
 
 // ── Upload modal state ────────────────────────────────────────────────────────
@@ -592,6 +648,8 @@ function _closeUploadModal() {
   if (label) label.textContent = '📎 Choose file';
   const caption = $ed('edCaptionInput');
   if (caption) caption.value = '';
+  const goalSel = $ed('edGoalSelect');
+  if (goalSel) goalSel.value = '';
   const err = $ed('edUploadError');
   if (err) { err.hidden = true; err.textContent = ''; }
 }
@@ -605,6 +663,7 @@ async function _submitUpload() {
       edEvent.id, _uploadFile,
       edCurrentUser.id, edCurrentUser.name, edCurrentUser.handle,
       caption || null,
+      ($ed('edGoalSelect') || {}).value || null,
     );
     _closeUploadModal();
     hypePosts.unshift(post);
@@ -624,6 +683,29 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
     return;
   }
 
+  if (e.target.closest('#edFinishEventBtn')) {
+    const btn = document.getElementById('edFinishEventBtn');
+    if (!btn || btn.disabled) return;
+    if (!btn.dataset.confirm) {
+      // Two-tap confirmation so the event isn't closed by accident
+      btn.dataset.confirm = '1';
+      btn.textContent = '🏁 Tap again to finish — uploads will close';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '⏳ Finishing...';
+    try {
+      _stopLiveSync();
+      await advanceMatchState(edEvent.id, 'end');
+      await navigateToEventDetail({ id: edEvent.id });
+    } catch (_) {
+      btn.disabled = false;
+      delete btn.dataset.confirm;
+      btn.textContent = '🏁 Finish event';
+    }
+    return;
+  }
+
   if (e.target.closest('#edRecapBtn')) {
     if (typeof window.navigateToRecap === 'function') {
       window.navigateToRecap(edEvent.id);
@@ -637,7 +719,9 @@ $ed('eventDetailView').addEventListener('click', async (e) => {
     btn.disabled = true;
     btn.textContent = '⏳ Generating video...';
     try {
-      const result = await generateVideoRecap(edEvent.id);
+      let tone = 'emocionante';
+      try { tone = localStorage.getItem('fanfest_recap_tone') || tone; } catch (_) {}
+      const result = await generateVideoRecap(edEvent.id, tone);
       edEvent.recapVideoUrl = result.video_url;
       btn.textContent = '🎬 Video generated';
       btn.classList.add('is-generated');

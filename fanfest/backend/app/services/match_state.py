@@ -29,12 +29,64 @@ _last_sync: dict[str, float] = {}
 SYNC_THROTTLE_SECONDS = 60
 
 
+def _load_goals(event_id: str) -> list[Goal]:
+    from app.db.database import get_session
+    from app.db.models import GoalModel
+
+    with get_session() as db:
+        rows = (
+            db.query(GoalModel)
+            .filter_by(event_id=event_id)
+            .order_by(GoalModel.minute, GoalModel.id)
+            .all()
+        )
+        return [
+            Goal(id=r.id, player=r.player, team=r.team, minute=r.minute, label=r.label)
+            for r in rows
+        ]
+
+
+def _insert_goal(event_id: str, goal: Goal) -> Goal:
+    """Persist a goal; returns it with its DB id. Falls back to in-memory only on error."""
+    try:
+        from app.db.database import get_session
+        from app.db.models import GoalModel
+
+        with get_session() as db:
+            row = GoalModel(
+                event_id=event_id, player=goal.player, team=goal.team,
+                minute=goal.minute, label=goal.label,
+            )
+            db.add(row)
+            db.flush()
+            return goal.model_copy(update={"id": row.id})
+    except Exception:
+        return goal
+
+
+def _delete_goals(event_id: str) -> None:
+    try:
+        from app.db.database import get_session
+        from app.db.models import GoalModel
+
+        with get_session() as db:
+            db.query(GoalModel).filter_by(event_id=event_id).delete()
+    except Exception:
+        pass
+
+
 def _init_from_db(event_id: str) -> MatchState | None:
     """Try to build a default pre-match state from the DB for a user-created event."""
     try:
         from app.services.events_service import get_event  # lazy to avoid circular import
         ev = get_event(event_id)
-        match_status = "ended" if ev.get("status") == "past" else "pre"
+        db_status = ev.get("status")
+        if db_status == "past":
+            match_status = "ended"
+        elif db_status == "live":
+            match_status = "live"
+        else:
+            match_status = "pre"
         state = MatchState(
             event_id=event_id,
             home_team=ev["home_team"],
@@ -44,7 +96,7 @@ def _init_from_db(event_id: str) -> MatchState | None:
             status=match_status,
             clock_seconds=0,
             venue=ev.get("venue_name", ""),
-            goals=[],
+            goals=_load_goals(event_id),
         )
         _states[event_id] = state
         return state
@@ -70,9 +122,11 @@ def get_state(event_id: str) -> MatchState:
     return state
 
 
-def score_goal(event_id: str, player: str, team: str, minute: int) -> MatchState:
+def score_goal(
+    event_id: str, player: str, team: str, minute: int, label: str | None = None
+) -> MatchState:
     state = get_state(event_id)
-    goal = Goal(player=player, team=team, minute=minute)
+    goal = _insert_goal(event_id, Goal(player=player, team=team, minute=minute, label=label))
     updated_goals = list(state.goals) + [goal]
     home_score = state.home_score + (1 if team == state.home_team else 0)
     away_score = state.away_score + (1 if team == state.away_team else 0)
@@ -89,11 +143,21 @@ def score_goal(event_id: str, player: str, team: str, minute: int) -> MatchState
     return updated
 
 
+def start_match(event_id: str) -> MatchState:
+    state = get_state(event_id)
+    updated = state.model_copy(update={"status": "live"})
+    _states[event_id] = updated
+    return updated
+
+
 def end_match(event_id: str) -> MatchState:
     state = get_state(event_id)
     updated = state.model_copy(update={"status": "ended"})
     _states[event_id] = updated
     _persist(updated)
+    # Mark the event itself as finished so lists/detail show it as past
+    from app.services.events_service import persist_status  # lazy to avoid circular import
+    persist_status(event_id, "past")
     return updated
 
 
@@ -109,12 +173,52 @@ def reset(event_id: str) -> MatchState:
         }
     )
     _states[event_id] = updated
+    _delete_goals(event_id)
     return updated
+
+
+def set_goal_label(event_id: str, goal_id: int, label: str | None) -> MatchState:
+    """Set/clear the timeline-only label of a goal."""
+    from app.db.database import get_session
+    from app.db.models import GoalModel
+
+    state = get_state(event_id)
+    label = (label or "").strip() or None
+    with get_session() as db:
+        row = db.query(GoalModel).filter_by(event_id=event_id, id=goal_id).first()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        row.label = label
+    updated = state.model_copy(
+        update={"goals": [g.model_copy(update={"label": label}) if g.id == goal_id else g
+                          for g in state.goals]}
+    )
+    _states[event_id] = updated
+    return updated
+
+
+def has_fixture_link(event_id: str) -> bool:
+    return event_id in _fixture_links
 
 
 def link_fixture(event_id: str, fixture_id: int) -> None:
     """Store the API-Football fixture_id link for a FanFest event."""
     _fixture_links[event_id] = fixture_id
+    try:
+        from app.services.events_service import persist_fixture_id
+        persist_fixture_id(event_id, fixture_id)
+    except Exception:
+        pass
+
+
+def load_fixture_links_from_db() -> None:
+    """Populate _fixture_links from DB on startup so links survive restarts."""
+    try:
+        from app.services.events_service import load_all_fixture_ids
+        for event_id, fixture_id in load_all_fixture_ids().items():
+            _fixture_links.setdefault(event_id, fixture_id)
+    except Exception:
+        pass
 
 
 async def sync_from_api(event_id: str) -> MatchState:

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-Provider = Literal["auto", "anthropic", "openai", "offline"]
+Provider = Literal["auto", "gemini", "anthropic", "openai", "offline"]
 
 DEFAULT_MODEL = "claude-opus-4-8"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
@@ -18,6 +18,7 @@ class RecapConfig:
     base_dir: Path = field(default_factory=Path.cwd)
 
     language: str = "es"
+    tone: str = "emocionante"  # emocionante | inspirador | humorístico | nostálgico
     provider: Provider = "auto"
     model: str = DEFAULT_MODEL
     openai_model: str = DEFAULT_OPENAI_MODEL

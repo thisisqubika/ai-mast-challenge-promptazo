@@ -99,13 +99,14 @@ export async function fetchMedia(eventId) {
   return res.json();
 }
 
-export async function uploadMedia(eventId, file, uploaderId, uploaderName, uploaderHandle, caption) {
+export async function uploadMedia(eventId, file, uploaderId, uploaderName, uploaderHandle, caption, goalId = null) {
   const form = new FormData();
   form.append("file", file);
   form.append("uploader_id", uploaderId);
   form.append("uploader_name", uploaderName);
   if (uploaderHandle) form.append("uploader_handle", uploaderHandle);
   if (caption) form.append("caption", caption);
+  if (goalId) form.append("goal_id", String(goalId));
   const res = await fetch(`${API_BASE}/events/${eventId}/media`, {
     method: "POST",
     body: form,
@@ -196,9 +197,11 @@ export async function fetchVideoRecap(eventId) {
   return res.json();
 }
 
-export async function generateVideoRecap(eventId) {
+export async function generateVideoRecap(eventId, tone = 'emocionante') {
   const res = await fetch(`${API_BASE}/events/${eventId}/recap/video`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tone }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

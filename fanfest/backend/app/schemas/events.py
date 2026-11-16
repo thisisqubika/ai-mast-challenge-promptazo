@@ -94,9 +94,15 @@ class LikeResponse(BaseModel):
 
 
 class Goal(BaseModel):
+    id: int | None = None  # DB id (None for seeded demo matches)
     player: str
     team: str
     minute: int
+    label: str | None = None  # optional, shown only on the photo timeline
+
+
+class GoalLabelUpdate(BaseModel):
+    label: str | None = Field(default=None, max_length=60)
 
 
 class MatchState(BaseModel):
@@ -125,6 +131,7 @@ class Photo(BaseModel):
     liked_by: list[str] = Field(default_factory=list, exclude=True)
     comments: list[CommentOut] = Field(default_factory=list)
     phase: str | None = None  # "pre" | "during" | "post" — set by list_media endpoint
+    goal_id: int | None = None  # timeline section: the goal this photo belongs to
 
 
 class PhotoList(BaseModel):
@@ -141,10 +148,11 @@ class PhotoUploadForm(BaseModel):
 
 
 class MatchStateUpdate(BaseModel):
-    action: Literal["goal", "end", "reset"]
+    action: Literal["goal", "start", "end", "reset"]
     player: str | None = None
     team: str | None = None
     minute: int | None = None
+    label: str | None = None  # optional timeline label for a new goal
 
 
 class LinkFixtureRequest(BaseModel):
@@ -158,12 +166,14 @@ class LinkFixtureRequest(BaseModel):
 
 class RecapRequest(BaseModel):
     tone: Literal["emocionante", "inspirador", "humorístico", "nostálgico"] = "emocionante"
-    slide_count: int = Field(4, ge=1, le=10)
+    slide_count: int = Field(4, ge=1, le=20)  # "Auto" = one slide per goal
 
 
 class RecapHighlight(BaseModel):
     label: str
     description: str
+    goal_number: int | None = None  # 1-based goal this highlight is about
+    photo_id: str | None = None  # fan photo shown behind this slide (same moment)
 
 
 class RecapResponse(BaseModel):
@@ -178,11 +188,23 @@ class RecapResponse(BaseModel):
     away_team: str
     photo_count: int
     prediction_pct: int | None = None
+    # Slide copy written by the AI (None → the frontend uses neutral defaults)
+    headline: str | None = None
+    stats_title: str | None = None
+    closing_title: str | None = None
+    closing_text: str | None = None
+
+
+class VideoRecapRequest(BaseModel):
+    tone: Literal["emocionante", "inspirador", "humorístico", "nostálgico"] = "emocionante"
 
 
 class VideoRecapResponse(BaseModel):
     event_id: str
     video_url: str
+    generated_by: str | None = None  # "gemini" | "anthropic" | "openai" | "offline"
+    model: str | None = None
+    tone: str | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -261,6 +261,33 @@ def persist_score(event_id: str, home_score: int, away_score: int) -> None:
             db.commit()
 
 
+def persist_status(event_id: str, status: str) -> None:
+    """Persist the event lifecycle status ('future' | 'live' | 'past')."""
+    with get_session() as db:
+        event = db.query(EventModel).filter_by(id=event_id).first()
+        if event:
+            event.status = status
+            db.commit()
+
+
+def persist_fixture_id(event_id: str, fixture_id: int) -> None:
+    """Persist the API-Football fixture_id link so it survives server restarts."""
+    with get_session() as db:
+        event = db.query(EventModel).filter_by(id=event_id).first()
+        if event:
+            event.fixture_id = fixture_id
+            db.commit()
+
+
+def load_all_fixture_ids() -> dict[str, int]:
+    """Return all event_id → fixture_id mappings stored in the DB."""
+    with get_session() as db:
+        rows = db.query(EventModel.id, EventModel.fixture_id).filter(
+            EventModel.fixture_id.isnot(None)
+        ).all()
+    return {row.id: row.fixture_id for row in rows}
+
+
 # ── Test helpers ──────────────────────────────────────────────────────────────
 
 def has_prediction(user_id: str, event_id: str) -> bool:

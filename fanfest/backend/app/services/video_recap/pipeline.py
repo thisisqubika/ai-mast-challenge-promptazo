@@ -7,13 +7,13 @@ Two entry points:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .assets import prepare_assets
 from .chronology import build_timeline
 from .config import RecapConfig
-from .errors import InputValidationError
+from .errors import InputValidationError, StoryboardGenerationError
 from .export import (
     build_normalized_input,
     write_normalized_input,
@@ -50,8 +50,14 @@ def run_from_input(event: EventInput, config: RecapConfig, log=print) -> Pipelin
     scenes = prepare_assets(scenes, base_dir=config.base_dir)
 
     generator = get_generator(config)
-    log(f"[3/6] Generating storyboard via '{generator.name}' provider")
-    storyboard = generator.generate(event, scenes, config)
+    log(f"[3/6] Generating storyboard via '{generator.name}' provider (tone: {config.tone})")
+    try:
+        storyboard = generator.generate(event, scenes, config)
+    except StoryboardGenerationError as exc:
+        if generator.name == "offline":
+            raise
+        log(f"      AI storyboard failed ({exc}); falling back to 'offline' provider")
+        storyboard = get_generator(replace(config, provider="offline")).generate(event, scenes, config)
 
     log("[4/6] Validating storyboard")
     validate_storyboard(storyboard, scenes)

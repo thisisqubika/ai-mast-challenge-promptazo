@@ -213,7 +213,7 @@ EVENTS: list[Event] = [
 FANS: list[Fan] = [
     Fan(user_id="user_001", name="Alice",    location="Buenos Aires, AR"),
     Fan(user_id="user_002", name="Bob",      location="Córdoba, AR"),
-    Fan(user_id="user_003", name="Carlos",   location="Rosario, AR"),
+    Fan(user_id="user_003", name="Paula",    location="Rosario, AR"),
     Fan(user_id="user_004", name="Diana",    location="Mendoza, AR"),
     Fan(user_id="user_005", name="Elena",    location="Salta, AR"),
     Fan(user_id="user_006", name="Fernando", location="Tucumán, AR"),
@@ -320,13 +320,13 @@ PHOTOS: list[Photo] = [
     Photo("photo-009", "evt-002", f"{_MEDIA_BASE}/media/evt-002/balgrano2.jpeg",                                       "user_009", "Iván",     uploaded_at=datetime(2026, 6, 15, 20, 30, tzinfo=_utc), uploader_handle="@ivan_bel",      caption="El banco de Belgrano, atentos al partido 💪", likes_count=18),
     Photo("photo-016", "evt-002", f"{_MEDIA_BASE}/media/evt-002/belgrano3.jpeg",                                       "user_001", "Alice",    uploaded_at=datetime(2026, 6, 15, 21, 30, tzinfo=_utc), uploader_handle="@alice_fan",     caption="Celebración celeste en el Kempes. ¡Campeones! 🏆🔵", likes_count=93),
     Photo("photo-017", "evt-002", f"{_MEDIA_BASE}/media/evt-002/belgrano4.jpeg",                                       "user_004", "Diana",    uploaded_at=datetime(2026, 6, 15, 22,  0, tzinfo=_utc), uploader_handle="@diana_mv",      caption="Llanto y alegría. Belgrano campeón Apertura 2026 ✨", likes_count=55),
-    Photo("photo-018", "evt-002", f"{_MEDIA_BASE}/media/evt-002/belgrano-2509-optimized.jpg",                          "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 15, 22, 30, tzinfo=_utc), uploader_handle="@carlos_fan",    caption="El Kempes repleto de azul. ¡Qué noche! 🔵⚪", likes_count=72),
+    Photo("photo-018", "evt-002", f"{_MEDIA_BASE}/media/evt-002/belgrano-2509-optimized.jpg",                          "user_003", "Paula",    uploaded_at=datetime(2026, 6, 15, 22, 30, tzinfo=_utc), uploader_handle="@paula",    caption="El Kempes repleto de azul. ¡Qué noche! 🔵⚪", likes_count=72),
     Photo("photo-019", "evt-002", f"{_MEDIA_BASE}/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.58.46.jpeg",   "user_002", "Bob",      uploaded_at=datetime(2026, 6, 15, 22, 55, tzinfo=_utc), uploader_handle="@bob_ftw",       caption="El momento del penal decisivo. El Kempes se paralizó 😤⚽", likes_count=34),
     Photo("photo-020", "evt-002", f"{_MEDIA_BASE}/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.47.42.jpeg",   "user_006", "Fernando", uploaded_at=datetime(2026, 6, 15, 23, 20, tzinfo=_utc), uploader_handle="@fer_nando",     caption="Uvita celebra el gol del título 🙌🔵", likes_count=127),
     Photo("photo-021", "evt-002", f"{_MEDIA_BASE}/media/evt-002/WhatsApp%20Image%202026-06-20%20at%2012.58.47.jpeg",   "user_007", "Gabriela", uploaded_at=datetime(2026, 6, 15, 23, 50, tzinfo=_utc), uploader_handle="@gaby_celeste",  caption="Locura en la tribuna. ¡Primer Apertura de Belgrano! 🎉", likes_count=211),
     Photo("photo-010", "evt-003", "https://picsum.photos/400/300?random=10", "user_002", "Bob",      uploaded_at=datetime(2026, 6, 26, 18, 40, tzinfo=_utc)),
-    Photo("photo-011", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial.jpeg",  "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
-    Photo("photo-012", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial2.jpg", "user_003", "Carlos",   uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@carlos_fan",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
+    Photo("photo-011", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial.jpeg",  "user_003", "Paula",    uploaded_at=datetime(2026, 6, 24, 21, 20, tzinfo=_utc), uploader_handle="@paula",   caption="¡Llegando al fan fest! El ambiente está increíble 🔥", likes_count=24),
+    Photo("photo-012", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial2.jpg", "user_003", "Paula",    uploaded_at=datetime(2026, 6, 24, 21, 55, tzinfo=_utc), uploader_handle="@paula",   caption="¡Gol de Lozano! La barra está explotando 🇲🇽⚽"),
     Photo("photo-013", "evt-004", f"{_MEDIA_BASE}/media/evt-004/mundial3.jpg", "user_006", "Fernando", uploaded_at=datetime(2026, 6, 24, 22, 10, tzinfo=_utc), uploader_handle="@fer_nando",    caption="El pub lleno a reventar, increíble noche 🍺🎉", likes_count=8),
 ]
 
@@ -349,7 +349,7 @@ COMMENTS: list[Comment] = [
     ),
     Comment(
         id="comment-003", photo_id="photo-013",
-        user_id="user_003", user_name="Carlos", user_handle="@carlos_fan",
+        user_id="user_003", user_name="Paula",  user_handle="@paula",
         text="¡Una noche para no olvidar! México campeón 🏆",
         created_at=datetime(2026, 6, 24, 22, 20, tzinfo=_utc),
     ),

@@ -1,4 +1,4 @@
-import { fetchMatchState, fetchPhotos } from './api.js';
+import { fetchMatchState, fetchPhotos } from './api.js?v=16';
 
 const EVENT_ID = 'event_001';
 const POLL_INTERVAL = 3000;

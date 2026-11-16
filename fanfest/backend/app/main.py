@@ -20,6 +20,9 @@ def _run_migrations() -> None:
             "ALTER TABLE events ADD COLUMN recap_video_url TEXT",
             "ALTER TABLE events ADD COLUMN home_score INTEGER",
             "ALTER TABLE events ADD COLUMN away_score INTEGER",
+            "ALTER TABLE events ADD COLUMN fixture_id INTEGER",
+            "ALTER TABLE photos ADD COLUMN caption TEXT",
+            "ALTER TABLE photos ADD COLUMN goal_id INTEGER",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -36,6 +39,8 @@ async def lifespan(app: FastAPI):
         _run_migrations()
         from app.db.seed import run_seed
         run_seed()
+    from app.services import match_state as _ms
+    _ms.load_fixture_links_from_db()
     yield
 
 
