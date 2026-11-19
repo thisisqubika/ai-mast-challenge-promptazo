@@ -572,9 +572,9 @@ function _actions(idx) {
   return `
     <div class="rc-slide-actions">
       <div class="rc-action-row">
-        <button class="rc-btn-dl" title="Download all slides as images (.zip)">
-          <i class="ti ti-download" style="font-size:18px;color:#F1F5F9"></i>
-          <span style="font-size:14px;font-weight:700;color:#F1F5F9">Images</span>
+        <button class="rc-btn-dl rc-btn-video" title="Download all slides as a video (2s per slide)">
+          <i class="ti ti-movie" style="font-size:18px;color:#F1F5F9"></i>
+          <span style="font-size:14px;font-weight:700;color:#F1F5F9">Video</span>
         </button>
         <button class="rc-btn-dl rc-btn-gif" title="Download all slides as an animated GIF">
           <i class="ti ti-gif" style="font-size:18px;color:#F1F5F9"></i>
@@ -903,20 +903,22 @@ async function _withBusy(btn, label, fn) {
   btn.disabled = false;
 }
 
-// Download: every active slide as PNG, bundled in one ZIP
-async function _downloadAllSlides(btn) {
-  await _withBusy(btn, 'Preparing…', async () => {
-    const base = _fileBase();
-    if (typeof window.JSZip !== 'function') {
-      // No ZIP library: fall back to the current slide only
-      _saveBlob(await _slideToBlob(_activeIdx[_rcCurrent] ?? 0), `${base}.png`);
-      return;
-    }
-    const zip = new window.JSZip();
+// Video: every slide for 2 seconds, compiled into an MP4 by the backend
+const VIDEO_SECONDS_PER_SLIDE = 2;
+async function _downloadVideo(btn) {
+  await _withBusy(btn, 'Creating…', async () => {
+    const form = new FormData();
     for (let i = 0; i < _activeIdx.length; i++) {
-      zip.file(`${base}-${String(i + 1).padStart(2, '0')}.png`, await _slideToBlob(_activeIdx[i]));
+      const span = btn.querySelector('span');
+      if (span) span.textContent = `${i + 1}/${_activeIdx.length}…`;
+      form.append('frames', await _slideToBlob(_activeIdx[i]), `slide-${i + 1}.png`);
     }
-    _saveBlob(await zip.generateAsync({ type: 'blob' }), `${base}.zip`);
+    form.append('seconds_per_slide', String(VIDEO_SECONDS_PER_SLIDE));
+    form.append('tone', TONE_MAP[_tone] || 'emocionante');  // picks the background music
+    const base = window.FANFEST_API_BASE || 'http://localhost:8000';
+    const res = await fetch(`${base}/api/v1/events/${_eventId}/recap/slides-video`, { method: 'POST', body: form });
+    if (!res.ok) throw new Error(`slides-video ${res.status}`);
+    _saveBlob(await res.blob(), `${_fileBase()}.mp4`);
   });
 }
 
@@ -1008,8 +1010,8 @@ function _mountSlides(allSlides) {
   $r('recapView').onclick = e => {
     const gif = e.target.closest('.rc-btn-gif');
     if (gif) { _downloadGif(gif); return; }
-    const dl = e.target.closest('.rc-btn-dl');
-    if (dl) { _downloadAllSlides(dl); return; }
+    const video = e.target.closest('.rc-btn-video');
+    if (video) { _downloadVideo(video); return; }
     const sh = e.target.closest('.rc-btn-share');
     if (sh) _shareCurrentSlide(sh);
   };

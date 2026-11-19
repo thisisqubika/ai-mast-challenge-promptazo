@@ -1,6 +1,8 @@
 import unicodedata
 
-from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from app.core.config import settings
 from app.schemas.events import (
@@ -453,6 +455,30 @@ def create_recap(event_id: str, body: RecapRequest) -> RecapResponse:
 # ---------------------------------------------------------------------------
 # Video recap (AI-generated MP4)
 # ---------------------------------------------------------------------------
+
+
+@router.post("/{event_id}/recap/slides-video")
+def compile_slides_video(
+    event_id: str,
+    frames: list[UploadFile] = File(...),
+    seconds_per_slide: float = Form(default=2.0, gt=0, le=10),
+    tone: str | None = Form(default=None),
+) -> FileResponse:
+    """Join the AI Recap slides (PNG frames, in order) into a shareable MP4."""
+    from app.services import slides_video_service
+
+    try:
+        path = slides_video_service.build_slides_video(
+            [f.file.read() for f in frames], seconds_per_slide, tone
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return FileResponse(
+        path,
+        media_type="video/mp4",
+        filename=f"recap-{event_id}.mp4",
+        background=BackgroundTask(path.unlink, missing_ok=True),
+    )
 
 
 @router.get("/{event_id}/recap/video", response_model=VideoRecapResponse)

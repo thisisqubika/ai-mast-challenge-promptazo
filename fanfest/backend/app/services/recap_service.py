@@ -2,6 +2,7 @@
 
 import json
 import logging
+import random
 
 import anthropic
 
@@ -144,7 +145,7 @@ def _attach_photos(
             chosen = h.photo_id
         if chosen is None or chosen in used:
             spare = [p.id for p in goal_photos if p.id not in used]
-            chosen = spare[0] if spare else (chosen if goal_photos else None)
+            chosen = random.choice(spare) if spare else (chosen if goal_photos else None)
         if chosen:
             used.add(chosen)
         result.append(h.model_copy(update={
@@ -194,6 +195,19 @@ def _build_context(state: MatchState, photos: list[Photo]) -> dict:
         if g.team == state.home_team
     ]
     goal_moment = {g.id: (g.label or g.player) for g in state.goals if g.id is not None}
+    # All captions + comments of every photo tagged with each goal (a goal can have many photos)
+    texts_by_goal: dict[int, list[str]] = {}
+    for p in sorted(photos, key=lambda p: p.uploaded_at):
+        if p.goal_id is None:
+            continue
+        bucket = texts_by_goal.setdefault(p.goal_id, [])
+        if p.caption and p.caption.strip():
+            bucket.append(p.caption.strip())
+        bucket.extend(c.text for c in p.comments if c.text)
+    home_goal_ids = [g.id for g in state.goals if g.team == state.home_team]
+    for g, gid in zip(home_goals, home_goal_ids):
+        if texts_by_goal.get(gid):
+            g["fan_texts"] = texts_by_goal[gid]
     away_goals = [
         {"player": g.player, "minute": g.minute}
         for g in state.goals
@@ -237,6 +251,7 @@ def _build_prompt(context: dict, tone: str, slide_count: int) -> str:
         goal_lines = "\n".join(
             f"  - goal_number {i + 1}: {g['player']}, minuto {g['minute']}"
             + (f" — momento: {g['moment']}" if g.get("moment") else "")
+            + (f" — lo que contaron: {' / '.join(g['fan_texts'])}" if g.get("fan_texts") else "")
             for i, g in enumerate(home_goals)
         )
         highlight_instruction = (
@@ -268,9 +283,11 @@ def _build_prompt(context: dict, tone: str, slide_count: int) -> str:
             "Usá esos textos como fuente principal: cada highlight y la narrativa deben "
             "referirse a momentos concretos que mencionan, parafraseándolos con su propio vocabulario. "
             "No inventes hechos que contradigan los comentarios. "
-            "Para cada highlight elegí en \"photo_id\" una foto cuyo \"moment\" coincida con "
-            "ese goal_number, y que la description sea coherente con el caption y los "
-            "comentarios de ESA foto. Si no hay foto de ese momento, usá null.\n\n"
+            "Cada gol puede tener varias fotos: la description de su highlight debe tener en "
+            "cuenta TODOS los textos de ese gol (\"fan_texts\" en home_goals: captions y "
+            "comentarios de todas sus fotos), combinándolos en un solo relato coherente. "
+            "En \"photo_id\" elegí UNA sola foto de ese mismo momento para el fondo (cualquiera "
+            "de las que tengan ese \"moment\"). Si no hay foto de ese momento, usá null.\n\n"
         )
 
     return (
@@ -305,6 +322,19 @@ _ATMOSPHERE_HIGHLIGHTS = [
 ]
 
 
+def _offline_goal_text(goal, photos: list[Photo], team: str) -> str:
+    """Offline description: what people wrote about this goal's photos, if anything."""
+    texts = []
+    for p in photos:
+        if p.goal_id == goal.id:
+            if p.caption and p.caption.strip():
+                texts.append(p.caption.strip())
+            texts.extend(c.text for c in p.comments if c.text)
+    if texts:
+        return " · ".join(texts[:3])[:220]
+    return f"{goal.label} ({goal.player}): uno de los momentos que hicieron grande a {team}."
+
+
 def _fallback_recap(
     event_id: str,
     state: MatchState,
@@ -325,7 +355,7 @@ def _fallback_recap(
         RecapHighlight(
             label=g.label.upper() if g.label else f"¡GOL DE {g.player.split()[-1].upper()}! MIN {g.minute}",
             description=(
-                f"{g.label} ({g.player}): uno de los momentos que hicieron grande a {state.home_team}."
+                _offline_goal_text(g, photos, state.home_team)
                 if g.label else
                 f"El estadio explotó cuando {g.player} anotó el gol de {state.home_team} "
                 f"en el minuto {g.minute}. Los hinchas enloquecieron de alegría."

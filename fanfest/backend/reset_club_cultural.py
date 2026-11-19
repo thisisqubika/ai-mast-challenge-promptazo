@@ -134,13 +134,40 @@ def post_match_state(body: dict) -> dict:
         return json.load(res)
 
 
+def _photo_goal_minutes() -> dict[str, int]:
+    """photo id -> minute of the goal it's tagged with (goal ids change on reset)."""
+    with database.get_session() as db:
+        minute_by_goal = {
+            g.id: g.minute for g in db.query(models.GoalModel).filter_by(event_id=EVENT_ID)
+        }
+        return {
+            p.id: minute_by_goal[p.goal_id]
+            for p in db.query(models.PhotoModel).filter_by(event_id=EVENT_ID)
+            if p.goal_id in minute_by_goal
+        }
+
+
+def _retag_photos(photo_minutes: dict[str, int]) -> None:
+    """Point kept photos at the recreated goal with the same minute."""
+    with database.get_session() as db:
+        goal_by_minute = {
+            g.minute: g.id for g in db.query(models.GoalModel).filter_by(event_id=EVENT_ID)
+        }
+        for p in db.query(models.PhotoModel).filter_by(event_id=EVENT_ID):
+            p.goal_id = goal_by_minute.get(photo_minutes.get(p.id))
+    if photo_minutes:
+        print(f"✓ Re-linked {len(photo_minutes)} photo(s) to their goals")
+
+
 def load_goals() -> None:
+    photo_minutes = _photo_goal_minutes()
     post_match_state({"action": "reset"})
     for player, minute, label in GOALS:
         state = post_match_state(
             {"action": "goal", "player": player, "team": HOME_TEAM, "minute": minute,
              "label": label}
         )
+    _retag_photos(photo_minutes)
     print(
         f"✓ {state['home_team']} {state['home_score']}-{state['away_score']} "
         f"{state['away_team']} ({state['status']}), {len(state['goals'])} goals"
